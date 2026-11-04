@@ -30,7 +30,7 @@ export async function checkRateLimit(
     .onConflictDoUpdate({
       target: rateLimits.key,
       set: {
-        count: sql`case when ${rateLimits.windowStart} = ${start} then ${rateLimits.count} + 1 else 1 end`,
+        count: sql`case when ${rateLimits.windowStart} = ${start.getTime()} then ${rateLimits.count} + 1 else 1 end`,
         windowStart: start,
         expiresAt: expires,
       },
