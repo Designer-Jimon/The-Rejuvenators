@@ -19,22 +19,22 @@ npm run dev
 
 ## Public site
 - Home, About, Vision & Mission, Activities, Departments + detail, FAQ, Contact.
-- Hero text/buttons, content blocks, activities, department photos/leaders, FAQ, contact/social and logo are database-driven.
+- Appointments at `/appointments`: guest/member request form, available slots, confirmation receipt.
+- Hero text/buttons, content blocks, department photos/leaders, FAQ, contact/social and logo are database-driven.
 - CMS saves revalidate public pages immediately via `revalidatePath`.
 
 ## Performance and navigation
-- `loading.tsx` skeletons for public, member and admin route groups.
-- Per-request React cache for settings, content blocks, nav and logo; public DB reads use `Promise.all`.
-- Sticky, always-visible public/member/admin headers with safe-area padding and scroll shadow.
-- `next/link` prefetch, pressed feedback, top route progress bar, sticky headers.
-- Full-screen mobile menus: solid cream, scroll lock, safe areas, Escape/route close.
-- Below-fold sections use `content-visibility`; slideshow images use `next/image` with first-slide priority.
+- `loading.tsx` skeletons; per-request caches for settings, content, nav and logo.
+- Sticky public/member/admin headers with safe-area padding and scroll shadow.
+- `next/link` prefetch, pressed feedback, top route progress bar, mobile route-close menus.
+- Below-fold `content-visibility`; slideshow images use `next/image` with first-slide priority.
 
 ## Admin CMS (`/admin`)
-- Media Library (R2 uploads, compression, alt text), Logo & Branding, Slideshow, Website Content, Activities, Departments, FAQ, Social & Contact.
-- Enforces `content.manage` / `settings.manage`, writes audit logs, uses mobile cards and single-column forms.
+- Media Library (R2), Logo & Branding, Slideshow, Website Content, Activities, Departments, FAQ, Social & Contact.
+- Appointments at `/admin/appointments`: approve/decline/suggest/complete, notes, WhatsApp, availability.
+- Requires `appointment.manage` for appointments; content/settings permissions remain enforced with audit logs.
 
 ## Data and security
-- Migration `0001_cuddly_carmella_unuscione.sql` adds CMS fields and backfills activity schedules.
+- Migration `0002_steady_mongoose.sql` adds appointment fields/indexes and seeds appointment settings/permission.
 - Public R2 reads limited to `media/`; state-changing APIs verify origin; admin checks run server-side.
 - Verify: `npm run typecheck`, `npm run build`, `npm run test:security`, `npm run cf:build`.

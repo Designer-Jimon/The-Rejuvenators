@@ -112,6 +112,74 @@ export const adminActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("whatsapp_invite") }),
 ]);
 
+export const appointmentRequestSchema = z
+  .object({
+    fullName: name,
+    phone,
+    email,
+    purpose: z
+      .string()
+      .trim()
+      .min(3, "Tell us the purpose of the appointment.")
+      .max(200, "Keep the purpose under 200 characters."),
+    preferredDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a preferred date."),
+    preferredTime: z
+      .string()
+      .trim()
+      .regex(/^\d{2}:\d{2}$/, "Choose a preferred time."),
+    message: z
+      .string()
+      .trim()
+      .max(1500, "Keep your message under 1500 characters.")
+      .optional()
+      .default(""),
+  })
+  .strict();
+
+export const appointmentAdminActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("approve") }),
+  z.object({ action: z.literal("decline") }),
+  z.object({
+    action: z.literal("suggest"),
+    suggestedDate: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a date."),
+    suggestedTime: z
+      .string()
+      .trim()
+      .regex(/^\d{2}:\d{2}$/, "Choose a time."),
+  }),
+  z.object({ action: z.literal("complete") }),
+  z.object({
+    action: z.literal("note"),
+    adminNote: z
+      .string()
+      .trim()
+      .min(2, "Write a note first.")
+      .max(2000, "Keep the note under 2000 characters."),
+  }),
+]);
+
+export const appointmentAvailabilitySchema = z
+  .object({
+    days: z.array(z.number().int().min(0).max(6)),
+    start: z.string().regex(/^\d{2}:\d{2}$/),
+    end: z.string().regex(/^\d{2}:\d{2}$/),
+    slotMinutes: z.number().int().min(10).max(120),
+  })
+  .refine((data) => data.start < data.end, {
+    message: "The end time must be after the start time.",
+    path: ["end"],
+  });
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 export type AdminActionInput = z.infer<typeof adminActionSchema>;
+export type AppointmentRequestInput = z.infer<typeof appointmentRequestSchema>;
+export type AppointmentAdminActionInput = z.infer<
+  typeof appointmentAdminActionSchema
+>;

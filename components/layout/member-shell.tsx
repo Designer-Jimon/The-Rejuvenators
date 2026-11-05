@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import {
   Bell,
+  CalendarClock,
   Cross,
   Home,
   LogOut,
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 const navigation = [
   { href: "/member", label: "Home", icon: Home },
+  { href: "/member/appointments", label: "Appointments", icon: CalendarClock },
   { href: "/member/directory", label: "Directory", icon: Users },
   { href: "/member/notifications", label: "Alerts", icon: Bell },
   { href: "/member/profile", label: "Profile", icon: UserRound },
@@ -169,7 +171,7 @@ export function MemberShell({
         className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white/95 backdrop-blur lg:hidden"
         aria-label="Member bottom navigation"
       >
-        <div className="mx-auto grid max-w-md grid-cols-5">
+        <div className="mx-auto grid max-w-md grid-cols-6">
           {navigation.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -179,7 +181,7 @@ export function MemberShell({
                 href={item.href}
                 prefetch
                 className={cn(
-                  "relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition active:scale-95 active:opacity-70",
+                  "relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[9px] font-semibold transition active:scale-95 active:opacity-70 sm:text-[10px]",
                   active ? "text-brand-800" : "text-charcoal/50",
                 )}
                 aria-current={active ? "page" : undefined}

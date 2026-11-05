@@ -14,6 +14,7 @@ const preferenceTypes = [
   NOTIFICATION_TYPES.memberRejected,
   NOTIFICATION_TYPES.memberStatus,
   NOTIFICATION_TYPES.leaderAssigned,
+  NOTIFICATION_TYPES.appointmentUpdate,
   NOTIFICATION_TYPES.general,
 ];
 

@@ -21,6 +21,7 @@ export const PERMISSIONS = {
   contentManage: "content.manage",
   settingsManage: "settings.manage",
   directoryView: "directory.view",
+  appointmentManage: "appointment.manage",
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -43,6 +44,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     PERMISSIONS.memberFollowup,
     PERMISSIONS.memberWhatsapp,
     PERMISSIONS.directoryView,
+    PERMISSIONS.appointmentManage,
   ],
   content_admin: [
     PERMISSIONS.adminAccess,
@@ -60,6 +62,8 @@ export const NOTIFICATION_TYPES = {
   memberRejected: "member_rejected",
   memberStatus: "member_status",
   leaderAssigned: "leader_assigned",
+  appointmentRequest: "appointment_request",
+  appointmentUpdate: "appointment_update",
   general: "general",
 } as const;
 
@@ -69,6 +73,8 @@ export const NOTIFICATION_LABELS: Record<string, string> = {
   member_rejected: "Registration decisions",
   member_status: "Membership status changes",
   leader_assigned: "Unit leader assignments",
+  appointment_request: "New appointment requests",
+  appointment_update: "Appointment updates",
   general: "General announcements",
 };
 
@@ -98,6 +104,10 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   youtube_url: "",
   map_url: "",
   footer_note: "Built for the IT IS FINISHED REVIVAL OUTREACH family.",
+  appointment_days: "1,2,3,4,5",
+  appointment_start: "09:00",
+  appointment_end: "17:00",
+  appointment_slot_minutes: "30",
 };
 
 export const PUBLIC_NAV = [
@@ -106,6 +116,7 @@ export const PUBLIC_NAV = [
   { href: "/vision-mission", label: "Vision & Mission" },
   { href: "/activities", label: "Activities" },
   { href: "/departments", label: "Departments" },
+  { href: "/appointments", label: "Appointments" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ] as const;

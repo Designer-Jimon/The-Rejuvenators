@@ -195,18 +195,13 @@ export default async function ContactPage() {
           <p className="mt-3 text-base leading-7 text-cream/75">
             {appointment.body}
           </p>
-          {emailIsLink ? (
-            <a
-              href={`mailto:${settings.email}?subject=Appointment%20request`}
-              className={buttonClasses("gold", "lg", "mt-5 w-full sm:w-auto")}
-            >
-              Request an appointment
-            </a>
-          ) : (
-            <p className="mt-5 rounded-2xl border border-white/15 bg-white/5 p-4 text-sm text-cream/60">
-              Add a church email in Admin to enable online appointment requests.
-            </p>
-          )}
+          <Link
+            href="/appointments"
+            prefetch
+            className={buttonClasses("gold", "lg", "mt-5 w-full sm:w-auto")}
+          >
+            Book an appointment
+          </Link>
         </div>
 
         <div className="surface p-6">

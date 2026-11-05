@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Building2,
+  CalendarClock,
   CalendarDays,
   ChevronRight,
   Cross,
@@ -34,6 +35,13 @@ const navigation = [
     icon: Users,
     exact: false,
     permission: "membership",
+  },
+  {
+    href: "/admin/appointments",
+    label: "Appointments",
+    icon: CalendarClock,
+    exact: false,
+    permission: "appointments",
   },
   {
     href: "/admin/media",
@@ -107,6 +115,7 @@ export function AdminShell({
   logoUrl,
   unread,
   canManageMembers,
+  canManageAppointments,
   canManageContent,
   canManageSettings,
 }: {
@@ -116,6 +125,7 @@ export function AdminShell({
   logoUrl: string | null;
   unread: number;
   canManageMembers: boolean;
+  canManageAppointments: boolean;
   canManageContent: boolean;
   canManageSettings: boolean;
 }) {
@@ -164,6 +174,7 @@ export function AdminShell({
 
   const items = navigation.filter((item) => {
     if (item.permission === "membership") return canManageMembers;
+    if (item.permission === "appointments") return canManageAppointments;
     if (item.permission === "content") return canManageContent;
     if (item.permission === "settings") return canManageSettings;
     return true;

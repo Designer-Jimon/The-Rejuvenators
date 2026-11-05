@@ -21,6 +21,7 @@ export default async function AdminLayout({
       logoUrl={settings.logo_key ? "/api/branding/logo" : null}
       unread={user.unreadNotifications}
       canManageMembers={hasPermission(user, PERMISSIONS.memberReview)}
+      canManageAppointments={hasPermission(user, PERMISSIONS.appointmentManage)}
       canManageContent={hasPermission(user, PERMISSIONS.contentManage)}
       canManageSettings={hasPermission(user, PERMISSIONS.settingsManage)}
     >

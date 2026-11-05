@@ -46,3 +46,57 @@ export async function sendPasswordResetEmail(
 
   return { sent: true };
 }
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export async function sendAppointmentEmail(
+  to: string,
+  subject: string,
+  lines: string[],
+): Promise<SendResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM ?? "IT IS FINISHED <no-reply@example.com>";
+
+  if (!apiKey) {
+    console.log(`[appointment-email] ${to}: ${subject} - ${lines.join(" ")}`);
+    return { sent: false };
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject,
+      html: `
+        <div style="font-family:Inter,Arial,sans-serif;line-height:1.6;color:#1F1A17">
+          <h2 style="color:#8B1A1A">${escapeHtml(subject)}</h2>
+          ${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
+          <p style="margin-top:24px;color:#6b625c">IT IS FINISHED REVIVAL OUTREACH</p>
+        </div>
+      `,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error(
+      "Resend appointment email failed",
+      response.status,
+      await response.text(),
+    );
+    return { sent: false };
+  }
+
+  return { sent: true };
+}

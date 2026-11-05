@@ -9,6 +9,7 @@ export const FOOTER_LINKS = [
   { href: "/vision-mission", label: "Vision & Mission" },
   { href: "/activities", label: "Activities" },
   { href: "/departments", label: "Departments" },
+  { href: "/appointments", label: "Appointments" },
   { href: "/events", label: "Events" },
   { href: "/sermons", label: "Sermons" },
   { href: "/faq", label: "FAQ" },

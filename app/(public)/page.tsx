@@ -419,11 +419,11 @@ export default async function HomePage() {
             {appointment.body}
           </p>
           <Link
-            href="/contact"
+            href="/appointments"
             prefetch
             className={buttonClasses("gold", "lg", "mt-6 w-full sm:w-auto")}
           >
-            Request an appointment
+            Book an appointment
           </Link>
         </div>
       </section>

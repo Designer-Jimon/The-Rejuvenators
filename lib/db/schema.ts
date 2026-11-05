@@ -25,6 +25,12 @@ export type MemberStatus = "active" | "inactive";
 export type FollowupStatus = "new" | "contacted" | "in_progress" | "completed";
 export type DepartmentRole = "member" | "leader";
 export type AttendanceStatus = "present" | "absent" | "excused";
+export type AppointmentStatus =
+  | "pending"
+  | "confirmed"
+  | "declined"
+  | "suggested"
+  | "completed";
 
 export const users = sqliteTable(
   "users",
@@ -579,20 +585,47 @@ export const messageReads = sqliteTable(
   ],
 );
 
-export const appointments = sqliteTable("appointments", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  requestedBy: text("requested_by").references(() => users.id, {
-    onDelete: "set null",
-  }),
-  title: text("title").notNull(),
-  notes: text("notes"),
-  scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }),
-  status: text("status").notNull().default("pending"),
-  ...timestamps(),
-});
+export const appointments = sqliteTable(
+  "appointments",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    requestedBy: text("requested_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    fullName: text("full_name").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    email: text("email").notNull().default(""),
+    title: text("title").notNull(),
+    notes: text("notes"),
+    preferredDate: text("preferred_date").notNull().default(""),
+    preferredTime: text("preferred_time").notNull().default(""),
+    slotKey: text("slot_key"),
+    suggestedDate: text("suggested_date"),
+    suggestedTime: text("suggested_time"),
+    adminNote: text("admin_note"),
+    handledBy: text("handled_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }),
+    status: text("status")
+      .$type<AppointmentStatus>()
+      .notNull()
+      .default("pending"),
+    ...timestamps(),
+  },
+  (table) => [
+    index("appointments_status_idx").on(table.status),
+    index("appointments_date_idx").on(table.preferredDate),
+    uniqueIndex("appointments_confirmed_slot_unique")
+      .on(table.slotKey)
+      .where(
+        sql`${table.status} = 'confirmed' AND ${table.slotKey} IS NOT NULL`,
+      ),
+  ],
+);
 
 export const notifications = sqliteTable(
   "notifications",

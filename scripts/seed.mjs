@@ -60,6 +60,7 @@ const permissions = [
   ["perm_content_manage", "content.manage", "Manage site content and media"],
   ["perm_settings_manage", "settings.manage", "Manage site settings"],
   ["perm_directory_view", "directory.view", "View the member directory"],
+  ["perm_appointment_manage", "appointment.manage", "Manage pastoral appointments and availability"],
 ];
 
 const roles = [
@@ -80,6 +81,7 @@ const rolePermissions = {
     "perm_member_followup",
     "perm_member_whatsapp",
     "perm_directory_view",
+    "perm_appointment_manage",
   ],
   role_content_admin: [
     "perm_admin_access",
@@ -126,6 +128,10 @@ const settings = {
   youtube_url: "",
   map_url: "",
   footer_note: "Built for the IT IS FINISHED REVIVAL OUTREACH family.",
+  appointment_days: "1,2,3,4,5",
+  appointment_start: "09:00",
+  appointment_end: "17:00",
+  appointment_slot_minutes: "30",
 };
 
 const lines = [
