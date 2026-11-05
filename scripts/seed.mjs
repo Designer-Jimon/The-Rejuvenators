@@ -107,6 +107,11 @@ const settings = {
   hero_headline: "Come as you are. Leave renewed.",
   hero_subheadline:
     "A Christ-centred family raising believers for revival, service and purpose.",
+  hero_primary_label: "Join Our Church Family",
+  hero_primary_href: "/register",
+  hero_secondary_label: "Discover Our Vision",
+  hero_secondary_href: "/vision-mission",
+  logo_key: "",
   welcome_title: "You are welcome home",
   welcome_body:
     "IT IS FINISHED REVIVAL OUTREACH is a place of worship, healing and growth. Whether you are new to faith or returning, there is a place for you here.",
@@ -119,6 +124,7 @@ const settings = {
   facebook_url: "",
   instagram_url: "",
   youtube_url: "",
+  map_url: "",
   footer_note: "Built for the IT IS FINISHED REVIVAL OUTREACH family.",
 };
 
@@ -238,32 +244,56 @@ const activities = [
   [
     "act_sunday_service",
     "Sunday Service",
-    "Day: Sunday\nTime: [Sunday service time - edit in Admin]\nVenue: [Church address - edit in Admin]\n\nJoin us for our weekly Sunday gathering.",
+    "Sunday",
+    "[Sunday service time - edit in Admin]",
+    "[Church address - edit in Admin]",
+    "Join us for our weekly Sunday gathering.",
+    "",
   ],
   [
     "act_rejuvenators_service",
     "Rejuvenators Service",
-    "Day: [Day - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nA gathering for the Rejuvenators family.",
+    "[Day - edit in Admin]",
+    "[Time - edit in Admin]",
+    "[Venue - edit in Admin]",
+    "A gathering for the Rejuvenators family.",
+    "",
   ],
   [
     "act_prayer_meeting",
     "Prayer Meeting",
-    "Day: [Day - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nA time of corporate prayer and intercession.",
+    "[Day - edit in Admin]",
+    "[Time - edit in Admin]",
+    "[Venue - edit in Admin]",
+    "A time of corporate prayer and intercession.",
+    "",
   ],
   [
     "act_bible_study",
     "Bible Study",
-    "Day: [Day - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nGrow in the Word together.",
+    "[Day - edit in Admin]",
+    "[Time - edit in Admin]",
+    "[Venue - edit in Admin]",
+    "Grow in the Word together.",
+    "",
   ],
   [
     "act_night_vigil",
     "Night Vigil",
-    "Day: [Day - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nA night of worship and prayer.",
+    "[Day - edit in Admin]",
+    "[Time - edit in Admin]",
+    "[Venue - edit in Admin]",
+    "A night of worship and prayer.",
+    "",
   ],
   [
     "act_special_revival",
     "Special Revival Programs",
-    "Day: [Dates - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nSpecial revival meetings and outreaches.",
+    "[Dates - edit in Admin]",
+    "[Time - edit in Admin]",
+    "[Venue - edit in Admin]",
+    "Special revival meetings and outreaches.",
+    "",
   ],
 ];
 
@@ -286,9 +316,9 @@ for (const [id, key, title, body] of contentBlocks) {
 }
 
 for (let index = 0; index < activities.length; index += 1) {
-  const [id, title, description] = activities[index];
+  const [id, title, day, time, venue, description, extraInfo] = activities[index];
   lines.push(
-    `INSERT OR IGNORE INTO activities (id, title, description, activity_date, is_published, created_at, updated_at) VALUES (${q(id)}, ${q(title)}, ${q(description)}, NULL, 1, unixepoch() * 1000, unixepoch() * 1000);`,
+    `INSERT OR IGNORE INTO activities (id, title, description, day, time, venue, location, extra_info, sort_order, is_published, created_at, updated_at) VALUES (${q(id)}, ${q(title)}, ${q(description)}, ${q(day)}, ${q(time)}, ${q(venue)}, ${q(venue)}, ${q(extraInfo)}, ${index + 1}, 1, unixepoch() * 1000, unixepoch() * 1000);`,
   );
 }
 

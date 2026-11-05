@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { and, asc, eq, gte } from "drizzle-orm";
 import {
   ArrowRight,
@@ -24,7 +25,8 @@ import {
   slideshowImages,
 } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
-import { getBlock, getContentMap, parseActivitySchedule } from "@/lib/content";
+import { getBlock, getContentMap } from "@/lib/content";
+import { publicMediaUrl } from "@/lib/media";
 import { formatDate } from "@/lib/utils";
 import { buttonClasses } from "@/components/ui/button";
 import {
@@ -67,7 +69,7 @@ export default async function HomePage() {
         .select()
         .from(activities)
         .where(eq(activities.isPublished, true))
-        .orderBy(asc(activities.activityDate))
+        .orderBy(asc(activities.sortOrder), asc(activities.createdAt))
         .limit(3),
       db
         .select()
@@ -88,18 +90,25 @@ export default async function HomePage() {
   const devotional = getBlock(content, "latest_devotional");
   const appointment = getBlock(content, "appointment_cta");
 
+  const heroActions = {
+    primaryHref: settings.hero_primary_href || "/register",
+    primaryLabel: settings.hero_primary_label || "Join Our Church Family",
+    secondaryHref: settings.hero_secondary_href || "/vision-mission",
+    secondaryLabel:
+      settings.hero_secondary_label || "Discover Our Vision",
+  };
+
   const heroSlides: HeroSlide[] = slides.length
     ? slides.map((slide, index) => ({
         id: slide.id,
         eyebrow: settings.church_name,
         title: slide.headline || settings.hero_headline,
         subtitle: slide.subheadline || settings.hero_subheadline,
-        imageUrl: `/api/media/${slide.imageKey}`,
+        imageUrl: publicMediaUrl(slide.imageKey),
         gradient: (["brand", "ember", "charcoal", "gold"] as const)[
           index % 4
         ],
-        href: "/register",
-        linkLabel: "Join Our Church Family",
+        ...heroActions,
       }))
     : [
         {
@@ -108,8 +117,7 @@ export default async function HomePage() {
           title: settings.hero_headline,
           subtitle: settings.hero_subheadline,
           gradient: "brand",
-          href: "/register",
-          linkLabel: "Join Our Church Family",
+          ...heroActions,
         },
         {
           id: "revival",
@@ -117,8 +125,7 @@ export default async function HomePage() {
           title: "Revival is the heartbeat of God",
           subtitle: intro.body,
           gradient: "ember",
-          href: "/vision-mission",
-          linkLabel: "Discover Our Vision",
+          ...heroActions,
         },
         {
           id: "finished",
@@ -126,8 +133,7 @@ export default async function HomePage() {
           title: "IT IS FINISHED",
           subtitle: scripture.body,
           gradient: "charcoal",
-          href: "/about",
-          linkLabel: "Learn our story",
+          ...heroActions,
         },
       ];
 
@@ -237,42 +243,55 @@ export default async function HomePage() {
         />
         {upcomingActivities.length ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {upcomingActivities.map((activity) => {
-              const schedule = parseActivitySchedule(activity.description);
-              return (
-                <article key={activity.id} className="surface p-5">
-                  <Badge tone="brand">Activity</Badge>
+            {upcomingActivities.map((activity) => (
+              <article
+                key={activity.id}
+                className="surface overflow-hidden"
+              >
+                {activity.imageKey ? (
+                  <div className="relative aspect-[16/9] bg-brand-50">
+                    <Image
+                      src={publicMediaUrl(activity.imageKey) ?? ""}
+                      alt={activity.title}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : null}
+                <div className="p-5">
+                  <Badge tone="brand">{activity.day || "Activity"}</Badge>
                   <h3 className="mt-3 font-serif text-xl font-semibold">
                     {activity.title}
                   </h3>
                   <dl className="mt-3 space-y-1 text-sm text-charcoal/65">
-                    {schedule.day ? (
-                      <div className="flex gap-2">
-                        <dt className="font-semibold text-charcoal/45">Day</dt>
-                        <dd>{schedule.day}</dd>
-                      </div>
-                    ) : null}
-                    {schedule.time ? (
+                    {activity.time ? (
                       <div className="flex gap-2">
                         <dt className="font-semibold text-charcoal/45">Time</dt>
-                        <dd>{schedule.time}</dd>
+                        <dd>{activity.time}</dd>
                       </div>
                     ) : null}
-                    {schedule.venue ? (
+                    {activity.venue ? (
                       <div className="flex gap-2">
                         <dt className="font-semibold text-charcoal/45">Venue</dt>
-                        <dd>{schedule.venue}</dd>
+                        <dd>{activity.venue}</dd>
                       </div>
                     ) : null}
                   </dl>
-                  {schedule.summary ? (
+                  {activity.description ? (
                     <p className="mt-3 text-base leading-7 text-charcoal/70">
-                      {schedule.summary}
+                      {activity.description}
                     </p>
                   ) : null}
-                </article>
-              );
-            })}
+                  {activity.extraInfo ? (
+                    <p className="mt-3 whitespace-pre-line text-sm leading-6 text-charcoal/55">
+                      {activity.extraInfo}
+                    </p>
+                  ) : null}
+                </div>
+              </article>
+            ))}
           </div>
         ) : (
           <EmptyState

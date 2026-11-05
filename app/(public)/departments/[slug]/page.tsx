@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { and, asc, eq, ne } from "drizzle-orm";
-import { ArrowLeft, ArrowRight, HeartHandshake } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  HeartHandshake,
+  UserRound,
+} from "lucide-react";
 import { getDb } from "@/lib/db";
 import { departments } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
+import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
 import { Badge, PageHero, SectionHeader } from "@/components/ui/display";
 
@@ -85,6 +92,19 @@ export default async function DepartmentDetailPage({
         />
       </div>
 
+      {department.imageKey ? (
+        <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-3xl bg-brand-50 shadow-soft sm:aspect-[21/9]">
+          <Image
+            src={publicMediaUrl(department.imageKey) ?? ""}
+            alt={department.name}
+            fill
+            unoptimized
+            sizes="(max-width: 1024px) 100vw, 960px"
+            className="object-cover"
+          />
+        </div>
+      ) : null}
+
       <section className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
         <div className="surface p-6 sm:p-7">
           <Badge tone="brand">Serve with us</Badge>
@@ -94,6 +114,22 @@ export default async function DepartmentDetailPage({
           <p className="mt-3 whitespace-pre-line text-base leading-8 text-charcoal/70">
             {department.description || "[Department description - edit in Admin]"}
           </p>
+          {department.headOfUnit ? (
+            <p className="mt-5 flex items-center gap-2 rounded-2xl bg-brand-50 px-4 py-3 text-sm font-semibold text-charcoal/70">
+              <UserRound className="h-4 w-4 text-brand-700" aria-hidden="true" />
+              Head of unit: {department.headOfUnit}
+            </p>
+          ) : null}
+          {department.activities ? (
+            <div className="mt-6 rounded-2xl border border-brand-100 bg-cream/50 p-5">
+              <h3 className="font-serif text-lg font-semibold">
+                Department activities
+              </h3>
+              <p className="mt-2 whitespace-pre-line text-base leading-7 text-charcoal/70">
+                {department.activities}
+              </p>
+            </div>
+          ) : null}
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/register"

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { asc, eq } from "drizzle-orm";
 import { CalendarDays, Clock3, MapPin } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { activities } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
-import { parseActivitySchedule } from "@/lib/content";
-import { formatDate } from "@/lib/utils";
+import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
 import { Badge, EmptyState, PageHero, SectionHeader } from "@/components/ui/display";
 
@@ -32,13 +32,8 @@ export default async function ActivitiesPage() {
       .select()
       .from(activities)
       .where(eq(activities.isPublished, true))
-      .orderBy(asc(activities.activityDate)),
+      .orderBy(asc(activities.sortOrder), asc(activities.createdAt)),
   ]);
-
-  const scheduled = list.map((activity) => ({
-    activity,
-    schedule: parseActivitySchedule(activity.description),
-  }));
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
@@ -54,37 +49,61 @@ export default async function ActivitiesPage() {
           title="Gather with us"
           description="Days, times and venues are editable by the church team in the admin dashboard."
         />
-        {scheduled.length ? (
+        {list.length ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {scheduled.map(({ activity, schedule }) => (
-              <article key={activity.id} className="surface p-5">
-                <Badge tone="brand">{schedule.day || "Weekly"}</Badge>
-                <h3 className="mt-3 font-serif text-xl font-semibold">
-                  {activity.title}
-                </h3>
-                <dl className="mt-3 space-y-2 text-sm text-charcoal/70">
-                  <div className="flex items-start gap-2">
-                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" aria-hidden="true" />
-                    <div>
-                      <dt className="sr-only">Day</dt>
-                      <dd>{schedule.day || "Day to be confirmed"}</dd>
-                    </div>
+            {list.map((activity) => (
+              <article key={activity.id} className="surface overflow-hidden">
+                {activity.imageKey ? (
+                  <div className="relative aspect-[16/9] bg-brand-50">
+                    <Image
+                      src={publicMediaUrl(activity.imageKey) ?? ""}
+                      alt={activity.title}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                      className="object-cover"
+                    />
                   </div>
-                  <div className="flex items-start gap-2">
-                    <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" aria-hidden="true" />
-                    <div>
-                      <dt className="sr-only">Time</dt>
-                      <dd>{schedule.time || "Time to be confirmed"}</dd>
+                ) : null}
+                <div className="p-5">
+                  <Badge tone="brand">{activity.day || "Weekly"}</Badge>
+                  <h3 className="mt-3 font-serif text-xl font-semibold">
+                    {activity.title}
+                  </h3>
+                  <dl className="mt-3 space-y-2 text-sm text-charcoal/70">
+                    <div className="flex items-start gap-2">
+                      <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" aria-hidden="true" />
+                      <div>
+                        <dt className="sr-only">Day</dt>
+                        <dd>{activity.day || "Day to be confirmed"}</dd>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" aria-hidden="true" />
-                    <div>
-                      <dt className="sr-only">Venue</dt>
-                      <dd>{schedule.venue || settings.address}</dd>
+                    <div className="flex items-start gap-2">
+                      <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" aria-hidden="true" />
+                      <div>
+                        <dt className="sr-only">Time</dt>
+                        <dd>{activity.time || "Time to be confirmed"}</dd>
+                      </div>
                     </div>
-                  </div>
-                </dl>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" aria-hidden="true" />
+                      <div>
+                        <dt className="sr-only">Venue</dt>
+                        <dd>{activity.venue || settings.address}</dd>
+                      </div>
+                    </div>
+                  </dl>
+                  {activity.description ? (
+                    <p className="mt-3 text-base leading-7 text-charcoal/70">
+                      {activity.description}
+                    </p>
+                  ) : null}
+                  {activity.extraInfo ? (
+                    <p className="mt-3 whitespace-pre-line text-sm leading-6 text-charcoal/55">
+                      {activity.extraInfo}
+                    </p>
+                  ) : null}
+                </div>
               </article>
             ))}
           </div>
@@ -103,23 +122,27 @@ export default async function ActivitiesPage() {
           title="Every gathering"
           description="A place for worship, the Word, prayer and fellowship."
         />
-        {scheduled.length ? (
+        {list.length ? (
           <div className="grid gap-3 sm:grid-cols-2">
-            {scheduled.map(({ activity, schedule }) => (
+            {list.map((activity) => (
               <article key={activity.id} className="surface p-5 sm:p-6">
                 <h3 className="font-serif text-xl font-semibold">
                   {activity.title}
                 </h3>
-                {schedule.summary ? (
+                {activity.description ? (
                   <p className="mt-2 text-base leading-7 text-charcoal/70">
-                    {schedule.summary}
+                    {activity.description}
+                  </p>
+                ) : null}
+                {activity.extraInfo ? (
+                  <p className="mt-3 whitespace-pre-line text-sm leading-6 text-charcoal/55">
+                    {activity.extraInfo}
                   </p>
                 ) : null}
                 <p className="mt-3 text-sm text-charcoal/50">
-                  {activity.activityDate
-                    ? formatDate(activity.activityDate)
-                    : "Weekly gathering"}
-                  {activity.location ? ` - ${activity.location}` : ""}
+                  {[activity.day, activity.time, activity.venue]
+                    .filter(Boolean)
+                    .join(" · ") || "Schedule to be confirmed"}
                 </p>
               </article>
             ))}

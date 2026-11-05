@@ -1,9 +1,11 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { asc, eq } from "drizzle-orm";
-import { ArrowRight, HeartHandshake } from "lucide-react";
+import { ArrowRight, HeartHandshake, UserRound } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { departments } from "@/lib/db/schema";
+import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
 import { EmptyState, PageHero } from "@/components/ui/display";
 
@@ -44,26 +46,46 @@ export default async function DepartmentsPage() {
               <Link
                 key={department.id}
                 href={`/departments/${department.slug}`}
-                className="group surface p-5 transition hover:-translate-y-0.5 hover:border-brand-200 sm:p-6"
+                className="group surface overflow-hidden transition hover:-translate-y-0.5 hover:border-brand-200"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-gradient font-serif text-lg font-bold text-cream">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 transition group-hover:bg-brand-100">
-                    <HeartHandshake className="h-5 w-5" aria-hidden="true" />
+                {department.imageKey ? (
+                  <div className="relative aspect-[16/9] bg-brand-50">
+                    <Image
+                      src={publicMediaUrl(department.imageKey) ?? ""}
+                      alt={department.name}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : null}
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-gradient font-serif text-lg font-bold text-cream">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 transition group-hover:bg-brand-100">
+                      <HeartHandshake className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                  </div>
+                  <h2 className="mt-4 font-serif text-xl font-semibold group-hover:text-brand-800">
+                    {department.name}
+                  </h2>
+                  <p className="mt-2 text-base leading-7 text-charcoal/65">
+                    {department.description || "Department details will be added soon."}
+                  </p>
+                  {department.headOfUnit ? (
+                    <p className="mt-3 flex items-center gap-1.5 text-sm text-charcoal/55">
+                      <UserRound className="h-4 w-4" aria-hidden="true" />
+                      {department.headOfUnit}
+                    </p>
+                  ) : null}
+                  <span className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-brand-800">
+                    Explore department
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </span>
                 </div>
-                <h2 className="mt-4 font-serif text-xl font-semibold group-hover:text-brand-800">
-                  {department.name}
-                </h2>
-                <p className="mt-2 text-base leading-7 text-charcoal/65">
-                  {department.description || "Department details will be added soon."}
-                </p>
-                <span className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-brand-800">
-                  Explore department
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </span>
               </Link>
             ))}
           </div>

@@ -153,9 +153,20 @@ export default async function ContactPage() {
             <p className="mt-2 text-base leading-7 text-charcoal/75">
               {settings.address}
             </p>
-            <p className="mt-4 rounded-2xl border border-dashed border-brand-200 bg-cream/60 p-4 text-sm text-charcoal/55">
-              [Map embed - edit in Admin]
-            </p>
+            {settings.map_url.startsWith("http") ? (
+              <a
+                href={settings.map_url}
+                target="_blank"
+                rel="noreferrer"
+                className={buttonClasses("outline", "lg", "mt-4 w-full sm:w-auto")}
+              >
+                Open in maps
+              </a>
+            ) : (
+              <p className="mt-4 rounded-2xl border border-dashed border-brand-200 bg-cream/60 p-4 text-sm text-charcoal/55">
+                [Map link - edit in Admin]
+              </p>
+            )}
           </div>
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wide text-charcoal/45">

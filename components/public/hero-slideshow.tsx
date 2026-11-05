@@ -13,6 +13,10 @@ export type HeroSlide = {
   imageUrl?: string | null;
   href?: string;
   linkLabel?: string;
+  primaryHref?: string;
+  primaryLabel?: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
   gradient?: "brand" | "ember" | "charcoal" | "gold";
 };
 
@@ -124,14 +128,32 @@ export function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
                   {slide.subtitle}
                 </p>
               ) : null}
-              {slide.href && slide.linkLabel ? (
-                <div className="mt-7">
-                  <Link
-                    href={slide.href}
-                    className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-gold-300 px-5 text-base font-semibold text-charcoal shadow-soft transition hover:bg-gold-400"
-                  >
-                    {slide.linkLabel}
-                  </Link>
+              {(slide.primaryHref && slide.primaryLabel) ||
+              (slide.href && slide.linkLabel) ? (
+                <div className="mt-7 flex flex-col gap-2 sm:flex-row">
+                  {slide.primaryHref && slide.primaryLabel ? (
+                    <Link
+                      href={slide.primaryHref}
+                      className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-gold-300 px-5 text-base font-semibold text-charcoal shadow-soft transition hover:bg-gold-400"
+                    >
+                      {slide.primaryLabel}
+                    </Link>
+                  ) : (
+                    <Link
+                      href={slide.href ?? "/register"}
+                      className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-gold-300 px-5 text-base font-semibold text-charcoal shadow-soft transition hover:bg-gold-400"
+                    >
+                      {slide.linkLabel}
+                    </Link>
+                  )}
+                  {slide.secondaryHref && slide.secondaryLabel ? (
+                    <Link
+                      href={slide.secondaryHref}
+                      className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-white/40 bg-white/10 px-5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/20"
+                    >
+                      {slide.secondaryLabel}
+                    </Link>
+                  ) : null}
                 </div>
               ) : null}
             </div>

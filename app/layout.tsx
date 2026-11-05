@@ -21,10 +21,10 @@ export const metadata: Metadata = {
     "worship",
     "Christian",
   ],
-  manifest: "/manifest.webmanifest",
+  manifest: "/api/manifest",
   icons: {
-    icon: "/icons/icon.svg",
-    apple: "/icons/icon.svg",
+    icon: "/api/branding/logo",
+    apple: "/api/branding/logo",
   },
   openGraph: {
     title: siteTitle,
