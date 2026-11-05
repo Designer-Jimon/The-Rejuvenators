@@ -4,11 +4,19 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
+  Building2,
+  CalendarDays,
   Cross,
+  FileText,
+  HelpCircle,
+  Images,
   LayoutDashboard,
   LogOut,
   Menu,
+  Palette,
   Settings,
+  Share2,
+  Sparkles,
   Users,
   X,
 } from "lucide-react";
@@ -26,6 +34,62 @@ const navigation = [
     permission: "membership",
   },
   {
+    href: "/admin/media",
+    label: "Media library",
+    icon: Images,
+    exact: false,
+    permission: "content",
+  },
+  {
+    href: "/admin/branding",
+    label: "Logo & branding",
+    icon: Palette,
+    exact: false,
+    permission: "content",
+  },
+  {
+    href: "/admin/slideshow",
+    label: "Homepage slideshow",
+    icon: Sparkles,
+    exact: false,
+    permission: "content",
+  },
+  {
+    href: "/admin/content",
+    label: "Website content",
+    icon: FileText,
+    exact: false,
+    permission: "content",
+  },
+  {
+    href: "/admin/activities",
+    label: "Activities",
+    icon: CalendarDays,
+    exact: false,
+    permission: "content",
+  },
+  {
+    href: "/admin/departments",
+    label: "Departments",
+    icon: Building2,
+    exact: false,
+    permission: "content",
+  },
+  {
+    href: "/admin/faqs",
+    label: "FAQ",
+    icon: HelpCircle,
+    exact: false,
+    permission: "content",
+  },
+  {
+    href: "/admin/social",
+    label: "Social & contact",
+    icon: Share2,
+    exact: false,
+    permission: "settings",
+  },
+  {
     href: "/admin/settings",
     label: "Site settings",
     icon: Settings,
@@ -38,15 +102,19 @@ export function AdminShell({
   children,
   name,
   avatarUrl,
+  logoUrl,
   unread,
   canManageMembers,
+  canManageContent,
   canManageSettings,
 }: {
   children: ReactNode;
   name: string;
   avatarUrl: string | null;
+  logoUrl: string | null;
   unread: number;
   canManageMembers: boolean;
+  canManageContent: boolean;
   canManageSettings: boolean;
 }) {
   const pathname = usePathname();
@@ -66,6 +134,7 @@ export function AdminShell({
 
   const items = navigation.filter((item) => {
     if (item.permission === "membership") return canManageMembers;
+    if (item.permission === "content") return canManageContent;
     if (item.permission === "settings") return canManageSettings;
     return true;
   });
@@ -102,8 +171,17 @@ export function AdminShell({
           href="/admin"
           className="flex items-center gap-2.5 border-b border-brand-100 px-5 py-5"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-gradient text-cream">
-            <Cross className="h-5 w-5" aria-hidden="true" />
+          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Cross className="h-5 w-5" aria-hidden="true" />
+            )}
           </span>
           <span className="font-serif text-sm font-bold uppercase leading-tight text-brand-800">
             Admin

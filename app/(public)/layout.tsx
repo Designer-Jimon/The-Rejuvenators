@@ -51,6 +51,7 @@ export default async function PublicLayout({
     <div className="flex min-h-[100dvh] flex-col overflow-x-hidden">
       <PublicHeader
         churchName={settings.church_name}
+        logoUrl={settings.logo_key ? "/api/branding/logo" : null}
         isLoggedIn={Boolean(user)}
         isAdmin={admin}
         dashboardHref={admin ? "/admin" : "/member"}
@@ -62,8 +63,17 @@ export default async function PublicLayout({
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Link href="/" className="flex items-center gap-2.5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-gradient text-cream">
-                  <Cross className="h-5 w-5" aria-hidden="true" />
+                <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
+                  {settings.logo_key ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src="/api/branding/logo"
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Cross className="h-5 w-5" aria-hidden="true" />
+                  )}
                 </span>
                 <span className="font-serif text-base font-bold uppercase text-brand-800">
                   {settings.church_name}

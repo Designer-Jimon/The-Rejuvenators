@@ -12,12 +12,14 @@ const links = PUBLIC_NAV;
 
 export function PublicHeader({
   churchName,
+  logoUrl,
   isLoggedIn,
   isAdmin,
   dashboardHref,
   userName,
 }: {
   churchName: string;
+  logoUrl?: string | null;
   isLoggedIn: boolean;
   isAdmin: boolean;
   dashboardHref: string;
@@ -47,8 +49,13 @@ export function PublicHeader({
           className="flex min-h-11 items-center gap-2.5"
           aria-label={`${churchName} home`}
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-gradient text-cream shadow-soft">
-            <Cross className="h-5 w-5" aria-hidden="true" />
+          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream shadow-soft">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <Cross className="h-5 w-5" aria-hidden="true" />
+            )}
           </span>
           <span className="max-w-[190px] leading-tight sm:max-w-none">
             <span className="block font-serif text-sm font-bold uppercase tracking-wide text-brand-800 sm:text-base">

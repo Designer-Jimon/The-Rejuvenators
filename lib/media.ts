@@ -42,6 +42,11 @@ export function mediaUrl(key: string | null | undefined) {
   return `/api/media/${key.split("/").map(encodeURIComponent).join("/")}`;
 }
 
+export function publicMediaUrl(key: string | null | undefined) {
+  if (!key) return null;
+  return `/api/public/media/${key.split("/").map(encodeURIComponent).join("/")}`;
+}
+
 export async function uploadImage(
   file: File,
   folder: "avatars" | "covers" | "media",

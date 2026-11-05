@@ -79,6 +79,11 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   hero_headline: "Come as you are. Leave renewed.",
   hero_subheadline:
     "A Christ-centred family raising believers for revival, service and purpose.",
+  hero_primary_label: "Join Our Church Family",
+  hero_primary_href: "/register",
+  hero_secondary_label: "Discover Our Vision",
+  hero_secondary_href: "/vision-mission",
+  logo_key: "",
   welcome_title: "You are welcome home",
   welcome_body:
     "IT IS FINISHED REVIVAL OUTREACH is a place of worship, healing and growth. Whether you are new to faith or returning, there is a place for you here.",
@@ -91,6 +96,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   facebook_url: "",
   instagram_url: "",
   youtube_url: "",
+  map_url: "",
   footer_note: "Built for the IT IS FINISHED REVIVAL OUTREACH family.",
 };
 
@@ -187,6 +193,10 @@ export const SETTING_FIELDS: Array<{
   { key: "pastor_name", label: "Lead pastor" },
   { key: "hero_headline", label: "Homepage headline" },
   { key: "hero_subheadline", label: "Homepage subheading", multiline: true },
+  { key: "hero_primary_label", label: "Hero primary button label" },
+  { key: "hero_primary_href", label: "Hero primary button link" },
+  { key: "hero_secondary_label", label: "Hero secondary button label" },
+  { key: "hero_secondary_href", label: "Hero secondary button link" },
   { key: "welcome_title", label: "Welcome title" },
   { key: "welcome_body", label: "Welcome message", multiline: true },
   { key: "address", label: "Church address" },
@@ -198,5 +208,6 @@ export const SETTING_FIELDS: Array<{
   { key: "facebook_url", label: "Facebook URL" },
   { key: "instagram_url", label: "Instagram URL" },
   { key: "youtube_url", label: "YouTube URL" },
+  { key: "map_url", label: "Map link" },
   { key: "footer_note", label: "Footer note" },
 ];

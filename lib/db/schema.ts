@@ -162,6 +162,9 @@ export const departments = sqliteTable(
     slug: text("slug").notNull(),
     description: text("description"),
     icon: text("icon"),
+    imageKey: text("image_key"),
+    activities: text("activities"),
+    headOfUnit: text("head_of_unit"),
     sortOrder: integer("sort_order").notNull().default(0),
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     ...timestamps(),
@@ -311,8 +314,14 @@ export const activities = sqliteTable("activities", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
+  day: text("day"),
+  time: text("time"),
+  venue: text("venue"),
+  imageKey: text("image_key"),
+  extraInfo: text("extra_info"),
   location: text("location"),
   activityDate: integer("activity_date", { mode: "timestamp_ms" }),
+  sortOrder: integer("sort_order").notNull().default(0),
   isPublished: integer("is_published", { mode: "boolean" })
     .notNull()
     .default(true),
@@ -338,6 +347,7 @@ export const mediaLibrary = sqliteTable("media_library", {
   filename: text("filename").notNull(),
   contentType: text("content_type").notNull(),
   size: integer("size").notNull(),
+  altText: text("alt_text"),
   uploadedBy: text("uploaded_by").references(() => users.id, {
     onDelete: "set null",
   }),
