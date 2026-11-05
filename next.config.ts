@@ -15,6 +15,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  allowedDevOrigins: ["192.168.0.127", "192.168.0.*"],
   images: { unoptimized: true },
   outputFileTracingRoot: process.cwd(),
   eslint: { ignoreDuringBuilds: true },

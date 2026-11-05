@@ -26,7 +26,8 @@ npm run dev
 - `loading.tsx` skeletons for public, member and admin route groups.
 - Per-request React cache for settings, content blocks, nav and logo; public DB reads use `Promise.all`.
 - Sticky, always-visible public/member/admin headers with safe-area padding and scroll shadow.
-- `next/link` prefetch, active/pressed feedback, thin top route progress bar, reachable hamburger.
+- `next/link` prefetch, pressed feedback, top route progress bar, sticky headers.
+- Full-screen mobile menus: solid cream, scroll lock, safe areas, Escape/route close.
 - Below-fold sections use `content-visibility`; slideshow images use `next/image` with first-slide priority.
 
 ## Admin CMS (`/admin`)
@@ -36,5 +37,4 @@ npm run dev
 ## Data and security
 - Migration `0001_cuddly_carmella_unuscione.sql` adds CMS fields and backfills activity schedules.
 - Public R2 reads limited to `media/`; state-changing APIs verify origin; admin checks run server-side.
-
 - Verify: `npm run typecheck`, `npm run build`, `npm run test:security`, `npm run cf:build`.

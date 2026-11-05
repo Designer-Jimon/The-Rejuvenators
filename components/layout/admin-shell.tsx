@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   Building2,
   CalendarDays,
+  ChevronRight,
   Cross,
   FileText,
   HelpCircle,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "./notification-bell";
 import { Avatar } from "@/components/ui/display";
+import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -130,6 +132,26 @@ export function AdminShell({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   async function logout() {
     setLoggingOut(true);
     await fetch("/api/auth/logout", { method: "POST" });
@@ -181,13 +203,13 @@ export function AdminShell({
           prefetch
           className="flex items-center gap-2.5 border-b border-brand-100 px-5 py-5 active:opacity-80"
         >
-          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoUrl}
                 alt=""
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
             ) : (
               <Cross className="h-5 w-5" aria-hidden="true" />
@@ -265,54 +287,121 @@ export function AdminShell({
 
       <div
         className={cn(
-          "fixed inset-0 z-[60] bg-charcoal/50 backdrop-blur-sm transition lg:hidden",
-          open ? "visible opacity-100" : "invisible opacity-0",
+          "fixed inset-0 z-[100] bg-cream transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none lg:hidden",
+          open
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-2 opacity-0",
         )}
         aria-hidden={!open}
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setOpen(false);
-        }}
       >
-        <div
-          className={cn(
-            "flex h-full w-[82%] max-w-xs flex-col bg-white shadow-lift transition-transform",
-            open ? "translate-x-0" : "-translate-x-full",
-          )}
-        >
-          <div className="flex items-center justify-between border-b border-brand-100 px-4 py-3">
-            <span className="font-serif text-lg font-bold text-brand-800">Admin</span>
+        <div className="safe-top safe-bottom flex h-[100dvh] flex-col bg-cream">
+          <div className="flex items-center justify-between gap-3 border-b border-brand-100 px-4 py-3">
+            <Link
+              href="/admin"
+              prefetch
+              onClick={() => setOpen(false)}
+              className="flex min-h-11 min-w-0 items-center gap-2.5 active:opacity-80"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={logoUrl}
+                    alt=""
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <Cross className="h-5 w-5" aria-hidden="true" />
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate font-serif text-sm font-bold uppercase tracking-wide text-brand-800">
+                  Admin
+                </span>
+                <span className="block truncate text-[10px] uppercase tracking-[0.18em] text-charcoal/45">
+                  {name}
+                </span>
+              </span>
+            </Link>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 transition active:scale-95 active:opacity-70"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-white transition active:scale-95 active:opacity-70"
               aria-label="Close admin menu"
             >
               <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
-          <div className="flex items-center gap-3 border-b border-brand-100 px-4 py-4">
-            <Avatar name={name} src={avatarUrl} size="md" />
-            <p className="truncate text-sm font-semibold">{name}</p>
-          </div>
-          {nav}
-          <div className="border-t border-brand-100 p-3">
-            <Link
-              href="/member"
-              prefetch
-              onClick={() => setOpen(false)}
-              className="flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 transition hover:bg-brand-50 active:scale-[0.98] active:opacity-70"
-            >
-              Member view
-            </Link>
-            <button
-              type="button"
-              onClick={logout}
-              disabled={loggingOut}
-              className="flex min-h-11 w-full items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 hover:bg-brand-50"
-            >
-              <LogOut className="h-5 w-5" aria-hidden="true" />
-              {loggingOut ? "Logging out..." : "Log out"}
-            </button>
+
+          <nav
+            className="flex-1 overflow-y-auto px-4 py-2"
+            aria-label="Admin mobile"
+          >
+            <div className="flex flex-col">
+              {items.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href, item.exact);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    prefetch
+                    onClick={() => setOpen(false)}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex min-h-14 w-full items-center gap-3 border-b border-brand-100 py-2 text-lg font-semibold transition active:opacity-70",
+                      active ? "text-brand-800" : "text-charcoal/80",
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "h-5 w-5 shrink-0",
+                        active ? "text-brand-700" : "text-charcoal/40",
+                      )}
+                      aria-hidden="true"
+                    />
+                    <span className="flex-1">{item.label}</span>
+                    <ChevronRight
+                      className={cn(
+                        "h-5 w-5 shrink-0",
+                        active ? "text-brand-700" : "text-charcoal/30",
+                      )}
+                      aria-hidden="true"
+                    />
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
+
+          <div className="border-t border-brand-100 p-4">
+            <div className="flex flex-col gap-3">
+              <Link
+                href="/member"
+                prefetch
+                onClick={() => setOpen(false)}
+                className={buttonClasses(
+                  "outline",
+                  "lg",
+                  "min-h-[52px] w-full",
+                )}
+              >
+                Member view
+              </Link>
+              <button
+                type="button"
+                onClick={logout}
+                disabled={loggingOut}
+                className={buttonClasses(
+                  "primary",
+                  "lg",
+                  "min-h-[52px] w-full",
+                )}
+              >
+                <LogOut className="h-5 w-5" aria-hidden="true" />
+                {loggingOut ? "Logging out..." : "Log out"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
