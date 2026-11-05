@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { and, asc, eq, ne } from "drizzle-orm";
 import {
   ArrowLeft,
@@ -18,7 +19,7 @@ import { Badge, PageHero, SectionHeader } from "@/components/ui/display";
 
 export const dynamic = "force-dynamic";
 
-async function getDepartment(slug: string) {
+const getDepartment = cache(async (slug: string) => {
   const db = await getDb();
   const rows = await db
     .select()
@@ -26,7 +27,7 @@ async function getDepartment(slug: string) {
     .where(and(eq(departments.slug, slug), eq(departments.isActive, true)))
     .limit(1);
   return rows[0] ?? null;
-}
+});
 
 export async function generateMetadata({
   params,
@@ -78,7 +79,8 @@ export default async function DepartmentDetailPage({
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Link
         href="/departments"
-        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-800 hover:underline"
+        prefetch
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-800 hover:underline active:opacity-70"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         All departments
@@ -98,6 +100,7 @@ export default async function DepartmentDetailPage({
             src={publicMediaUrl(department.imageKey) ?? ""}
             alt={department.name}
             fill
+            loading="lazy"
             unoptimized
             sizes="(max-width: 1024px) 100vw, 960px"
             className="object-cover"
@@ -105,7 +108,7 @@ export default async function DepartmentDetailPage({
         </div>
       ) : null}
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+      <section className="content-auto mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
         <div className="surface p-6 sm:p-7">
           <Badge tone="brand">Serve with us</Badge>
           <h2 className="mt-4 font-serif text-2xl font-semibold">
@@ -133,6 +136,7 @@ export default async function DepartmentDetailPage({
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/register"
+              prefetch
               className={buttonClasses("primary", "lg", "w-full sm:w-auto")}
             >
               Join this department
@@ -140,6 +144,7 @@ export default async function DepartmentDetailPage({
             </Link>
             <Link
               href="/contact"
+              prefetch
               className={buttonClasses("outline", "lg", "w-full sm:w-auto")}
             >
               Ask a question
@@ -165,12 +170,12 @@ export default async function DepartmentDetailPage({
       </section>
 
       {related.length ? (
-        <section className="mt-12">
+        <section className="content-auto mt-12">
           <SectionHeader
             eyebrow="More teams"
             title="Explore other departments"
             action={
-              <Link href="/departments">
+              <Link href="/departments" prefetch>
                 <span className={buttonClasses("outline", "sm")}>View all</span>
               </Link>
             }
@@ -180,7 +185,8 @@ export default async function DepartmentDetailPage({
               <Link
                 key={item.id}
                 href={`/departments/${item.slug}`}
-                className="surface p-5 transition hover:border-brand-200 hover:bg-brand-50/40"
+                prefetch
+                className="surface p-5 transition hover:border-brand-200 hover:bg-brand-50/40 active:scale-[0.99] active:opacity-80"
               >
                 <h3 className="font-serif text-lg font-semibold">{item.name}</h3>
                 <p className="mt-1 text-base leading-7 text-charcoal/65">

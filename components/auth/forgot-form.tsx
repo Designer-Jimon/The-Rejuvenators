@@ -23,7 +23,7 @@ export function ForgotForm() {
           {state.resetUrl ? (
             <p className="mt-2 break-all">
               Development reset link:{" "}
-              <Link href={state.resetUrl} className="font-semibold underline">
+              <Link href={state.resetUrl} prefetch className="font-semibold underline active:opacity-70">
                 {state.resetUrl}
               </Link>
             </p>
@@ -48,7 +48,7 @@ export function ForgotForm() {
       </Button>
 
       <p className="text-center text-sm text-charcoal/60">
-        <Link href="/login" className="font-semibold text-brand-800 hover:underline">
+        <Link href="/login" prefetch className="font-semibold text-brand-800 hover:underline active:opacity-70">
           Back to sign in
         </Link>
       </p>

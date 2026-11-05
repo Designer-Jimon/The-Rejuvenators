@@ -43,7 +43,7 @@ export default async function ActivitiesPage() {
         description={`Come and be part of what God is doing at ${settings.church_name}.`}
       />
 
-      <section className="mt-10">
+      <section className="content-auto mt-10">
         <SectionHeader
           eyebrow="Weekly schedule"
           title="Gather with us"
@@ -59,6 +59,7 @@ export default async function ActivitiesPage() {
                       src={publicMediaUrl(activity.imageKey) ?? ""}
                       alt={activity.title}
                       fill
+                      loading="lazy"
                       unoptimized
                       sizes="(max-width: 640px) 100vw, 33vw"
                       className="object-cover"
@@ -116,7 +117,7 @@ export default async function ActivitiesPage() {
         )}
       </section>
 
-      <section className="mt-12">
+      <section className="content-auto mt-12">
         <SectionHeader
           eyebrow="What to expect"
           title="Every gathering"
@@ -150,7 +151,7 @@ export default async function ActivitiesPage() {
         ) : null}
       </section>
 
-      <section className="mt-12 rounded-3xl bg-brand-gradient p-6 text-cream shadow-lift sm:p-8">
+      <section className="content-auto mt-12 rounded-3xl bg-brand-gradient p-6 text-cream shadow-lift sm:p-8">
         <h2 className="font-serif text-2xl font-bold text-white">
           New to the church?
         </h2>
@@ -161,12 +162,14 @@ export default async function ActivitiesPage() {
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Link
             href="/contact"
+            prefetch
             className={buttonClasses("gold", "lg", "w-full sm:w-auto")}
           >
             Contact the church
           </Link>
           <Link
             href="/register"
+            prefetch
             className={buttonClasses(
               "outline",
               "lg",

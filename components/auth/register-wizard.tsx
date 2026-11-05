@@ -135,10 +135,10 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
           the membership team. You can sign in now to check your status.
         </p>
         <div className="mt-6 flex flex-col gap-2">
-          <Link href="/login?registered=1">
+          <Link href="/login?registered=1" prefetch>
             <Button className="w-full">Sign in to your account</Button>
           </Link>
-          <Link href="/">
+          <Link href="/" prefetch>
             <Button variant="outline" className="w-full">
               Back to the website
             </Button>
@@ -387,7 +387,7 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
 
       <p className="mt-5 text-center text-sm text-charcoal/60">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-brand-800 hover:underline">
+        <Link href="/login" prefetch className="font-semibold text-brand-800 hover:underline active:opacity-70">
           Sign in
         </Link>
       </p>

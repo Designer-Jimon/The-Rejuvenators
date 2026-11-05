@@ -95,7 +95,8 @@ export default async function NotificationsPage() {
               <Link
                 key={notification.id}
                 href={notification.link}
-                className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2"
+                prefetch
+                className="block rounded-2xl transition active:scale-[0.99] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2"
               >
                 {content}
               </Link>

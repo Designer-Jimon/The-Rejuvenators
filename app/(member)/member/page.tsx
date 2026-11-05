@@ -157,7 +157,7 @@ export default async function MemberHomePage() {
           />
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-brand-50 p-4">
             <ProgressRing value={completeness} label="Profile completeness" />
-            <Link href="/member/profile">
+            <Link href="/member/profile" prefetch>
               <Button variant="outline" size="sm">
                 Complete profile
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -201,7 +201,8 @@ export default async function MemberHomePage() {
               <h2 className="font-serif text-lg font-semibold">Recent alerts</h2>
               <Link
                 href="/member/notifications"
-                className="text-xs font-semibold text-brand-800 hover:underline"
+                prefetch
+                className="text-xs font-semibold text-brand-800 hover:underline active:opacity-70"
               >
                 View all
               </Link>
@@ -212,7 +213,8 @@ export default async function MemberHomePage() {
                   <Link
                     key={notification.id}
                     href={notification.link ?? "/member/notifications"}
-                    className="block rounded-2xl border border-brand-100 p-3 hover:bg-brand-50/50"
+                    prefetch
+                    className="block rounded-2xl border border-brand-100 p-3 transition hover:bg-brand-50/50 active:scale-[0.99] active:opacity-80"
                   >
                     <p className="text-sm font-semibold">{notification.title}</p>
                     <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-charcoal/60">

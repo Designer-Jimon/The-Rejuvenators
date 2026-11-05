@@ -48,7 +48,8 @@ export default async function AdminMemberDetailPage({
     <div className="space-y-5">
       <Link
         href="/admin/members"
-        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-800 hover:underline"
+        prefetch
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-800 hover:underline active:opacity-70"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Back to members

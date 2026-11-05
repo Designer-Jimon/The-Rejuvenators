@@ -18,7 +18,7 @@ export function ResetForm({ token }: { token: string }) {
     return (
       <div className="space-y-4">
         <FormMessage tone="success">{state.success}</FormMessage>
-        <Link href="/login">
+        <Link href="/login" prefetch>
           <Button className="w-full">Go to sign in</Button>
         </Link>
       </div>
@@ -54,7 +54,7 @@ export function ResetForm({ token }: { token: string }) {
       </Button>
 
       <p className="text-center text-sm text-charcoal/60">
-        <Link href="/login" className="font-semibold text-brand-800 hover:underline">
+        <Link href="/login" prefetch className="font-semibold text-brand-800 hover:underline active:opacity-70">
           Back to sign in
         </Link>
       </p>

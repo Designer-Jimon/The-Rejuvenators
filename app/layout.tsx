@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { ToastProvider } from "@/components/ui/toast";
+import { RouteProgress } from "@/components/ui/route-progress";
 import "./globals.css";
 
 const siteUrl = process.env.APP_URL || "http://localhost:3000";
@@ -60,6 +62,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <Suspense fallback={null}>
+          <RouteProgress />
+        </Suspense>
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

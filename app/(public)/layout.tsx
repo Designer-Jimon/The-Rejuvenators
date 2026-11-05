@@ -11,29 +11,23 @@ import {
 } from "lucide-react";
 import { getSessionUser } from "@/lib/auth/session";
 import { isAdmin } from "@/lib/auth/authorize";
-import { getSettings } from "@/lib/settings";
+import { getSettings, getLogoUrl } from "@/lib/settings";
+import { getPublicNav, FOOTER_LINKS } from "@/lib/navigation";
 import { PublicHeader } from "@/components/layout/public-header";
 
 export const dynamic = "force-dynamic";
-
-const footerLinks = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About us" },
-  { href: "/vision-mission", label: "Vision & Mission" },
-  { href: "/activities", label: "Activities" },
-  { href: "/departments", label: "Departments" },
-  { href: "/events", label: "Events" },
-  { href: "/sermons", label: "Sermons" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/contact", label: "Contact" },
-];
 
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [user, settings] = await Promise.all([getSessionUser(), getSettings()]);
+  const [user, settings, nav, logoUrl] = await Promise.all([
+    getSessionUser(),
+    getSettings(),
+    getPublicNav(),
+    getLogoUrl(),
+  ]);
   const admin = user ? isAdmin(user) : false;
 
   const socials = [
@@ -48,10 +42,11 @@ export default async function PublicLayout({
   ].filter((social) => social.href.startsWith("http"));
 
   return (
-    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden">
+    <div className="flex min-h-[100dvh] flex-col overflow-x-clip">
       <PublicHeader
         churchName={settings.church_name}
-        logoUrl={settings.logo_key ? "/api/branding/logo" : null}
+        logoUrl={logoUrl}
+        links={nav}
         isLoggedIn={Boolean(user)}
         isAdmin={admin}
         dashboardHref={admin ? "/admin" : "/member"}
@@ -62,9 +57,13 @@ export default async function PublicLayout({
         <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <Link href="/" className="flex items-center gap-2.5">
+              <Link
+                href="/"
+                prefetch
+                className="flex items-center gap-2.5 active:opacity-80"
+              >
                 <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
-                  {settings.logo_key ? (
+                  {logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src="/api/branding/logo"
@@ -92,11 +91,12 @@ export default async function PublicLayout({
                 Explore
               </h2>
               <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1">
-                {footerLinks.map((link) => (
+                {FOOTER_LINKS.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="inline-flex min-h-10 items-center text-sm font-semibold text-charcoal/70 hover:text-brand-800 hover:underline"
+                      prefetch
+                      className="inline-flex min-h-10 items-center text-sm font-semibold text-charcoal/70 hover:text-brand-800 hover:underline active:opacity-70"
                     >
                       {link.label}
                     </Link>
@@ -167,10 +167,10 @@ export default async function PublicLayout({
                 </p>
               )}
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold text-brand-800">
-                <Link href="/login" className="hover:underline">
+                <Link href="/login" prefetch className="hover:underline active:opacity-70">
                   Member login
                 </Link>
-                <Link href="/register" className="hover:underline">
+                <Link href="/register" prefetch className="hover:underline active:opacity-70">
                   Register
                 </Link>
               </div>

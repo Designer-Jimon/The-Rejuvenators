@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -95,19 +96,27 @@ export function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
               "relative min-w-full overflow-hidden px-5 py-12 text-cream sm:px-10 sm:py-16",
               gradients[slide.gradient ?? "brand"],
             )}
-            style={
-              slide.imageUrl
-                ? {
-                    backgroundImage: `linear-gradient(115deg, rgba(43,8,8,0.9), rgba(234,88,12,0.55)), url(${slide.imageUrl})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }
-                : undefined
-            }
             aria-roledescription="slide"
             aria-label={`${slideIndex + 1} of ${count}`}
             aria-hidden={slideIndex !== index}
           >
+            {slide.imageUrl ? (
+              <>
+                <Image
+                  src={slide.imageUrl}
+                  alt=""
+                  fill
+                  priority={slideIndex === 0}
+                  loading={slideIndex === 0 ? "eager" : "lazy"}
+                  sizes="(max-width: 640px) 100vw, 1100px"
+                  className="object-cover"
+                />
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 bg-[linear-gradient(115deg,rgba(43,8,8,0.9),rgba(234,88,12,0.55))]"
+                />
+              </>
+            ) : null}
             <div className="relative z-10 flex min-h-[280px] max-w-3xl flex-col justify-center sm:min-h-[320px]">
               {slide.eyebrow ? (
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-gold-200">
@@ -134,14 +143,16 @@ export function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
                   {slide.primaryHref && slide.primaryLabel ? (
                     <Link
                       href={slide.primaryHref}
-                      className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-gold-300 px-5 text-base font-semibold text-charcoal shadow-soft transition hover:bg-gold-400"
+                      prefetch
+                      className="inline-flex min-h-12 touch-manipulation items-center justify-center rounded-2xl bg-gold-300 px-5 text-base font-semibold text-charcoal shadow-soft transition hover:bg-gold-400 active:scale-[0.97] active:opacity-90"
                     >
                       {slide.primaryLabel}
                     </Link>
                   ) : (
                     <Link
                       href={slide.href ?? "/register"}
-                      className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-gold-300 px-5 text-base font-semibold text-charcoal shadow-soft transition hover:bg-gold-400"
+                      prefetch
+                      className="inline-flex min-h-12 touch-manipulation items-center justify-center rounded-2xl bg-gold-300 px-5 text-base font-semibold text-charcoal shadow-soft transition hover:bg-gold-400 active:scale-[0.97] active:opacity-90"
                     >
                       {slide.linkLabel}
                     </Link>
@@ -149,7 +160,8 @@ export function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
                   {slide.secondaryHref && slide.secondaryLabel ? (
                     <Link
                       href={slide.secondaryHref}
-                      className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-white/40 bg-white/10 px-5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/20"
+                      prefetch
+                      className="inline-flex min-h-12 touch-manipulation items-center justify-center rounded-2xl border border-white/40 bg-white/10 px-5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/20 active:scale-[0.97] active:opacity-90"
                     >
                       {slide.secondaryLabel}
                     </Link>
@@ -175,7 +187,7 @@ export function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
             type="button"
             onClick={previous}
             aria-label="Previous slide"
-            className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-charcoal/30 text-white backdrop-blur transition hover:bg-charcoal/50"
+            className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-charcoal/30 text-white backdrop-blur transition hover:bg-charcoal/50 active:scale-90 active:opacity-70"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -183,7 +195,7 @@ export function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
             type="button"
             onClick={next}
             aria-label="Next slide"
-            className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-charcoal/30 text-white backdrop-blur transition hover:bg-charcoal/50"
+            className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-charcoal/30 text-white backdrop-blur transition hover:bg-charcoal/50 active:scale-90 active:opacity-70"
           >
             <ChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>

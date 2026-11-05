@@ -45,7 +45,7 @@ export default async function AboutPage() {
         description={`${settings.tagline}. We gather to worship, grow in the Word and serve our community.`}
       />
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+      <section className="content-auto mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
         <div className="surface p-6 sm:p-7">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
             <BookOpen className="h-5 w-5" aria-hidden="true" />
@@ -67,7 +67,7 @@ export default async function AboutPage() {
         </aside>
       </section>
 
-      <section className="mt-12">
+      <section className="content-auto mt-12">
         <SectionHeader eyebrow="History" title={story.title} />
         <div className="surface p-6 sm:p-7">
           <p className="whitespace-pre-line text-base leading-8 text-charcoal/70">
@@ -76,7 +76,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <section className="mt-12">
+      <section className="content-auto mt-12">
         <SectionHeader
           eyebrow="What guides us"
           title="Values and beliefs"
@@ -103,7 +103,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <section className="mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+      <section className="content-auto mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <div className="rounded-3xl bg-charcoal p-6 text-cream shadow-lift sm:p-7">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-200">
             {pastor.title}
@@ -123,6 +123,7 @@ export default async function AboutPage() {
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/vision-mission"
+              prefetch
               className={buttonClasses("primary", "lg", "w-full sm:w-auto")}
             >
               Discover our vision
@@ -130,6 +131,7 @@ export default async function AboutPage() {
             </Link>
             <Link
               href="/register"
+              prefetch
               className={buttonClasses("outline", "lg", "w-full sm:w-auto")}
             >
               Join our church family

@@ -15,7 +15,8 @@ export default function AuthLayout({
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col px-4 py-6 sm:px-6">
         <Link
           href="/"
-          className="flex min-h-11 items-center gap-2.5 self-start text-cream"
+          prefetch
+          className="flex min-h-11 items-center gap-2.5 self-start text-cream active:opacity-80"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
             <Cross className="h-5 w-5" aria-hidden="true" />

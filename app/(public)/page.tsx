@@ -152,7 +152,7 @@ export default async function HomePage() {
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
       <HeroSlideshow slides={heroSlides} />
 
-      <section className="mt-6 grid gap-3 sm:grid-cols-3">
+      <section className="content-auto mt-6 grid gap-3 sm:grid-cols-3">
         {[
           { icon: CalendarDays, label: "Sunday", value: settings.service_sunday },
           { icon: Clock3, label: "Midweek", value: settings.service_weekday },
@@ -177,7 +177,7 @@ export default async function HomePage() {
         })}
       </section>
 
-      <section className="mt-12 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+      <section className="content-auto mt-12 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
         <div>
           <SectionHeader
             eyebrow="Welcome"
@@ -197,12 +197,14 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/register"
+                prefetch
                 className={buttonClasses("primary", "lg", "w-full sm:w-auto")}
               >
                 Join Our Church Family
               </Link>
               <Link
                 href="/vision-mission"
+                prefetch
                 className={buttonClasses("outline", "lg", "w-full sm:w-auto")}
               >
                 Discover Our Vision
@@ -222,7 +224,8 @@ export default async function HomePage() {
           </blockquote>
           <Link
             href="/about"
-            className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-gold-200 hover:underline"
+            prefetch
+            className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-gold-200 hover:underline active:opacity-70"
           >
             Read our story
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -230,13 +233,13 @@ export default async function HomePage() {
         </aside>
       </section>
 
-      <section className="mt-14">
+      <section className="content-auto mt-14">
         <SectionHeader
           eyebrow="Gather"
           title="Upcoming activities"
           description="Our weekly rhythm and special gatherings. Days, times and venues are editable by the church team."
           action={
-            <Link href="/activities">
+            <Link href="/activities" prefetch>
               <span className={buttonClasses("outline", "sm")}>View all</span>
             </Link>
           }
@@ -254,6 +257,7 @@ export default async function HomePage() {
                       src={publicMediaUrl(activity.imageKey) ?? ""}
                       alt={activity.title}
                       fill
+                      loading="lazy"
                       unoptimized
                       sizes="(max-width: 640px) 100vw, 33vw"
                       className="object-cover"
@@ -302,13 +306,13 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="mt-14">
+      <section className="content-auto mt-14">
         <SectionHeader
           eyebrow="Featured"
           title="Upcoming events"
           description="Special services, outreaches and gatherings published by the church team."
           action={
-            <Link href="/events">
+            <Link href="/events" prefetch>
               <span className={buttonClasses("outline", "sm")}>All events</span>
             </Link>
           }
@@ -338,7 +342,7 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="mt-14 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+      <section className="content-auto mt-14 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <div className="rounded-3xl bg-gradient-to-br from-brand-800 to-ember-600 p-7 text-cream shadow-lift">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-200">
             {pastor.title}
@@ -351,7 +355,8 @@ export default async function HomePage() {
           </p>
           <Link
             href="/about"
-            className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-gold-200 hover:underline"
+            prefetch
+            className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-gold-200 hover:underline active:opacity-70"
           >
             About the church
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -363,7 +368,7 @@ export default async function HomePage() {
             title="Featured departments"
             description="Discover the teams that make ministry happen and request to join one."
             action={
-              <Link href="/departments">
+              <Link href="/departments" prefetch>
                 <span className={buttonClasses("outline", "sm")}>View all</span>
               </Link>
             }
@@ -373,7 +378,8 @@ export default async function HomePage() {
               <Link
                 key={department.id}
                 href={`/departments/${department.slug}`}
-                className="group rounded-3xl border border-brand-100 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-200"
+                prefetch
+                className="group rounded-3xl border border-brand-100 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-200 active:scale-[0.99] active:opacity-80"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
                   <HeartHandshake className="h-5 w-5" aria-hidden="true" />
@@ -390,7 +396,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mt-14 grid gap-6 lg:grid-cols-2">
+      <section className="content-auto mt-14 grid gap-6 lg:grid-cols-2">
         <div className="surface p-6 sm:p-7">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
             <BookOpen className="h-5 w-5" aria-hidden="true" />
@@ -414,6 +420,7 @@ export default async function HomePage() {
           </p>
           <Link
             href="/contact"
+            prefetch
             className={buttonClasses("gold", "lg", "mt-6 w-full sm:w-auto")}
           >
             Request an appointment
@@ -421,13 +428,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mt-14">
+      <section className="content-auto mt-14">
         <SectionHeader
           eyebrow="Connect"
           title="Contact the church"
           description="Reach out with questions about the church, membership or visiting."
           action={
-            <Link href="/contact">
+            <Link href="/contact" prefetch>
               <span className={buttonClasses("outline", "sm")}>Contact page</span>
             </Link>
           }
@@ -495,7 +502,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mt-14 overflow-hidden rounded-3xl bg-charcoal px-6 py-10 text-center text-cream sm:px-10">
+      <section className="content-auto mt-14 overflow-hidden rounded-3xl bg-charcoal px-6 py-10 text-center text-cream sm:px-10">
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-gold-200">
           <Cross className="h-6 w-6" aria-hidden="true" />
         </span>
@@ -509,12 +516,14 @@ export default async function HomePage() {
         <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
           <Link
             href="/register"
+            prefetch
             className={buttonClasses("gold", "lg", "w-full sm:w-auto")}
           >
             Join Our Church Family
           </Link>
           <Link
             href="/departments"
+            prefetch
             className={buttonClasses(
               "outline",
               "lg",

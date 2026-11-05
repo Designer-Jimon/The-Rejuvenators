@@ -59,7 +59,7 @@ export default async function ContactPage() {
         description={`Reach out with questions about ${settings.church_name}, membership or visiting.`}
       />
 
-      <section className="mt-8 grid gap-4 sm:grid-cols-2">
+      <section className="content-auto mt-8 grid gap-4 sm:grid-cols-2">
         <div className="surface flex items-start gap-3 p-5">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
             <MapPin className="h-5 w-5" aria-hidden="true" />
@@ -138,7 +138,7 @@ export default async function ContactPage() {
         </div>
       </section>
 
-      <section className="mt-8 surface p-6">
+      <section className="content-auto mt-8 surface p-6">
         <SectionHeader
           eyebrow="Visit"
           title="Plan your visit"
@@ -178,6 +178,7 @@ export default async function ContactPage() {
             </p>
             <Link
               href="/faq"
+              prefetch
               className={buttonClasses("outline", "lg", "mt-4 w-full sm:w-auto")}
             >
               Read the FAQ
@@ -186,7 +187,7 @@ export default async function ContactPage() {
         </div>
       </section>
 
-      <section className="mt-8 grid gap-4 sm:grid-cols-2">
+      <section className="content-auto mt-8 grid gap-4 sm:grid-cols-2">
         <div className="rounded-3xl bg-charcoal p-6 text-cream shadow-lift">
           <h2 className="font-serif text-2xl font-bold text-white">
             {appointment.title}

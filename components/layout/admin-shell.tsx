@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Building2,
   CalendarDays,
@@ -121,6 +121,14 @@ export function AdminShell({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   async function logout() {
     setLoggingOut(true);
@@ -148,9 +156,10 @@ export function AdminShell({
           <Link
             key={item.href}
             href={item.href}
+            prefetch
             onClick={() => setOpen(false)}
             className={cn(
-              "flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold transition",
+              "flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold transition active:scale-[0.98] active:opacity-80",
               active
                 ? "bg-brand-700 text-cream shadow-soft"
                 : "text-charcoal/70 hover:bg-brand-50 hover:text-brand-800",
@@ -169,7 +178,8 @@ export function AdminShell({
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-brand-100 bg-white lg:flex">
         <Link
           href="/admin"
-          className="flex items-center gap-2.5 border-b border-brand-100 px-5 py-5"
+          prefetch
+          className="flex items-center gap-2.5 border-b border-brand-100 px-5 py-5 active:opacity-80"
         >
           <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
             {logoUrl ? (
@@ -198,7 +208,8 @@ export function AdminShell({
           </div>
           <Link
             href="/member"
-            className="flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 hover:bg-brand-50"
+            prefetch
+            className="flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 transition hover:bg-brand-50 active:scale-[0.98] active:opacity-70"
           >
             Member view
           </Link>
@@ -206,7 +217,7 @@ export function AdminShell({
             type="button"
             onClick={logout}
             disabled={loggingOut}
-            className="flex min-h-11 w-full items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 hover:bg-brand-50 hover:text-brand-800"
+            className="flex min-h-11 w-full items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 transition hover:bg-brand-50 hover:text-brand-800 active:scale-[0.98] active:opacity-70"
           >
             <LogOut className="h-5 w-5" aria-hidden="true" />
             {loggingOut ? "Logging out..." : "Log out"}
@@ -215,13 +226,18 @@ export function AdminShell({
       </aside>
 
       <div className="lg:pl-64">
-        <header className="safe-top sticky top-0 z-30 border-b border-brand-100 bg-cream/95 backdrop-blur">
+        <header
+          className={cn(
+            "safe-top sticky top-0 z-30 border-b border-brand-100 bg-cream/95 backdrop-blur transition-shadow duration-200",
+            scrolled && "shadow-soft",
+          )}
+        >
           <div className="flex items-center justify-between gap-3 px-4 py-2 sm:px-6">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 bg-white lg:hidden"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 bg-white transition active:scale-95 active:opacity-70 lg:hidden"
                 aria-label="Open admin menu"
               >
                 <Menu className="h-5 w-5" aria-hidden="true" />
@@ -268,7 +284,7 @@ export function AdminShell({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 transition active:scale-95 active:opacity-70"
               aria-label="Close admin menu"
             >
               <X className="h-5 w-5" aria-hidden="true" />
@@ -282,8 +298,9 @@ export function AdminShell({
           <div className="border-t border-brand-100 p-3">
             <Link
               href="/member"
+              prefetch
               onClick={() => setOpen(false)}
-              className="flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 hover:bg-brand-50"
+              className="flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 transition hover:bg-brand-50 active:scale-[0.98] active:opacity-70"
             >
               Member view
             </Link>

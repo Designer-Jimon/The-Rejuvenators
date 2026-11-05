@@ -50,7 +50,7 @@ export default async function AdminOverviewPage() {
                 Update the church name, service times, contact details and social
                 links shown across the public website.
               </p>
-              <Link href="/admin/settings" className="mt-4 inline-block">
+              <Link href="/admin/settings" prefetch className="mt-4 inline-block">
                 <Button>
                   Manage site settings
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -98,7 +98,7 @@ export default async function AdminOverviewPage() {
             Review registrations, manage the family and keep church details current.
           </p>
         </div>
-        <Link href="/admin/members">
+        <Link href="/admin/members" prefetch>
           <Button>
             Open membership
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -138,7 +138,7 @@ export default async function AdminOverviewPage() {
             title="Awaiting review"
             description="Newest registrations that need a membership decision."
             action={
-              <Link href="/admin/members?status=pending">
+              <Link href="/admin/members?status=pending" prefetch>
                 <Button variant="outline" size="sm">
                   View all
                 </Button>
@@ -153,7 +153,8 @@ export default async function AdminOverviewPage() {
                 <Link
                   key={member.id}
                   href={`/admin/members/${member.id}`}
-                  className="flex min-h-16 items-center gap-3 rounded-2xl border border-brand-100 p-3 hover:bg-brand-50/60"
+                  prefetch
+                  className="flex min-h-16 items-center gap-3 rounded-2xl border border-brand-100 p-3 transition hover:bg-brand-50/60 active:scale-[0.99] active:opacity-80"
                 >
                   <Avatar
                     name={member.name}

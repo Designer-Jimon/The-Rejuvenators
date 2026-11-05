@@ -19,7 +19,7 @@ export default async function ResetPasswordPage({
         <p className="mt-2 text-sm text-charcoal/65">
           This link is missing a token. Request a new password reset link.
         </p>
-        <Link href="/forgot-password" className="mt-5 inline-block">
+        <Link href="/forgot-password" prefetch className="mt-5 inline-block">
           <Button>Request a new link</Button>
         </Link>
       </div>

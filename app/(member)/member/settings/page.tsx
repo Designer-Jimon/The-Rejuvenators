@@ -116,7 +116,7 @@ export default async function MemberSettingsPage({
                 <p className="text-xs text-charcoal/55">Keep your account secure.</p>
               </div>
             </div>
-            <Link href="/change-password" className="mt-4 block">
+            <Link href="/change-password" prefetch className="mt-4 block">
               <Button variant="outline" className="w-full">
                 Change password
               </Button>
@@ -137,7 +137,7 @@ export default async function MemberSettingsPage({
               Phone, email and activity visibility can be changed from your
               profile page.
             </p>
-            <Link href="/member/profile" className="mt-3 block">
+            <Link href="/member/profile" prefetch className="mt-3 block">
               <Button variant="ghost" className="w-full">
                 Open profile privacy settings
               </Button>

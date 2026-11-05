@@ -42,7 +42,7 @@ export default async function FaqPage() {
         description={`Common questions about ${settings.church_name}, visiting, membership and getting involved.`}
       />
 
-      <section className="mt-8">
+      <section className="content-auto mt-8">
         {list.length ? (
           <Accordion
             items={list.map((faq) => ({
@@ -60,7 +60,7 @@ export default async function FaqPage() {
         )}
       </section>
 
-      <section className="mt-10 rounded-3xl bg-brand-gradient p-6 text-cream shadow-lift sm:p-8">
+      <section className="content-auto mt-10 rounded-3xl bg-brand-gradient p-6 text-cream shadow-lift sm:p-8">
         <h2 className="font-serif text-2xl font-bold text-white">
           Still have a question?
         </h2>
@@ -71,12 +71,14 @@ export default async function FaqPage() {
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Link
             href="/contact"
+            prefetch
             className={buttonClasses("gold", "lg", "w-full sm:w-auto")}
           >
             Contact the church
           </Link>
           <Link
             href="/register"
+            prefetch
             className={buttonClasses(
               "outline",
               "lg",

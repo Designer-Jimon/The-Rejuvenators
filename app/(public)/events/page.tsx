@@ -25,7 +25,7 @@ export default async function EventsPage() {
         description="Special services, outreaches and gatherings. Events published by the church team appear here."
       />
 
-      <div className="mt-8">
+      <div className="content-auto mt-8">
         {list.length ? (
           <div className="space-y-4">
             {list.map((event) => (

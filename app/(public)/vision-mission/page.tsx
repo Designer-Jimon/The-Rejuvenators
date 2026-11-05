@@ -43,7 +43,7 @@ export default async function VisionMissionPage() {
         description={`${settings.church_name} exists to provoke revival and to make Jesus known.`}
       />
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+      <section className="content-auto mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
         <div className="rounded-3xl bg-brand-gradient p-6 text-cream shadow-lift sm:p-7">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-gold-200">
             <Target className="h-5 w-5" aria-hidden="true" />
@@ -76,7 +76,7 @@ export default async function VisionMissionPage() {
         </div>
       </section>
 
-      <section className="mt-12 rounded-3xl bg-charcoal p-7 text-center text-cream shadow-lift sm:p-10">
+      <section className="content-auto mt-12 rounded-3xl bg-charcoal p-7 text-center text-cream shadow-lift sm:p-10">
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-gold-200">
           <Flame className="h-6 w-6" aria-hidden="true" />
         </span>
@@ -89,12 +89,14 @@ export default async function VisionMissionPage() {
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
             href="/register"
+            prefetch
             className={buttonClasses("gold", "lg", "w-full sm:w-auto")}
           >
             Join our church family
           </Link>
           <Link
             href="/activities"
+            prefetch
             className={buttonClasses(
               "outline",
               "lg",
@@ -107,7 +109,7 @@ export default async function VisionMissionPage() {
         </div>
       </section>
 
-      <section className="mt-12">
+      <section className="content-auto mt-12">
         <SectionHeader
           eyebrow="Next"
           title="Where revival becomes practical"
@@ -116,14 +118,16 @@ export default async function VisionMissionPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <Link
             href="/activities"
-            className="surface flex items-center justify-between gap-4 p-5 transition hover:border-brand-200 hover:bg-brand-50/40"
+            prefetch
+            className="surface flex items-center justify-between gap-4 p-5 transition hover:border-brand-200 hover:bg-brand-50/40 active:scale-[0.99] active:opacity-80"
           >
             <span className="font-serif text-xl font-semibold">Activities</span>
             <ArrowRight className="h-5 w-5 text-brand-700" aria-hidden="true" />
           </Link>
           <Link
             href="/departments"
-            className="surface flex items-center justify-between gap-4 p-5 transition hover:border-brand-200 hover:bg-brand-50/40"
+            prefetch
+            className="surface flex items-center justify-between gap-4 p-5 transition hover:border-brand-200 hover:bg-brand-50/40 active:scale-[0.99] active:opacity-80"
           >
             <span className="font-serif text-xl font-semibold">Departments</span>
             <ArrowRight className="h-5 w-5 text-brand-700" aria-hidden="true" />

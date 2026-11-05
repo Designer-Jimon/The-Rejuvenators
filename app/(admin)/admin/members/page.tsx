@@ -51,7 +51,8 @@ export default async function AdminMembersPage({
       render: (member: MemberListItem) => (
         <Link
           href={`/admin/members/${member.id}`}
-          className="flex min-h-11 items-center gap-3 font-semibold text-charcoal hover:text-brand-800"
+          prefetch
+          className="flex min-h-11 items-center gap-3 font-semibold text-charcoal transition hover:text-brand-800 active:opacity-70"
         >
           <Avatar
             name={member.name}
@@ -97,7 +98,8 @@ export default async function AdminMembersPage({
       render: (member: MemberListItem) => (
         <Link
           href={`/admin/members/${member.id}`}
-          className="font-semibold text-brand-800 hover:underline"
+          prefetch
+          className="font-semibold text-brand-800 hover:underline active:opacity-70"
         >
           Open
         </Link>
@@ -122,8 +124,9 @@ export default async function AdminMembersPage({
           <Link
             key={tab.key}
             href={`/admin/members?status=${tab.key}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
+            prefetch
             className={cn(
-              "inline-flex min-h-11 shrink-0 items-center rounded-2xl border px-4 text-sm font-semibold transition",
+              "inline-flex min-h-11 shrink-0 items-center rounded-2xl border px-4 text-sm font-semibold transition active:scale-[0.98] active:opacity-80",
               status === tab.key
                 ? "border-brand-700 bg-brand-700 text-cream"
                 : "border-brand-200 bg-white text-charcoal/70 hover:border-brand-400",

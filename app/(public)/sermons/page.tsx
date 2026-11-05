@@ -25,7 +25,7 @@ export default async function SermonsPage() {
         description="Catch up on messages from the house. Audio and video links are published by the church team."
       />
 
-      <div className="mt-8">
+      <div className="content-auto mt-8">
         {list.length ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {list.map((sermon) => (

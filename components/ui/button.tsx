@@ -29,7 +29,7 @@ export function buttonClasses(
   className?: string,
 ) {
   return cn(
-    "inline-flex select-none items-center justify-center gap-2 rounded-2xl font-semibold transition active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60",
+    "inline-flex touch-manipulation select-none items-center justify-center gap-2 rounded-2xl font-semibold transition-[transform,background-color,color,border-color,opacity] duration-150 active:scale-[0.97] active:opacity-90 disabled:pointer-events-none disabled:opacity-60",
     variants[variant],
     sizes[size],
     className,

@@ -13,8 +13,9 @@ export function NotificationBell({
   return (
     <Link
       href={href}
+      prefetch
       aria-label={`${label}${unread ? `, ${unread} unread` : ""}`}
-      className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 bg-white text-charcoal/75 transition hover:border-brand-300 hover:text-brand-800"
+      className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 bg-white text-charcoal/75 transition hover:border-brand-300 hover:text-brand-800 active:scale-95 active:opacity-70"
     >
       <Bell className="h-5 w-5" aria-hidden="true" />
       {unread > 0 ? (

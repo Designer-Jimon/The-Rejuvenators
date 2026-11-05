@@ -53,6 +53,7 @@ export function LoginForm({
       <div className="flex justify-end">
         <Link
           href="/forgot-password"
+          prefetch
           className="text-sm font-semibold text-brand-800 hover:underline"
         >
           Forgot password?
@@ -65,7 +66,7 @@ export function LoginForm({
 
       <p className="text-center text-sm text-charcoal/60">
         New here?{" "}
-        <Link href="/register" className="font-semibold text-brand-800 hover:underline">
+        <Link href="/register" prefetch className="font-semibold text-brand-800 hover:underline active:opacity-70">
           Create a member account
         </Link>
       </p>

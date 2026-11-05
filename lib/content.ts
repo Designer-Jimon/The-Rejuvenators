@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { contentBlocks } from "@/lib/db/schema";
@@ -11,7 +12,7 @@ export type ContentBlock = ContentBlockDefault & {
   imageKey?: string | null;
 };
 
-export async function getContentMap() {
+export const getContentMap = cache(async () => {
   const db = await getDb();
   const rows = await db
     .select()
@@ -29,7 +30,7 @@ export async function getContentMap() {
     };
   }
   return map;
-}
+});
 
 export function getBlock(
   map: Record<string, ContentBlock>,

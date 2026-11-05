@@ -39,14 +39,15 @@ export default async function DepartmentsPage() {
         description="Every believer has a part to play. Explore the departments and request to join one during registration."
       />
 
-      <div className="mt-8">
+      <div className="content-auto mt-8">
         {list.length ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {list.map((department, index) => (
               <Link
                 key={department.id}
                 href={`/departments/${department.slug}`}
-                className="group surface overflow-hidden transition hover:-translate-y-0.5 hover:border-brand-200"
+                prefetch
+                className="group surface overflow-hidden transition hover:-translate-y-0.5 hover:border-brand-200 active:scale-[0.99] active:opacity-80"
               >
                 {department.imageKey ? (
                   <div className="relative aspect-[16/9] bg-brand-50">
@@ -54,6 +55,7 @@ export default async function DepartmentsPage() {
                       src={publicMediaUrl(department.imageKey) ?? ""}
                       alt={department.name}
                       fill
+                      loading="lazy"
                       unoptimized
                       sizes="(max-width: 640px) 100vw, 50vw"
                       className="object-cover"
@@ -98,7 +100,7 @@ export default async function DepartmentsPage() {
         )}
       </div>
 
-      <div className="mt-10 rounded-3xl bg-charcoal p-6 text-center text-cream sm:p-8">
+      <div className="content-auto mt-10 rounded-3xl bg-charcoal p-6 text-center text-cream sm:p-8">
         <h2 className="font-serif text-2xl font-bold text-white">
           Ready to serve?
         </h2>
@@ -108,6 +110,7 @@ export default async function DepartmentsPage() {
         </p>
         <Link
           href="/register"
+          prefetch
           className={buttonClasses("gold", "lg", "mt-5 w-full sm:w-auto")}
         >
           Register and choose a department

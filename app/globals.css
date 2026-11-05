@@ -20,6 +20,7 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
   }
 
   body {
@@ -93,6 +94,11 @@
 
   .prose-body {
     @apply text-[15px] leading-7 text-charcoal/80 sm:text-base;
+  }
+
+  .content-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
   }
 
   .hide-scrollbar {
