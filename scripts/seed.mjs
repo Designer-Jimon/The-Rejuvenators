@@ -159,11 +159,145 @@ for (const [key, value] of Object.entries(settings)) {
   );
 }
 
-lines.push(
-  `INSERT OR IGNORE INTO content_blocks (id, key, title, body, is_published, created_at, updated_at) VALUES ('block_about', 'about_story', 'Our story', ${q("[Add the church story in Admin - placeholder]")}, 1, unixepoch() * 1000, unixepoch() * 1000);`,
-  `INSERT OR IGNORE INTO content_blocks (id, key, title, body, is_published, created_at, updated_at) VALUES ('block_mission', 'mission', 'Our mission', ${q("[Add the church mission in Admin - placeholder]")}, 1, unixepoch() * 1000, unixepoch() * 1000);`,
-  `INSERT OR IGNORE INTO content_blocks (id, key, title, body, is_published, created_at, updated_at) VALUES ('block_vision', 'vision', 'Our vision', ${q("[Add the church vision in Admin - placeholder]")}, 1, unixepoch() * 1000, unixepoch() * 1000);`,
-);
+const contentBlocks = [
+  [
+    "block_about",
+    "about_story",
+    "Our story",
+    "In June 2010, while praying in the Spirit, the founder heard \"IT IS FINISHED\" and thought it was a programme theme for August. In that meeting the Holy Ghost said He had inaugurated \"IT IS FINISHED\" as a commission to provoke revival in this end time. It became a monthly all-night meeting until October 2012, when, after waiting on the Lord for the blueprint, the vision and mission were given.",
+  ],
+  [
+    "block_scripture",
+    "scripture",
+    "John 19:30",
+    "\"When Jesus therefore had received the vinegar, He said IT IS FINISHED: and He bowed His head and gave up the ghost.\"",
+  ],
+  [
+    "block_intro",
+    "intro",
+    "A mandate of revival",
+    "Revival is the heartbeat of God in this time. Anytime darkness covers the earth to the point that wickedness and oppression increase (Isaiah 60:2), what we need is Revival (Isaiah 60:1). \"IT IS FINISHED\" was the last word our Lord and Saviour Jesus uttered at the cross and was the beginning of Revival for mankind. The commission is named IT IS FINISHED REVIVAL OUTREACH from that word (John 19:30).",
+  ],
+  [
+    "block_vision",
+    "vision",
+    "Our vision",
+    "To provoke REVIVAL. Revival means calling forth something dead, weak or no longer efficient; Christ becoming more popular than anything or anyone; the glory of the Lord becoming real in our nation (Hab 2:14); the supernatural power of God becoming part of everyday life; righteousness, holiness and purity becoming our character; commanding the world to the obedience of Christ.",
+  ],
+  [
+    "block_mission",
+    "mission",
+    "Our mission",
+    "1) Win souls for Christ, the primary assignment, through crusades and outreaches (Mark 16:15, Acts 1:8).\n2) Disciple men and women through the Foundation Class and Rejuvenators Gathering (Matt 28:19-20) to be fire carriers (Joel 2:3).\n3) Raise worshippers (Rev 14:6-8; 2 Chron 5:11-14): create an atmosphere of worship in every meeting; our existence is to worship God (Isa 43:21); worship deepens relationship with God (Ps 63:1-3, 42:1-2).\n4) Bring people to the place of supernatural power in their field of profession (Mark 16:20; Acts 4:31-33).\n5) Make them know Christ lives in us and we are His representatives (1 Cor 3:23).\n6) Hold revival meetings in campuses, churches, schools and Christian organisations: campus outreaches called \"Rescue Missions\", revival meetings in churches in bad spiritual state, school outreaches, crusades in cities and nations, and raising revivalists in families (Acts 21:8-9).",
+  ],
+  [
+    "block_closing",
+    "closing",
+    "Our passion",
+    "Revival is our mandate; to set the world on fire is our passion; that Jesus will be known all over the world is our desire.",
+  ],
+  [
+    "block_core_values",
+    "core_values",
+    "Core values",
+    "[Edit in Admin: Core values]",
+  ],
+  [
+    "block_what_we_believe",
+    "what_we_believe",
+    "What we believe",
+    "[Edit in Admin: What we believe]",
+  ],
+  [
+    "block_spiritual_mandate",
+    "spiritual_mandate",
+    "Spiritual mandate",
+    "[Edit in Admin: Spiritual mandate]",
+  ],
+  [
+    "block_pastor_intro",
+    "pastor_intro",
+    "Meet our pastor",
+    "[Edit in Admin: Pastor introduction]",
+  ],
+  [
+    "block_latest_devotional",
+    "latest_devotional",
+    "Latest devotional",
+    "[Edit in Admin: Latest devotional]",
+  ],
+  [
+    "block_appointment_cta",
+    "appointment_cta",
+    "Book an appointment",
+    "[Edit in Admin: Appointment booking details]",
+  ],
+];
+
+const activities = [
+  [
+    "act_sunday_service",
+    "Sunday Service",
+    "Day: Sunday\nTime: [Sunday service time - edit in Admin]\nVenue: [Church address - edit in Admin]\n\nJoin us for our weekly Sunday gathering.",
+  ],
+  [
+    "act_rejuvenators_service",
+    "Rejuvenators Service",
+    "Day: [Day - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nA gathering for the Rejuvenators family.",
+  ],
+  [
+    "act_prayer_meeting",
+    "Prayer Meeting",
+    "Day: [Day - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nA time of corporate prayer and intercession.",
+  ],
+  [
+    "act_bible_study",
+    "Bible Study",
+    "Day: [Day - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nGrow in the Word together.",
+  ],
+  [
+    "act_night_vigil",
+    "Night Vigil",
+    "Day: [Day - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nA night of worship and prayer.",
+  ],
+  [
+    "act_special_revival",
+    "Special Revival Programs",
+    "Day: [Dates - edit in Admin]\nTime: [Time - edit in Admin]\nVenue: [Venue - edit in Admin]\n\nSpecial revival meetings and outreaches.",
+  ],
+];
+
+const faqs = [
+  ["faq_location", "Where is the church located?", "[Church address - edit in Admin]"],
+  ["faq_sunday_time", "What time is the Sunday service?", "[Sunday service time - edit in Admin]"],
+  ["faq_membership", "How do I become a member?", "[Membership steps - edit in Admin]"],
+  ["faq_department", "How do I join a department?", "[Department joining steps - edit in Admin]"],
+  ["faq_book_pastor", "Can I book an appointment with the pastor?", "[Appointment booking details - edit in Admin]"],
+  ["faq_register_first", "Do I need to register before attending?", "[Registration guidance - edit in Admin]"],
+  ["faq_participate", "How can I participate in church activities?", "[Activity participation details - edit in Admin]"],
+  ["faq_contact", "How do I contact the church?", "[Contact details - edit in Admin]"],
+  ["faq_devotionals", "How do I access daily devotionals?", "[Devotional access details - edit in Admin]"],
+];
+
+for (const [id, key, title, body] of contentBlocks) {
+  lines.push(
+    `INSERT OR IGNORE INTO content_blocks (id, key, title, body, is_published, created_at, updated_at) VALUES (${q(id)}, ${q(key)}, ${q(title)}, ${q(body)}, 1, unixepoch() * 1000, unixepoch() * 1000);`,
+  );
+}
+
+for (let index = 0; index < activities.length; index += 1) {
+  const [id, title, description] = activities[index];
+  lines.push(
+    `INSERT OR IGNORE INTO activities (id, title, description, activity_date, is_published, created_at, updated_at) VALUES (${q(id)}, ${q(title)}, ${q(description)}, NULL, 1, unixepoch() * 1000, unixepoch() * 1000);`,
+  );
+}
+
+for (let index = 0; index < faqs.length; index += 1) {
+  const [id, question, answer] = faqs[index];
+  lines.push(
+    `INSERT OR IGNORE INTO faqs (id, question, answer, sort_order, is_published, created_at) VALUES (${q(id)}, ${q(question)}, ${q(answer)}, ${index + 1}, 1, unixepoch() * 1000);`,
+  );
+}
 
 lines.push(
   `INSERT OR IGNORE INTO users (id, name, email, phone, password_hash, status, must_change_password, created_at, updated_at) VALUES ('usr_super_admin', ${q(adminName)}, ${q(adminEmail)}, ${q("[Church phone - edit in Admin]")}, ${q(adminHash)}, 'active', 1, unixepoch() * 1000, unixepoch() * 1000);`,

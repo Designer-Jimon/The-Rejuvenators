@@ -94,6 +94,85 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   footer_note: "Built for the IT IS FINISHED REVIVAL OUTREACH family.",
 };
 
+export const PUBLIC_NAV = [
+  { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
+  { href: "/vision-mission", label: "Vision & Mission" },
+  { href: "/activities", label: "Activities" },
+  { href: "/departments", label: "Departments" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/contact", label: "Contact" },
+] as const;
+
+export type ContentBlockDefault = {
+  key: string;
+  title: string;
+  body: string;
+};
+
+export const DEFAULT_CONTENT_BLOCKS: Record<string, ContentBlockDefault> = {
+  about_story: {
+    key: "about_story",
+    title: "Our story",
+    body: "In June 2010, while praying in the Spirit, the founder heard \"IT IS FINISHED\" and thought it was a programme theme for August. In that meeting the Holy Ghost said He had inaugurated \"IT IS FINISHED\" as a commission to provoke revival in this end time. It became a monthly all-night meeting until October 2012, when, after waiting on the Lord for the blueprint, the vision and mission were given.",
+  },
+  scripture: {
+    key: "scripture",
+    title: "John 19:30",
+    body: "\"When Jesus therefore had received the vinegar, He said IT IS FINISHED: and He bowed His head and gave up the ghost.\"",
+  },
+  intro: {
+    key: "intro",
+    title: "A mandate of revival",
+    body: "Revival is the heartbeat of God in this time. Anytime darkness covers the earth to the point that wickedness and oppression increase (Isaiah 60:2), what we need is Revival (Isaiah 60:1). \"IT IS FINISHED\" was the last word our Lord and Saviour Jesus uttered at the cross and was the beginning of Revival for mankind. The commission is named IT IS FINISHED REVIVAL OUTREACH from that word (John 19:30).",
+  },
+  vision: {
+    key: "vision",
+    title: "Our vision",
+    body: "To provoke REVIVAL. Revival means calling forth something dead, weak or no longer efficient; Christ becoming more popular than anything or anyone; the glory of the Lord becoming real in our nation (Hab 2:14); the supernatural power of God becoming part of everyday life; righteousness, holiness and purity becoming our character; commanding the world to the obedience of Christ.",
+  },
+  mission: {
+    key: "mission",
+    title: "Our mission",
+    body: "1) Win souls for Christ, the primary assignment, through crusades and outreaches (Mark 16:15, Acts 1:8).\n2) Disciple men and women through the Foundation Class and Rejuvenators Gathering (Matt 28:19-20) to be fire carriers (Joel 2:3).\n3) Raise worshippers (Rev 14:6-8; 2 Chron 5:11-14): create an atmosphere of worship in every meeting; our existence is to worship God (Isa 43:21); worship deepens relationship with God (Ps 63:1-3, 42:1-2).\n4) Bring people to the place of supernatural power in their field of profession (Mark 16:20; Acts 4:31-33).\n5) Make them know Christ lives in us and we are His representatives (1 Cor 3:23).\n6) Hold revival meetings in campuses, churches, schools and Christian organisations: campus outreaches called \"Rescue Missions\", revival meetings in churches in bad spiritual state, school outreaches, crusades in cities and nations, and raising revivalists in families (Acts 21:8-9).",
+  },
+  closing: {
+    key: "closing",
+    title: "Our passion",
+    body: "Revival is our mandate; to set the world on fire is our passion; that Jesus will be known all over the world is our desire.",
+  },
+  core_values: {
+    key: "core_values",
+    title: "Core values",
+    body: "[Edit in Admin: Core values]",
+  },
+  what_we_believe: {
+    key: "what_we_believe",
+    title: "What we believe",
+    body: "[Edit in Admin: What we believe]",
+  },
+  spiritual_mandate: {
+    key: "spiritual_mandate",
+    title: "Spiritual mandate",
+    body: "[Edit in Admin: Spiritual mandate]",
+  },
+  pastor_intro: {
+    key: "pastor_intro",
+    title: "Meet our pastor",
+    body: "[Edit in Admin: Pastor introduction]",
+  },
+  latest_devotional: {
+    key: "latest_devotional",
+    title: "Latest devotional",
+    body: "[Edit in Admin: Latest devotional]",
+  },
+  appointment_cta: {
+    key: "appointment_cta",
+    title: "Book an appointment",
+    body: "[Edit in Admin: Appointment booking details]",
+  },
+};
+
 export const MEMBER_REGISTRATION_MESSAGE = (departmentName: string) =>
   `A new member has registered with IT IS FINISHED REVIVAL OUTREACH and has expressed interest in serving God through the ${departmentName} Department.`;
 

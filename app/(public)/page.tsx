@@ -1,33 +1,62 @@
 import Link from "next/link";
-import { and, asc, desc, eq, gte } from "drizzle-orm";
+import { and, asc, eq, gte } from "drizzle-orm";
 import {
   ArrowRight,
+  BookOpen,
   CalendarDays,
   Clock3,
+  Cross,
+  Facebook,
+  HeartHandshake,
+  Instagram,
+  Mail,
   MapPin,
-  Mic2,
+  MessageCircle,
+  Phone,
   Sparkles,
-  Users,
+  Youtube,
 } from "lucide-react";
 import { getDb } from "@/lib/db";
-import { departments, events, sermons } from "@/lib/db/schema";
-import { getSettings } from "@/lib/settings";
-import { formatDate } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
-  EmptyState,
-  PageHero,
-  SectionHeader,
+  activities,
+  departments,
+  events,
+  slideshowImages,
+} from "@/lib/db/schema";
+import { getSettings } from "@/lib/settings";
+import { getBlock, getContentMap, parseActivitySchedule } from "@/lib/content";
+import { formatDate } from "@/lib/utils";
+import { buttonClasses } from "@/components/ui/button";
+import {
   Badge,
+  EmptyState,
+  SectionHeader,
 } from "@/components/ui/display";
+import {
+  HeroSlideshow,
+  type HeroSlide,
+} from "@/components/public/hero-slideshow";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Home",
+  description:
+    "IT IS FINISHED REVIVAL OUTREACH - a Christ-centred family provoking revival through worship, the Word and service.",
+  openGraph: {
+    title: "IT IS FINISHED REVIVAL OUTREACH",
+    description:
+      "A Christ-centred family provoking revival through worship, the Word and service.",
+    type: "website",
+  },
+};
+
 export default async function HomePage() {
   const db = await getDb();
-  const [settings, departmentList, upcomingEvents, latestSermons] =
+  const [settings, content, departmentList, upcomingActivities, featuredEvents, slides] =
     await Promise.all([
       getSettings(),
+      getContentMap(),
       db
         .select()
         .from(departments)
@@ -36,37 +65,86 @@ export default async function HomePage() {
         .limit(6),
       db
         .select()
+        .from(activities)
+        .where(eq(activities.isPublished, true))
+        .orderBy(asc(activities.activityDate))
+        .limit(3),
+      db
+        .select()
         .from(events)
         .where(and(eq(events.isPublished, true), gte(events.startsAt, new Date())))
         .orderBy(asc(events.startsAt))
         .limit(3),
       db
         .select()
-        .from(sermons)
-        .where(eq(sermons.isPublished, true))
-        .orderBy(desc(sermons.preachedAt))
-        .limit(3),
+        .from(slideshowImages)
+        .where(eq(slideshowImages.isActive, true))
+        .orderBy(asc(slideshowImages.sortOrder)),
     ]);
+
+  const intro = getBlock(content, "intro");
+  const scripture = getBlock(content, "scripture");
+  const pastor = getBlock(content, "pastor_intro");
+  const devotional = getBlock(content, "latest_devotional");
+  const appointment = getBlock(content, "appointment_cta");
+
+  const heroSlides: HeroSlide[] = slides.length
+    ? slides.map((slide, index) => ({
+        id: slide.id,
+        eyebrow: settings.church_name,
+        title: slide.headline || settings.hero_headline,
+        subtitle: slide.subheadline || settings.hero_subheadline,
+        imageUrl: `/api/media/${slide.imageKey}`,
+        gradient: (["brand", "ember", "charcoal", "gold"] as const)[
+          index % 4
+        ],
+        href: "/register",
+        linkLabel: "Join Our Church Family",
+      }))
+    : [
+        {
+          id: "welcome",
+          eyebrow: settings.church_name,
+          title: settings.hero_headline,
+          subtitle: settings.hero_subheadline,
+          gradient: "brand",
+          href: "/register",
+          linkLabel: "Join Our Church Family",
+        },
+        {
+          id: "revival",
+          eyebrow: "Our mandate",
+          title: "Revival is the heartbeat of God",
+          subtitle: intro.body,
+          gradient: "ember",
+          href: "/vision-mission",
+          linkLabel: "Discover Our Vision",
+        },
+        {
+          id: "finished",
+          eyebrow: scripture.title,
+          title: "IT IS FINISHED",
+          subtitle: scripture.body,
+          gradient: "charcoal",
+          href: "/about",
+          linkLabel: "Learn our story",
+        },
+      ];
+
+  const socials = [
+    { href: settings.facebook_url, label: "Facebook", icon: Facebook },
+    { href: settings.instagram_url, label: "Instagram", icon: Instagram },
+    { href: settings.youtube_url, label: "YouTube", icon: Youtube },
+    {
+      href: settings.whatsapp_group_url,
+      label: "WhatsApp",
+      icon: MessageCircle,
+    },
+  ].filter((social) => social.href.startsWith("http"));
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-      <PageHero
-        eyebrow="IT IS FINISHED REVIVAL OUTREACH"
-        title={settings.hero_headline}
-        description={settings.hero_subheadline}
-        actions={
-          <>
-            <Link href="/register">
-              <Button variant="gold">Join the family</Button>
-            </Link>
-            <Link href="/departments">
-              <Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20">
-                Find your place
-              </Button>
-            </Link>
-          </>
-        }
-      />
+      <HeroSlideshow slides={heroSlides} />
 
       <section className="mt-6 grid gap-3 sm:grid-cols-3">
         {[
@@ -80,11 +158,11 @@ export default async function HomePage() {
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
                 <Icon className="h-5 w-5" aria-hidden="true" />
               </span>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
                   {item.label}
                 </p>
-                <p className="mt-1 text-sm font-semibold leading-6 text-charcoal/80">
+                <p className="mt-1 break-words text-base font-semibold leading-6 text-charcoal/80">
                   {item.value}
                 </p>
               </div>
@@ -93,182 +171,338 @@ export default async function HomePage() {
         })}
       </section>
 
-      <section className="mt-12 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+      <section className="mt-12 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
         <div>
           <SectionHeader
             eyebrow="Welcome"
             title={settings.welcome_title}
-            description={settings.welcome_body}
+            description={`${settings.church_name}. ${settings.welcome_body}`}
           />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-3xl border border-brand-100 bg-white p-5 shadow-soft">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gold-200/60 text-gold-500">
-                <Sparkles className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <h3 className="mt-3 font-serif text-lg font-semibold">Revival</h3>
-              <p className="mt-1 text-sm leading-6 text-charcoal/65">
-                A church family pursuing genuine encounter with God.
-              </p>
-            </div>
-            <div className="rounded-3xl border border-brand-100 bg-white p-5 shadow-soft">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-                <Users className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <h3 className="mt-3 font-serif text-lg font-semibold">Belonging</h3>
-              <p className="mt-1 text-sm leading-6 text-charcoal/65">
-                Grow in community and serve shoulder to shoulder.
-              </p>
+          <div className="rounded-3xl border border-brand-100 bg-white p-5 shadow-soft sm:p-6">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold-200/60 text-gold-500">
+              <Sparkles className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h3 className="mt-4 font-serif text-xl font-semibold">
+              {intro.title}
+            </h3>
+            <p className="mt-2 whitespace-pre-line text-base leading-7 text-charcoal/70">
+              {intro.body}
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/register"
+                className={buttonClasses("primary", "lg", "w-full sm:w-auto")}
+              >
+                Join Our Church Family
+              </Link>
+              <Link
+                href="/vision-mission"
+                className={buttonClasses("outline", "lg", "w-full sm:w-auto")}
+              >
+                Discover Our Vision
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
             </div>
           </div>
         </div>
-        <div className="relative overflow-hidden rounded-3xl bg-brand-gradient p-6 text-cream shadow-lift">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-200">
-            Led by
+
+        <aside className="rounded-3xl bg-brand-gradient p-6 text-cream shadow-lift">
+          <Badge tone="gold">Our foundation</Badge>
+          <p className="mt-4 font-serif text-xl font-semibold text-white">
+            {scripture.title}
           </p>
-          <p className="mt-2 font-serif text-2xl font-bold text-white">
+          <blockquote className="mt-3 text-base leading-8 text-cream/85">
+            {scripture.body}
+          </blockquote>
+          <Link
+            href="/about"
+            className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-gold-200 hover:underline"
+          >
+            Read our story
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </aside>
+      </section>
+
+      <section className="mt-14">
+        <SectionHeader
+          eyebrow="Gather"
+          title="Upcoming activities"
+          description="Our weekly rhythm and special gatherings. Days, times and venues are editable by the church team."
+          action={
+            <Link href="/activities">
+              <span className={buttonClasses("outline", "sm")}>View all</span>
+            </Link>
+          }
+        />
+        {upcomingActivities.length ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {upcomingActivities.map((activity) => {
+              const schedule = parseActivitySchedule(activity.description);
+              return (
+                <article key={activity.id} className="surface p-5">
+                  <Badge tone="brand">Activity</Badge>
+                  <h3 className="mt-3 font-serif text-xl font-semibold">
+                    {activity.title}
+                  </h3>
+                  <dl className="mt-3 space-y-1 text-sm text-charcoal/65">
+                    {schedule.day ? (
+                      <div className="flex gap-2">
+                        <dt className="font-semibold text-charcoal/45">Day</dt>
+                        <dd>{schedule.day}</dd>
+                      </div>
+                    ) : null}
+                    {schedule.time ? (
+                      <div className="flex gap-2">
+                        <dt className="font-semibold text-charcoal/45">Time</dt>
+                        <dd>{schedule.time}</dd>
+                      </div>
+                    ) : null}
+                    {schedule.venue ? (
+                      <div className="flex gap-2">
+                        <dt className="font-semibold text-charcoal/45">Venue</dt>
+                        <dd>{schedule.venue}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  {schedule.summary ? (
+                    <p className="mt-3 text-base leading-7 text-charcoal/70">
+                      {schedule.summary}
+                    </p>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<CalendarDays className="h-6 w-6" aria-hidden="true" />}
+            title="Activities coming soon"
+            description="The church team is preparing the weekly schedule."
+          />
+        )}
+      </section>
+
+      <section className="mt-14">
+        <SectionHeader
+          eyebrow="Featured"
+          title="Upcoming events"
+          description="Special services, outreaches and gatherings published by the church team."
+          action={
+            <Link href="/events">
+              <span className={buttonClasses("outline", "sm")}>All events</span>
+            </Link>
+          }
+        />
+        {featuredEvents.length ? (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {featuredEvents.map((event) => (
+              <article key={event.id} className="surface p-5">
+                <p className="text-xs font-bold uppercase tracking-wide text-brand-700">
+                  {formatDate(event.startsAt)}
+                </p>
+                <h3 className="mt-2 font-serif text-xl font-semibold">
+                  {event.title}
+                </h3>
+                <p className="mt-2 text-base leading-7 text-charcoal/70">
+                  {event.location || "Location to be confirmed"}
+                </p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<CalendarDays className="h-6 w-6" aria-hidden="true" />}
+            title="No events published yet"
+            description="Upcoming events will appear here once the admin team publishes them."
+          />
+        )}
+      </section>
+
+      <section className="mt-14 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div className="rounded-3xl bg-gradient-to-br from-brand-800 to-ember-600 p-7 text-cream shadow-lift">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-200">
+            {pastor.title}
+          </p>
+          <p className="mt-3 font-serif text-3xl font-bold text-white">
             {settings.pastor_name}
           </p>
-          <p className="mt-3 text-sm leading-7 text-cream/80">
-            We are a family of believers committed to worship, the Word and
-            practical service. There is room for you at the table.
+          <p className="mt-4 text-base leading-7 text-cream/85">
+            {pastor.body}
           </p>
           <Link
             href="/about"
-            className="mt-5 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-gold-200 hover:underline"
+            className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-gold-200 hover:underline"
           >
-            Learn about the church
+            About the church
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+        <div>
+          <SectionHeader
+            eyebrow="Serve"
+            title="Featured departments"
+            description="Discover the teams that make ministry happen and request to join one."
+            action={
+              <Link href="/departments">
+                <span className={buttonClasses("outline", "sm")}>View all</span>
+              </Link>
+            }
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {departmentList.map((department) => (
+              <Link
+                key={department.id}
+                href={`/departments/${department.slug}`}
+                className="group rounded-3xl border border-brand-100 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-200"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+                  <HeartHandshake className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <h3 className="mt-3 font-serif text-lg font-semibold group-hover:text-brand-800">
+                  {department.name}
+                </h3>
+                <p className="mt-1 text-base leading-7 text-charcoal/65">
+                  {department.description || "Details will be added soon."}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-14 grid gap-6 lg:grid-cols-2">
+        <div className="surface p-6 sm:p-7">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+            <BookOpen className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <h2 className="mt-4 font-serif text-2xl font-semibold">
+            {devotional.title}
+          </h2>
+          <p className="mt-2 whitespace-pre-line text-base leading-7 text-charcoal/70">
+            {devotional.body}
+          </p>
+        </div>
+        <div className="rounded-3xl bg-charcoal p-6 text-cream shadow-lift sm:p-7">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-200">
+            Pastoral care
+          </p>
+          <h2 className="mt-2 font-serif text-2xl font-bold text-white">
+            {appointment.title}
+          </h2>
+          <p className="mt-3 text-base leading-7 text-cream/75">
+            {appointment.body}
+          </p>
+          <Link
+            href="/contact"
+            className={buttonClasses("gold", "lg", "mt-6 w-full sm:w-auto")}
+          >
+            Request an appointment
           </Link>
         </div>
       </section>
 
-      <section className="mt-12">
+      <section className="mt-14">
         <SectionHeader
-          eyebrow="Serve"
-          title="Departments"
-          description="Discover the teams that make ministry happen and request to join one."
+          eyebrow="Connect"
+          title="Contact the church"
+          description="Reach out with questions about the church, membership or visiting."
           action={
-            <Link href="/departments">
-              <Button variant="outline" size="sm">
-                View all
-              </Button>
+            <Link href="/contact">
+              <span className={buttonClasses("outline", "sm")}>Contact page</span>
             </Link>
           }
         />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {departmentList.map((department) => (
-            <div
-              key={department.id}
-              className="rounded-3xl border border-brand-100 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-200"
-            >
-              <Badge tone="brand">Department</Badge>
-              <h3 className="mt-3 font-serif text-lg font-semibold">
-                {department.name}
-              </h3>
-              <p className="mt-1 text-sm leading-6 text-charcoal/65">
-                {department.description || "Details will be added soon."}
+          <div className="surface flex items-start gap-3 p-5">
+            <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-brand-700" aria-hidden="true" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
+                Address
+              </p>
+              <p className="mt-1 text-base leading-7 text-charcoal/75">
+                {settings.address}
               </p>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-12 grid gap-6 lg:grid-cols-2">
-        <div>
-          <SectionHeader
-            eyebrow="Gather"
-            title="Upcoming events"
-            action={
-              <Link href="/events">
-                <Button variant="outline" size="sm">
-                  All events
-                </Button>
-              </Link>
-            }
-          />
-          {upcomingEvents.length ? (
-            <div className="space-y-3">
-              {upcomingEvents.map((event) => (
-                <div key={event.id} className="surface p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-brand-700">
-                    {formatDate(event.startsAt)}
-                  </p>
-                  <h3 className="mt-1 font-serif text-lg font-semibold">
-                    {event.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-charcoal/65">
-                    {event.location || "Location to be confirmed"}
-                  </p>
-                </div>
-              ))}
+          </div>
+          <div className="surface flex items-start gap-3 p-5">
+            <Phone className="mt-0.5 h-5 w-5 shrink-0 text-brand-700" aria-hidden="true" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
+                Phone
+              </p>
+              <p className="mt-1 text-base leading-7 text-charcoal/75">
+                {settings.phone}
+              </p>
             </div>
-          ) : (
-            <EmptyState
-              icon={<CalendarDays className="h-6 w-6" aria-hidden="true" />}
-              title="No events published yet"
-              description="Upcoming events will appear here once the admin team publishes them."
-            />
-          )}
-        </div>
-        <div>
-          <SectionHeader
-            eyebrow="Listen"
-            title="Latest sermons"
-            action={
-              <Link href="/sermons">
-                <Button variant="outline" size="sm">
-                  All sermons
-                </Button>
-              </Link>
-            }
-          />
-          {latestSermons.length ? (
-            <div className="space-y-3">
-              {latestSermons.map((sermon) => (
-                <div key={sermon.id} className="surface p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-brand-700">
-                    {formatDate(sermon.preachedAt)}
-                  </p>
-                  <h3 className="mt-1 font-serif text-lg font-semibold">
-                    {sermon.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-charcoal/65">
-                    {sermon.speaker || "Speaker to be confirmed"}
-                  </p>
-                </div>
-              ))}
+          </div>
+          <div className="surface flex items-start gap-3 p-5">
+            <Mail className="mt-0.5 h-5 w-5 shrink-0 text-brand-700" aria-hidden="true" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
+                Email
+              </p>
+              <p className="mt-1 break-words text-base leading-7 text-charcoal/75">
+                {settings.email}
+              </p>
             </div>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <span className="text-sm font-bold uppercase tracking-wide text-charcoal/45">
+            Follow us
+          </span>
+          {socials.length ? (
+            socials.map((social) => {
+              const Icon = social.icon;
+              return (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={social.label}
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 bg-white text-brand-800 transition hover:bg-brand-50"
+                >
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </a>
+              );
+            })
           ) : (
-            <EmptyState
-              icon={<Mic2 className="h-6 w-6" aria-hidden="true" />}
-              title="Sermons coming soon"
-              description="Published sermons and messages will appear here."
-            />
+            <span className="text-sm text-charcoal/45">
+              [Social links - edit in Admin]
+            </span>
           )}
         </div>
       </section>
 
-      <section className="mt-12 overflow-hidden rounded-3xl bg-charcoal px-6 py-10 text-center text-cream sm:px-10">
-        <h2 className="font-serif text-2xl font-bold text-white sm:text-3xl">
+      <section className="mt-14 overflow-hidden rounded-3xl bg-charcoal px-6 py-10 text-center text-cream sm:px-10">
+        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-gold-200">
+          <Cross className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <h2 className="mt-4 font-serif text-2xl font-bold text-white sm:text-3xl">
           Your place is waiting
         </h2>
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-cream/70">
-          Create a member account to stay connected, request a department and
-          follow church life.
+        <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-cream/70">
+          Come and worship with us, grow in the Word and discover your place in
+          the house.
         </p>
         <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
-          <Link href="/register">
-            <Button variant="gold" className="w-full sm:w-auto">
-              Register as a member
-            </Button>
+          <Link
+            href="/register"
+            className={buttonClasses("gold", "lg", "w-full sm:w-auto")}
+          >
+            Join Our Church Family
           </Link>
-          <Link href="/contact">
-            <Button
-              variant="outline"
-              className="w-full border-white/25 bg-transparent text-white hover:bg-white/10 sm:w-auto"
-            >
-              Contact the church
-            </Button>
+          <Link
+            href="/departments"
+            className={buttonClasses(
+              "outline",
+              "lg",
+              "w-full border-white/25 bg-transparent text-white hover:bg-white/10 sm:w-auto",
+            )}
+          >
+            Explore departments
           </Link>
         </div>
       </section>

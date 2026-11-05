@@ -1,92 +1,232 @@
 import type { Metadata } from "next";
-import { Mail, MapPin, Phone, MessageCircle } from "lucide-react";
+import Link from "next/link";
+import {
+  CalendarDays,
+  Facebook,
+  Instagram,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Youtube,
+} from "lucide-react";
 import { getSettings } from "@/lib/settings";
-import { PageHero } from "@/components/ui/display";
+import { getBlock, getContentMap } from "@/lib/content";
+import { buttonClasses } from "@/components/ui/button";
+import { PageHero, SectionHeader } from "@/components/ui/display";
 
-export const metadata: Metadata = { title: "Contact" };
 export const dynamic = "force-dynamic";
 
-export default async function ContactPage() {
-  const settings = await getSettings();
+export const metadata: Metadata = {
+  title: "Contact",
+  description:
+    "Contact IT IS FINISHED REVIVAL OUTREACH - address, phone, email, service times and appointment requests.",
+  openGraph: {
+    title: "Contact | IT IS FINISHED REVIVAL OUTREACH",
+    description:
+      "Address, phone, email, service times and appointment requests.",
+    type: "website",
+  },
+};
 
-  const items = [
-    { icon: MapPin, label: "Address", value: settings.address },
-    { icon: Phone, label: "Phone", value: settings.phone },
-    { icon: Mail, label: "Email", value: settings.email },
-    { icon: MessageCircle, label: "WhatsApp group", value: settings.whatsapp_group_url },
-  ];
+export default async function ContactPage() {
+  const [settings, content] = await Promise.all([
+    getSettings(),
+    getContentMap(),
+  ]);
+  const appointment = getBlock(content, "appointment_cta");
+
+  const socials = [
+    { href: settings.facebook_url, label: "Facebook", icon: Facebook },
+    { href: settings.instagram_url, label: "Instagram", icon: Instagram },
+    { href: settings.youtube_url, label: "YouTube", icon: Youtube },
+    {
+      href: settings.whatsapp_group_url,
+      label: "WhatsApp",
+      icon: MessageCircle,
+    },
+  ].filter((social) => social.href.startsWith("http"));
+
+  const phoneIsLink = settings.phone.startsWith("+");
+  const emailIsLink =
+    settings.email.includes("@") && !settings.email.startsWith("[");
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
       <PageHero
         eyebrow="Connect"
         title="We would love to hear from you"
-        description="Reach out with questions about the church, membership or visiting."
+        description={`Reach out with questions about ${settings.church_name}, membership or visiting.`}
       />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        {items.map((item) => {
-          const Icon = item.icon;
-          const isLink =
-            item.label === "Phone"
-              ? item.value.startsWith("+")
-              : item.label === "Email"
-                ? item.value.includes("@") && !item.value.startsWith("[")
-                : item.label === "WhatsApp group"
-                  ? item.value.startsWith("http")
-                  : false;
-          const href =
-            item.label === "Phone"
-              ? `tel:${item.value}`
-              : item.label === "Email"
-                ? `mailto:${item.value}`
-                : item.value;
-          return (
-            <div key={item.label} className="surface flex items-start gap-3 p-5">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-                <Icon className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
-                  {item.label}
-                </p>
-                {isLink ? (
-                  <a
-                    href={href}
-                    target={item.label === "WhatsApp group" ? "_blank" : undefined}
-                    rel={item.label === "WhatsApp group" ? "noreferrer" : undefined}
-                    className="mt-1 block break-words text-sm font-semibold text-brand-800 hover:underline"
-                  >
-                    {item.value}
-                  </a>
-                ) : (
-                  <p className="mt-1 break-words text-sm font-semibold text-charcoal/75">
-                    {item.value || "[Not set - edit in Admin]"}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <section className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="surface flex items-start gap-3 p-5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+            <MapPin className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
+              Address
+            </p>
+            <p className="mt-1 break-words text-base font-semibold leading-7 text-charcoal/75">
+              {settings.address}
+            </p>
+          </div>
+        </div>
 
-      <div className="mt-8 surface p-6">
-        <h2 className="font-serif text-2xl font-semibold">Service times</h2>
-        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="surface flex items-start gap-3 p-5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+            <Phone className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
+              Phone
+            </p>
+            {phoneIsLink ? (
+              <a
+                href={`tel:${settings.phone}`}
+                className="mt-1 block break-words text-base font-semibold leading-7 text-brand-800 hover:underline"
+              >
+                {settings.phone}
+              </a>
+            ) : (
+              <p className="mt-1 break-words text-base font-semibold leading-7 text-charcoal/75">
+                {settings.phone || "[Church phone - edit in Admin]"}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="surface flex items-start gap-3 p-5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+            <Mail className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
+              Email
+            </p>
+            {emailIsLink ? (
+              <a
+                href={`mailto:${settings.email}`}
+                className="mt-1 block break-words text-base font-semibold leading-7 text-brand-800 hover:underline"
+              >
+                {settings.email}
+              </a>
+            ) : (
+              <p className="mt-1 break-words text-base font-semibold leading-7 text-charcoal/75">
+                {settings.email || "[Church email - edit in Admin]"}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="surface flex items-start gap-3 p-5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+            <CalendarDays className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
+              Service times
+            </p>
+            <p className="mt-1 text-base leading-7 text-charcoal/75">
+              {settings.service_sunday}
+            </p>
+            <p className="text-base leading-7 text-charcoal/75">
+              {settings.service_weekday}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-8 surface p-6">
+        <SectionHeader
+          eyebrow="Visit"
+          title="Plan your visit"
+          description="Let us know you are coming and we will help you find your way."
+          className="mb-4"
+        />
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <dt className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
-              Sunday service
-            </dt>
-            <dd className="mt-1 text-sm text-charcoal/75">{settings.service_sunday}</dd>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-charcoal/45">
+              Location
+            </h3>
+            <p className="mt-2 text-base leading-7 text-charcoal/75">
+              {settings.address}
+            </p>
+            <p className="mt-4 rounded-2xl border border-dashed border-brand-200 bg-cream/60 p-4 text-sm text-charcoal/55">
+              [Map embed - edit in Admin]
+            </p>
           </div>
           <div>
-            <dt className="text-xs font-bold uppercase tracking-wide text-charcoal/45">
-              Midweek service
-            </dt>
-            <dd className="mt-1 text-sm text-charcoal/75">{settings.service_weekday}</dd>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-charcoal/45">
+              Before you come
+            </h3>
+            <p className="mt-2 text-base leading-7 text-charcoal/70">
+              You do not need to have everything figured out. Come as you are and
+              worship with us.
+            </p>
+            <Link
+              href="/faq"
+              className={buttonClasses("outline", "lg", "mt-4 w-full sm:w-auto")}
+            >
+              Read the FAQ
+            </Link>
           </div>
-        </dl>
-      </div>
+        </div>
+      </section>
+
+      <section className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-3xl bg-charcoal p-6 text-cream shadow-lift">
+          <h2 className="font-serif text-2xl font-bold text-white">
+            {appointment.title}
+          </h2>
+          <p className="mt-3 text-base leading-7 text-cream/75">
+            {appointment.body}
+          </p>
+          {emailIsLink ? (
+            <a
+              href={`mailto:${settings.email}?subject=Appointment%20request`}
+              className={buttonClasses("gold", "lg", "mt-5 w-full sm:w-auto")}
+            >
+              Request an appointment
+            </a>
+          ) : (
+            <p className="mt-5 rounded-2xl border border-white/15 bg-white/5 p-4 text-sm text-cream/60">
+              Add a church email in Admin to enable online appointment requests.
+            </p>
+          )}
+        </div>
+
+        <div className="surface p-6">
+          <h2 className="font-serif text-2xl font-semibold">Follow us</h2>
+          <p className="mt-2 text-base leading-7 text-charcoal/65">
+            Stay connected with the church family.
+          </p>
+          {socials.length ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {socials.map((social) => {
+                const Icon = social.icon;
+                return (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={social.label}
+                    className="flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 bg-white text-brand-800 transition hover:bg-brand-50"
+                  >
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </a>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-charcoal/45">
+              [Social links - edit in Admin]
+            </p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

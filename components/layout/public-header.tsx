@@ -5,16 +5,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X, Cross, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PUBLIC_NAV } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/departments", label: "Departments" },
-  { href: "/events", label: "Events" },
-  { href: "/sermons", label: "Sermons" },
-  { href: "/contact", label: "Contact" },
-];
+const links = PUBLIC_NAV;
 
 export function PublicHeader({
   churchName,
