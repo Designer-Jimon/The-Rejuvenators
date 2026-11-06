@@ -183,6 +183,7 @@ export const departments = sqliteTable(
     slug: text("slug").notNull(),
     description: text("description"),
     icon: text("icon"),
+    iconKey: text("icon_key"),
     imageKey: text("image_key"),
     activities: text("activities"),
     headOfUnit: text("head_of_unit"),
@@ -316,6 +317,9 @@ export const departmentLeaders = sqliteTable(
       .notNull()
       .default(now),
     endedAt: integer("ended_at", { mode: "timestamp_ms" }),
+    centerId: text("center_id").references(() => worshipCenters.id, {
+      onDelete: "set null",
+    }),
     assignedBy: text("assigned_by").references(() => users.id, {
       onDelete: "set null",
     }),

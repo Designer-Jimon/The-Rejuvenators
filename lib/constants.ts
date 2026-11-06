@@ -142,6 +142,7 @@ export const PUBLIC_NAV = [
   { href: "/vision-mission", label: "Vision & Mission" },
   { href: "/activities", label: "Activities" },
   { href: "/departments", label: "Departments" },
+  { href: "/worship-centers", label: "Worship Centers" },
   { href: "/appointments", label: "Appointments" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },

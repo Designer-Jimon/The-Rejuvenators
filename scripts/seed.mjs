@@ -94,12 +94,12 @@ const rolePermissions = {
 };
 
 const departments = [
-  ["dept_worship", "Worship Team", "worship-team", "Praise, worship and music ministry.", 1],
-  ["dept_media", "Media Unit", "media-unit", "Photography, video and livestream.", 2],
-  ["dept_ushering", "Ushering Unit", "ushering-unit", "Welcome, seating and order.", 3],
-  ["dept_technical", "Technical Unit", "technical-unit", "Sound, lighting and technical support.", 4],
-  ["dept_content", "Content Unit", "content-unit", "Writing, design and social media.", 5],
-  ["dept_cleaning", "Cleaning Unit", "cleaning-unit", "Keeping the house of God clean and ready.", 6],
+  ["dept_worship", "Worship Team", "worship-team", "Praise, worship and music ministry.", "mic", 1],
+  ["dept_media", "Media Unit", "media-unit", "Photography, video and livestream.", "camera", 2],
+  ["dept_ushering", "Ushering Unit", "ushering-unit", "Welcome, seating and order.", "hand", 3],
+  ["dept_technical", "Technical Unit", "technical-unit", "Sound, lighting and technical support.", "wrench", 4],
+  ["dept_content", "Content Unit", "content-unit", "Writing, design and social media.", "pen", 5],
+  ["dept_cleaning", "Cleaning Unit", "cleaning-unit", "Keeping the house of God clean and ready.", "sparkles", 6],
 ];
 
 const worshipCenters = [
@@ -182,9 +182,9 @@ for (const [roleId, permissionIds] of Object.entries(rolePermissions)) {
   }
 }
 
-for (const [id, name, slug, description, sortOrder] of departments) {
+for (const [id, name, slug, description, iconKey, sortOrder] of departments) {
   lines.push(
-    `INSERT OR IGNORE INTO departments (id, name, slug, description, sort_order, is_active, created_at, updated_at) VALUES (${q(id)}, ${q(name)}, ${q(slug)}, ${q(description)}, ${sortOrder}, 1, unixepoch() * 1000, unixepoch() * 1000);`,
+    `INSERT OR IGNORE INTO departments (id, name, slug, description, icon_key, sort_order, is_active, created_at, updated_at) VALUES (${q(id)}, ${q(name)}, ${q(slug)}, ${q(description)}, ${q(iconKey)}, ${sortOrder}, 1, unixepoch() * 1000, unixepoch() * 1000);`,
   );
 }
 

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { asc, eq } from "drizzle-orm";
 import {
   CalendarDays,
+  Church,
   Facebook,
   Instagram,
   Mail,
@@ -10,6 +12,8 @@ import {
   Phone,
   Youtube,
 } from "lucide-react";
+import { getDb } from "@/lib/db";
+import { worshipCenters } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
 import { getBlock, getContentMap } from "@/lib/content";
 import { buttonClasses } from "@/components/ui/button";
@@ -30,9 +34,20 @@ export const metadata: Metadata = {
 };
 
 export default async function ContactPage() {
-  const [settings, content] = await Promise.all([
+  const db = await getDb();
+  const [settings, content, centers] = await Promise.all([
     getSettings(),
     getContentMap(),
+    db
+      .select({
+        id: worshipCenters.id,
+        name: worshipCenters.name,
+        city: worshipCenters.city,
+        state: worshipCenters.state,
+      })
+      .from(worshipCenters)
+      .where(eq(worshipCenters.isActive, true))
+      .orderBy(asc(worshipCenters.sortOrder), asc(worshipCenters.name)),
   ]);
   const appointment = getBlock(content, "appointment_cta");
 
@@ -137,6 +152,45 @@ export default async function ContactPage() {
           </div>
         </div>
       </section>
+
+      {centers.length ? (
+        <section className="content-auto mt-8 surface p-6">
+          <SectionHeader
+            eyebrow="Find us"
+            title="Worship centers"
+            description="We gather in more than one place. Choose the center nearest to you."
+            action={
+              <Link href="/worship-centers" prefetch>
+                <span className={buttonClasses("outline", "sm")}>View all</span>
+              </Link>
+            }
+            className="mb-4"
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {centers.map((center) => (
+              <Link
+                key={center.id}
+                href="/worship-centers"
+                prefetch
+                className="flex items-start gap-3 rounded-2xl border border-brand-100 p-4 transition hover:bg-brand-50/60 active:scale-[0.99] active:opacity-80"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                  <Church className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold text-charcoal">
+                    {center.name}
+                  </span>
+                  <span className="block text-xs text-charcoal/55">
+                    {[center.city, center.state].filter(Boolean).join(", ") ||
+                      "Address in admin"}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="content-auto mt-8 surface p-6">
         <SectionHeader

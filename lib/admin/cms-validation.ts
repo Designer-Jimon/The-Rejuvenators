@@ -69,11 +69,33 @@ export const eventSchema = z
   });
 
 export const departmentSchema = z.object({
-  id: z.string().trim().min(1),
+  id: optionalKey,
+  name: z.string().trim().min(1, "Enter the department name.").max(120),
+  slug: z.string().trim().max(120).optional().default(""),
+  iconKey: optionalKey,
   description: medium,
   imageKey: optionalKey,
   activities: long,
   headOfUnit: short,
+  sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
+  isActive: z.boolean().default(true),
+});
+
+export const worshipCenterSchema = z.object({
+  id: optionalKey,
+  name: z.string().trim().min(1, "Enter the center name.").max(160),
+  slug: z.string().trim().max(120).optional().default(""),
+  address: medium,
+  city: short,
+  state: short,
+  country: short,
+  phone: short,
+  email: short,
+  mapUrl: link,
+  photoKey: optionalKey,
+  serviceTimes: medium,
+  sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
+  isActive: z.boolean().default(true),
 });
 
 export const faqSchema = z.object({

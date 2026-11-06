@@ -5,6 +5,7 @@ import { asc, eq } from "drizzle-orm";
 import { ArrowRight, HeartHandshake, UserRound } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { departments } from "@/lib/db/schema";
+import { DepartmentIcon } from "@/lib/department-icons";
 import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
 import { EmptyState, PageHero } from "@/components/ui/display";
@@ -68,7 +69,10 @@ export default async function DepartmentsPage() {
                       {String(index + 1).padStart(2, "0")}
                     </span>
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 transition group-hover:bg-brand-100">
-                      <HeartHandshake className="h-5 w-5" aria-hidden="true" />
+                      <DepartmentIcon
+                        name={department.iconKey}
+                        className="h-5 w-5"
+                      />
                     </span>
                   </div>
                   <h2 className="mt-4 font-serif text-xl font-semibold group-hover:text-brand-800">

@@ -4,14 +4,10 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { and, asc, eq, ne } from "drizzle-orm";
-import {
-  ArrowLeft,
-  ArrowRight,
-  HeartHandshake,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, UserRound } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { departments } from "@/lib/db/schema";
+import { DepartmentIcon } from "@/lib/department-icons";
 import { getSettings } from "@/lib/settings";
 import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
@@ -154,7 +150,10 @@ export default async function DepartmentDetailPage({
 
         <aside className="rounded-3xl bg-brand-gradient p-6 text-cream shadow-lift">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-gold-200">
-            <HeartHandshake className="h-5 w-5" aria-hidden="true" />
+            <DepartmentIcon
+              name={department.iconKey}
+              className="h-5 w-5"
+            />
           </span>
           <h2 className="mt-4 font-serif text-xl font-bold text-white">
             Join the team

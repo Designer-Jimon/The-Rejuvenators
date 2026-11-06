@@ -8,7 +8,6 @@ import {
   Clock3,
   Cross,
   Facebook,
-  HeartHandshake,
   Instagram,
   Mail,
   MapPin,
@@ -27,6 +26,7 @@ import {
 } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
 import { getBlock, getContentMap } from "@/lib/content";
+import { DepartmentIcon } from "@/lib/department-icons";
 import { publicMediaUrl } from "@/lib/media";
 import { formatDate } from "@/lib/utils";
 import { buttonClasses } from "@/components/ui/button";
@@ -409,7 +409,10 @@ export default async function HomePage() {
                 className="group rounded-3xl border border-brand-100 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-200 active:scale-[0.99] active:opacity-80"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-                  <HeartHandshake className="h-5 w-5" aria-hidden="true" />
+                  <DepartmentIcon
+                    name={department.iconKey}
+                    className="h-5 w-5"
+                  />
                 </span>
                 <h3 className="mt-3 font-serif text-lg font-semibold group-hover:text-brand-800">
                   {department.name}

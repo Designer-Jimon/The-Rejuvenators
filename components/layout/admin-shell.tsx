@@ -10,6 +10,7 @@ import {
   CalendarClock,
   CalendarDays,
   ChevronRight,
+  Church,
   ClipboardCheck,
   Cross,
   FileText,
@@ -125,6 +126,13 @@ const navigation = [
     icon: Building2,
     exact: false,
     permission: "content",
+  },
+  {
+    href: "/admin/worship-centers",
+    label: "Worship centers",
+    icon: Church,
+    exact: false,
+    permission: "settings",
   },
   {
     href: "/admin/faqs",
