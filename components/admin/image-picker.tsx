@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { ImagePlus, Library, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { FormMessage } from "@/components/ui/form";
-import { compressImage } from "@/lib/client-image";
+import { PhotoPicker } from "@/components/ui/photo-picker";
+import { compressImageSafe } from "@/lib/client-image";
 import { publicMediaUrl } from "@/lib/media";
 
 export type MediaItem = {
@@ -36,13 +37,12 @@ export function ImagePicker({
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
 
   async function upload(file: File) {
     setError("");
     setUploading(true);
     try {
-      const compressed = await compressImage(file, {
+      const compressed = await compressImageSafe(file, {
         maxDimension: 1600,
         maxBytes: 300 * 1024,
       });
@@ -76,7 +76,6 @@ export function ImagePicker({
       );
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
@@ -108,15 +107,19 @@ export function ImagePicker({
               <Library className="h-4 w-4" aria-hidden="true" />
               Choose
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileRef.current?.click()}
-              loading={uploading}
-            >
-              Upload
-            </Button>
+            <PhotoPicker
+              label="Upload"
+              changeLabel="Upload"
+              triggerClassName="min-h-11 px-3.5 text-sm"
+              disabled={uploading}
+              onChange={(file) => {
+                if (file) void upload(file);
+              }}
+              onError={setError}
+              trigger={<span>Upload</span>}
+              maxDimension={1600}
+              maxBytes={300 * 1024}
+            />
             {value ? (
               <Button
                 type="button"
@@ -142,17 +145,6 @@ export function ImagePicker({
           {error ? <FormMessage>{error}</FormMessage> : null}
         </div>
       </div>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="sr-only"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void upload(file);
-        }}
-      />
-
       <Modal
         open={open}
         onClose={() => setOpen(false)}

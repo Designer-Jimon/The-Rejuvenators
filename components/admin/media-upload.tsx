@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormMessage, Input, Label } from "@/components/ui/form";
+import { PhotoPicker } from "@/components/ui/photo-picker";
 import { useToast } from "@/components/ui/toast";
-import { compressImage } from "@/lib/client-image";
+import { fetchWithTimeout } from "@/lib/client-fetch";
 
 export function MediaUpload() {
   const router = useRouter();
@@ -24,14 +25,10 @@ export function MediaUpload() {
     setError("");
     setUploading(true);
     try {
-      const compressed = await compressImage(file, {
-        maxDimension: 1600,
-        maxBytes: 300 * 1024,
-      });
       const body = new FormData();
-      body.append("file", compressed);
+      body.append("file", file);
       body.append("altText", altText);
-      const response = await fetch("/api/admin/media", {
+      const response = await fetchWithTimeout("/api/admin/media", {
         method: "POST",
         body,
       });
@@ -62,15 +59,16 @@ export function MediaUpload() {
       </p>
       <div className="mt-4 space-y-3">
         <div>
-          <Label htmlFor="media-file">Image file</Label>
-          <Input
-            id="media-file"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(event) => {
-              setFile(event.target.files?.[0] ?? null);
+          <Label>Image file</Label>
+          <PhotoPicker
+            onChange={(picked) => {
+              setFile(picked);
               setError("");
             }}
+            onError={setError}
+            hasPhoto={Boolean(file)}
+            maxDimension={1600}
+            maxBytes={300 * 1024}
           />
           {file ? (
             <p className="field-hint truncate">Selected: {file.name}</p>

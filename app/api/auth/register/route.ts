@@ -8,7 +8,7 @@ import {
   users,
 } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
-import { uploadImage } from "@/lib/media";
+import { createUserSession } from "@/lib/auth/session";
 import { notifyPermission } from "@/lib/notifications";
 import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { csrfFailure, sameOrigin } from "@/lib/http";
@@ -94,18 +94,6 @@ export async function POST(request: Request) {
   }
 
   const userId = crypto.randomUUID();
-  let avatarKey: string | null = null;
-  const avatar = formData.get("avatar");
-  if (avatar instanceof File && avatar.size > 0) {
-    try {
-      avatarKey = await uploadImage(avatar, "avatars", userId);
-    } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : "Photo upload failed." },
-        { status: 400 },
-      );
-    }
-  }
 
   const passwordHash = await hashPassword(parsed.data.password);
   const now = new Date();
@@ -131,7 +119,6 @@ export async function POST(request: Request) {
         address: parsed.data.address,
         occupation: parsed.data.occupation || null,
         bio: parsed.data.bio || null,
-        avatarKey,
         requestedDepartmentId: departmentId,
         registrationStatus: "pending",
         memberStatus: "inactive",
@@ -150,11 +137,21 @@ export async function POST(request: Request) {
       }),
     ]);
   } catch (error) {
-    console.error("Registration failed", error);
+    console.error("Registration failed", {
+      email: parsed.data.email,
+      userId,
+      error,
+    });
     return NextResponse.json(
       { error: "We could not complete your registration. Please try again." },
       { status: 500 },
     );
+  }
+
+  try {
+    await createUserSession(userId);
+  } catch (error) {
+    console.error("Registration session could not be created", { userId, error });
   }
 
   await notifyPermission("member.review", {

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Camera, CheckCircle2, ImagePlus, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormField, FormMessage, Input, Select, Textarea } from "@/components/ui/form";
+import { PhotoPicker } from "@/components/ui/photo-picker";
 import { cn } from "@/lib/utils";
-import { compressImage } from "@/lib/client-image";
+import { fetchWithTimeout } from "@/lib/client-fetch";
 
 type DepartmentOption = { id: string; name: string };
 
@@ -90,13 +91,8 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
       setPreview(null);
       return;
     }
-    try {
-      const compressed = await compressImage(file, { maxDimension: 1200, maxBytes: 280 * 1024 });
-      setAvatar(compressed);
-      setPreview(URL.createObjectURL(compressed));
-    } catch (photoError) {
-      setError(photoError instanceof Error ? photoError.message : "Could not use that photo.");
-    }
+    setAvatar(file);
+    setPreview(URL.createObjectURL(file));
   }
 
   async function submit() {
@@ -105,17 +101,37 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
     try {
       const data = new FormData();
       Object.entries(form).forEach(([key, value]) => data.append(key, value));
-      if (avatar) data.append("avatar", avatar);
 
-      const response = await fetch("/api/auth/register", {
+      const response = await fetchWithTimeout("/api/auth/register", {
         method: "POST",
         body: data,
       });
-      const result = (await response.json()) as { ok?: boolean; error?: string };
+      let result: { ok?: boolean; error?: string } = {};
+      try {
+        result = (await response.json()) as { ok?: boolean; error?: string };
+      } catch {
+        result = {};
+      }
       if (!response.ok) {
-        throw new Error(result.error ?? "Registration failed. Please try again.");
+        throw new Error(
+          result.error ?? `Registration failed (${response.status}). Please try again.`,
+        );
       }
       setDone(true);
+
+      if (avatar) {
+        try {
+          const photo = new FormData();
+          photo.append("kind", "avatar");
+          photo.append("file", avatar);
+          await fetchWithTimeout("/api/member/media", {
+            method: "POST",
+            body: photo,
+          });
+        } catch {
+          /* Account is already created; a failed photo must not block sign-up. */
+        }
+      }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Registration failed.");
     } finally {
@@ -135,12 +151,12 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
           the membership team. You can sign in now to check your status.
         </p>
         <div className="mt-6 flex flex-col gap-2">
-          <Link href="/login?registered=1" prefetch>
-            <Button className="w-full">Sign in to your account</Button>
+          <Link href="/member/profile" prefetch>
+            <Button className="w-full">Continue to my profile</Button>
           </Link>
-          <Link href="/" prefetch>
+          <Link href="/login?registered=1" prefetch>
             <Button variant="outline" className="w-full">
-              Back to the website
+              Sign in instead
             </Button>
           </Link>
         </div>
@@ -290,17 +306,14 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-brand-200 bg-white px-4 text-sm font-semibold text-brand-800 hover:bg-brand-50">
-                  <ImagePlus className="h-4 w-4" aria-hidden="true" />
-                  Choose photo
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="user"
-                    className="sr-only"
-                    onChange={(event) => onPhoto(event.target.files?.[0] ?? null)}
-                  />
-                </label>
+                <PhotoPicker
+                  onChange={onPhoto}
+                  onError={setError}
+                  hasPhoto={Boolean(preview)}
+                  capture="user"
+                  maxDimension={1200}
+                  maxBytes={280 * 1024}
+                />
                 {preview ? (
                   <button
                     type="button"

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, ImagePlus, LockKeyhole, Save } from "lucide-react";
+import { PhotoPicker } from "@/components/ui/photo-picker";
 import { Button } from "@/components/ui/button";
 import {
   Avatar,
@@ -17,7 +18,8 @@ import {
   Textarea,
 } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
-import { compressImage } from "@/lib/client-image";
+import { compressImageSafe } from "@/lib/client-image";
+import { fetchWithTimeout } from "@/lib/client-fetch";
 import { formatDate } from "@/lib/utils";
 
 export type ProfileEditorData = {
@@ -87,14 +89,14 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
     setError(null);
     setUploading(kind);
     try {
-      const compressed = await compressImage(file, {
+      const compressed = await compressImageSafe(file, {
         maxDimension: kind === "avatar" ? 900 : 1800,
         maxBytes: kind === "avatar" ? 240 * 1024 : 520 * 1024,
       });
       const data = new FormData();
       data.append("kind", kind);
       data.append("file", compressed);
-      const response = await fetch("/api/member/media", {
+      const response = await fetchWithTimeout("/api/member/media", {
         method: "POST",
         body: data,
       });
@@ -117,7 +119,7 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
     setError(null);
     setSaving(true);
     try {
-      const response = await fetch("/api/member/profile", {
+      const response = await fetchWithTimeout("/api/member/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -161,16 +163,24 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
               : undefined
           }
         >
-          <label className="absolute right-3 top-3 inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-black/35 px-3 text-xs font-semibold text-white backdrop-blur hover:bg-black/50">
-            <ImagePlus className="h-4 w-4" aria-hidden="true" />
-            {uploading === "cover" ? "Uploading..." : "Change cover"}
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={(event) => upload("cover", event.target.files?.[0] ?? null)}
+          <div className="absolute right-3 top-3">
+            <PhotoPicker
+              onChange={(file) => upload("cover", file)}
+              onError={setError}
+              label="Change cover"
+              changeLabel="Change cover"
+              disabled={uploading !== null}
+              maxDimension={1800}
+              maxBytes={520 * 1024}
+              triggerClassName="border-transparent bg-black/35 text-xs text-white backdrop-blur hover:bg-black/50"
+              trigger={
+                <>
+                  <ImagePlus className="h-4 w-4" aria-hidden="true" />
+                  {uploading === "cover" ? "Uploading..." : "Change cover"}
+                </>
+              }
             />
-          </label>
+          </div>
         </div>
         <div className="relative px-4 pb-5 pt-3 sm:px-6">
           <div className="-mt-12 flex flex-wrap items-end justify-between gap-4">
@@ -182,17 +192,20 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
                   size="xl"
                   className="border-4 border-white shadow-lift"
                 />
-                <label className="absolute -bottom-1 -right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-brand-700 text-cream shadow-soft hover:bg-brand-800">
-                  <Camera className="h-4 w-4" aria-hidden="true" />
-                  <span className="sr-only">Change profile photo</span>
-                  <input
-                    type="file"
-                    accept="image/*"
+                <div className="absolute -bottom-1 -right-1">
+                  <PhotoPicker
+                    onChange={(file) => upload("avatar", file)}
+                    onError={setError}
+                    label="Change profile photo"
+                    changeLabel="Change profile photo"
                     capture="user"
-                    className="sr-only"
-                    onChange={(event) => upload("avatar", event.target.files?.[0] ?? null)}
+                    disabled={uploading !== null}
+                    maxDimension={900}
+                    maxBytes={240 * 1024}
+                    triggerClassName="w-9 border-transparent bg-brand-700 px-0 text-cream hover:bg-brand-800"
+                    trigger={<Camera className="h-4 w-4" aria-hidden="true" />}
                   />
-                </label>
+                </div>
               </div>
               <div className="pb-1">
                 <h1 className="font-serif text-2xl font-bold leading-tight">

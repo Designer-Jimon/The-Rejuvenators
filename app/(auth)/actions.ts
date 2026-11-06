@@ -15,6 +15,7 @@ import {
 import { hasPermission, isAdmin } from "@/lib/auth/authorize";
 import { checkRateLimit, clientIpFromHeaders, rateLimitKey } from "@/lib/rate-limit";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { sameOriginServerAction } from "@/lib/http";
 import { safeNextPath } from "@/lib/utils";
 import {
   changePasswordSchema,
@@ -273,15 +274,7 @@ export async function logoutAction() {
 }
 
 async function sameOriginHeaders() {
-  const headerStore = await headers();
-  const origin = headerStore.get("origin");
-  if (!origin) return false;
-  const host = headerStore.get("host");
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
-  }
+  return sameOriginServerAction();
 }
 
 function csrfFailureState(): AuthState {

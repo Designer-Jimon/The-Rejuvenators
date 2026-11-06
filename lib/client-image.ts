@@ -42,3 +42,20 @@ export async function compressImage(
   const name = file.name.replace(/\.[^.]+$/, "") || "photo";
   return new File([blob], `${name}.jpg`, { type: "image/jpeg" });
 }
+
+export async function compressImageSafe(
+  file: File,
+  options?: { maxDimension?: number; maxBytes?: number },
+  timeoutMs = 8000,
+) {
+  try {
+    return await Promise.race([
+      compressImage(file, options),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Image compression timed out.")), timeoutMs);
+      }),
+    ]);
+  } catch {
+    return file;
+  }
+}
