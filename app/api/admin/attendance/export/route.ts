@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       email: users.email,
       memberCode: memberProfiles.memberCode,
       status: attendanceRecords.status,
-      markedAt: attendanceRecords.markedAt,
+      recordedAt: attendanceRecords.recordedAt,
     })
     .from(attendanceRecords)
     .innerJoin(events, eq(events.id, attendanceRecords.eventId))
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     "Member ID",
     "Email",
     "Status",
-    "Marked at",
+    "Recorded at",
   ];
   const csv = [
     header.map(cell).join(","),
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
         row.memberCode,
         row.email,
         row.status,
-        row.markedAt,
+        row.recordedAt,
       ]
         .map(cell)
         .join(","),

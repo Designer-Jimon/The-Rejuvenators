@@ -118,7 +118,7 @@ export default async function AdminOverviewPage() {
           label="Approved"
           value={counts.approved}
           icon={<UserCheck className="h-5 w-5" aria-hidden="true" />}
-          tone="green"
+          tone="success"
         />
         <StatCard
           label="Active members"
@@ -129,7 +129,7 @@ export default async function AdminOverviewPage() {
           label="Departments"
           value={counts.departments}
           icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
-          tone="charcoal"
+          tone="neutral"
         />
       </section>
 

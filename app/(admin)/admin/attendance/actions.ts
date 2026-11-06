@@ -42,8 +42,7 @@ export async function unlockAttendance(formData: FormData) {
     entityId: row.submission.eventId,
     details: `Unlocked attendance for ${row.eventTitle}.`,
   });
-  await notifyUser({
-    userId: row.submission.submittedBy,
+  await notifyUser(row.submission.submittedBy, {
     type: NOTIFICATION_TYPES.adminNotice,
     title: "Attendance unlocked",
     body: `Your attendance submission for ${row.eventTitle} was unlocked. You can edit and resubmit it.`,
@@ -71,8 +70,7 @@ export async function sendAttendanceFollowup(formData: FormData) {
     .limit(1);
   if (!member) back("followups", "error", "Member not found.");
 
-  await notifyUser({
-    userId: member.id,
+  await notifyUser(member.id, {
     type: NOTIFICATION_TYPES.attendanceFollowup,
     title: "We missed you",
     body:

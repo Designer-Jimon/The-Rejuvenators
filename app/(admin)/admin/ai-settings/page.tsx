@@ -220,7 +220,7 @@ export default async function AiSettingsPage({
                       <Badge
                         tone={
                           run.status === "completed"
-                            ? "green"
+                            ? "success"
                             : run.status === "running"
                               ? "brand"
                               : "gold"

@@ -53,9 +53,9 @@ function displayDate(value: string) {
 }
 
 function statusTone(status: string) {
-  if (status === "published") return "green" as const;
+  if (status === "published") return "success" as const;
   if (status === "scheduled") return "brand" as const;
-  if (status === "rejected") return "charcoal" as const;
+  if (status === "rejected") return "neutral" as const;
   if (status === "failed") return "gold" as const;
   return "gold" as const;
 }
@@ -242,9 +242,9 @@ export default async function AdminDevotionalsPage({
                             {plan.status}
                           </Badge>
                           {plan.isActive ? (
-                            <Badge tone="green">Active</Badge>
+                            <Badge tone="success">Active</Badge>
                           ) : (
-                            <Badge tone="charcoal">Paused</Badge>
+                            <Badge tone="neutral">Paused</Badge>
                           )}
                           {plan.autoPublish ? (
                             <Badge tone="brand">Auto-publish 5 AM</Badge>

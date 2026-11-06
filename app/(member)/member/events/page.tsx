@@ -164,7 +164,7 @@ export default async function MemberEventsPage() {
         <StatCard
           label="Times present"
           value={stats.overall}
-          tone="green"
+          tone="success"
           icon={<CheckCircle2 className="h-5 w-5" aria-hidden="true" />}
         />
         <StatCard
@@ -176,7 +176,7 @@ export default async function MemberEventsPage() {
         <StatCard
           label="Attendance rate"
           value={`${stats.percentage}%`}
-          tone="charcoal"
+          tone="neutral"
           icon={<ClipboardCheck className="h-5 w-5" aria-hidden="true" />}
         />
       </section>
@@ -325,10 +325,10 @@ export default async function MemberEventsPage() {
                     <Badge
                       tone={
                         status === "present"
-                          ? "green"
+                          ? "success"
                           : status === "excused"
                             ? "gold"
-                            : "charcoal"
+                            : "neutral"
                       }
                     >
                       {status}

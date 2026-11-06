@@ -107,7 +107,7 @@ export default async function AdminAttendancePage({
           email: users.email,
           memberCode: memberProfiles.memberCode,
           status: attendanceRecords.status,
-          markedAt: attendanceRecords.markedAt,
+          recordedAt: attendanceRecords.recordedAt,
         })
         .from(attendanceRecords)
         .innerJoin(users, eq(users.id, attendanceRecords.userId))
@@ -163,7 +163,7 @@ export default async function AdminAttendancePage({
     const current = absentByMember.get(row.userId);
     if (current) {
       current.absences += 1;
-      if (row.markedAt > current.lastAbsent) current.lastAbsent = row.markedAt;
+      if (row.recordedAt > current.lastAbsent) current.lastAbsent = row.recordedAt;
     } else {
       absentByMember.set(row.userId, {
         userId: row.userId,
@@ -171,7 +171,7 @@ export default async function AdminAttendancePage({
         email: row.email,
         memberCode: row.memberCode,
         absences: 1,
-        lastAbsent: row.markedAt,
+        lastAbsent: row.recordedAt,
       });
     }
   }
@@ -216,7 +216,7 @@ export default async function AdminAttendancePage({
         <StatCard
           label="Attendance rate"
           value={`${rate}%`}
-          tone="green"
+          tone="success"
           icon={<Users className="h-5 w-5" aria-hidden="true" />}
         />
         <StatCard
@@ -228,7 +228,7 @@ export default async function AdminAttendancePage({
         <StatCard
           label="Unlock requests"
           value={unlockRequests}
-          tone="charcoal"
+          tone="neutral"
           icon={<LockKeyhole className="h-5 w-5" aria-hidden="true" />}
         />
       </section>
@@ -275,7 +275,7 @@ export default async function AdminAttendancePage({
                   </div>
                   <Badge
                     tone={
-                      row.status === "unlock_requested" ? "gold" : "green"
+                      row.status === "unlock_requested" ? "gold" : "success"
                     }
                   >
                     {row.status === "unlock_requested"

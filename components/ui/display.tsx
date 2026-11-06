@@ -205,13 +205,13 @@ export function StatCard({
   value: ReactNode;
   hint?: string;
   icon?: ReactNode;
-  tone?: "brand" | "gold" | "green" | "charcoal";
+  tone?: "brand" | "gold" | "success" | "neutral";
 }) {
   const tones = {
     brand: "bg-brand-50 text-brand-700",
     gold: "bg-gold-200/60 text-gold-500",
-    green: "bg-emerald-50 text-emerald-700",
-    charcoal: "bg-charcoal/5 text-charcoal",
+    success: "bg-emerald-50 text-emerald-700",
+    neutral: "bg-charcoal/5 text-charcoal",
   };
   return (
     <div className="surface p-4 sm:p-5">

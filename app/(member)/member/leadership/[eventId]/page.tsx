@@ -201,7 +201,7 @@ export default async function LeaderAttendancePage({
               {submission ? (
                 <Badge
                   tone={
-                    submission.status === "unlock_requested" ? "gold" : "green"
+                    submission.status === "unlock_requested" ? "gold" : "success"
                   }
                 >
                   {submission.status === "unlock_requested"

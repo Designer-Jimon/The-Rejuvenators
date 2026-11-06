@@ -32,7 +32,7 @@ export async function GET(
     return NextResponse.json({ error: "File not found." }, { status: 404 });
   }
   const filename = (sermon.name ?? "sermon").replace(/["\r\n]/g, "");
-  return new NextResponse(object.body, {
+  return new NextResponse(object.body as unknown as BodyInit, {
     headers: {
       "Content-Type":
         sermon.type ?? object.httpMetadata?.contentType ?? "application/octet-stream",

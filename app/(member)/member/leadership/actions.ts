@@ -111,17 +111,15 @@ export async function submitDepartmentAttendance(formData: FormData) {
         eventId,
         userId: row.userId,
         status: row.status,
-        markedBy: user.id,
-        markedAt: now,
-        updatedAt: now,
+        recordedBy: user.id,
+        recordedAt: now,
       })
       .onConflictDoUpdate({
         target: [attendanceRecords.eventId, attendanceRecords.userId],
         set: {
           status: row.status,
-          markedBy: user.id,
-          markedAt: now,
-          updatedAt: now,
+          recordedBy: user.id,
+          recordedAt: now,
         },
       });
   }
@@ -154,8 +152,7 @@ export async function submitDepartmentAttendance(formData: FormData) {
     createdAt: now,
   });
 
-  await notifyPermission({
-    permission: PERMISSIONS.memberReview,
+  await notifyPermission(PERMISSIONS.memberReview, {
     type: NOTIFICATION_TYPES.adminNotice,
     title: "Attendance submitted",
     body: `${user.name} submitted ${event.title} for their department.`,
@@ -214,8 +211,7 @@ export async function requestAttendanceUnlock(formData: FormData) {
     details: reason || "Unlock requested.",
     createdAt: new Date(),
   });
-  await notifyPermission({
-    permission: PERMISSIONS.memberReview,
+  await notifyPermission(PERMISSIONS.memberReview, {
     type: NOTIFICATION_TYPES.adminNotice,
     title: "Attendance unlock requested",
     body: `${user.name} requested an unlock${reason ? `: ${reason}` : "."}`,

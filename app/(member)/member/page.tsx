@@ -158,13 +158,13 @@ export default async function MemberHomePage() {
             </span>
           }
           icon={<Clock3 className="h-5 w-5" aria-hidden="true" />}
-          tone="green"
+          tone="success"
         />
         <StatCard
           label="Unread alerts"
           value={user.unreadNotifications}
           icon={<Bell className="h-5 w-5" aria-hidden="true" />}
-          tone="charcoal"
+          tone="neutral"
         />
       </section>
 
