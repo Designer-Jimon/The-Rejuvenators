@@ -6,6 +6,7 @@ import {
   memberProfiles,
   userRoles,
   users,
+  worshipCenters,
 } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
 import { createUserSession } from "@/lib/auth/session";
@@ -52,6 +53,11 @@ export async function POST(request: Request) {
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
     gender: formData.get("gender"),
+    maritalStatus: formData.get("maritalStatus"),
+    country: formData.get("country"),
+    state: formData.get("state"),
+    lga: formData.get("lga"),
+    worshipCenterId: formData.get("worshipCenterId"),
     dateOfBirth: formData.get("dateOfBirth"),
     address: formData.get("address"),
     occupation: formData.get("occupation") || "",
@@ -76,6 +82,18 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "An account already exists with this email." },
       { status: 409 },
+    );
+  }
+
+  const center = await db
+    .select({ id: worshipCenters.id })
+    .from(worshipCenters)
+    .where(eq(worshipCenters.id, parsed.data.worshipCenterId))
+    .limit(1);
+  if (!center[0]) {
+    return NextResponse.json(
+      { error: "Select a valid worship center." },
+      { status: 400 },
     );
   }
 
@@ -115,6 +133,11 @@ export async function POST(request: Request) {
         userId,
         memberCode: memberCode(),
         gender: parsed.data.gender,
+        maritalStatus: parsed.data.maritalStatus,
+        country: parsed.data.country,
+        state: parsed.data.state,
+        lga: parsed.data.lga,
+        worshipCenterId: parsed.data.worshipCenterId,
         dateOfBirth: parsed.data.dateOfBirth,
         address: parsed.data.address,
         occupation: parsed.data.occupation || null,

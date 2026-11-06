@@ -27,6 +27,12 @@ export type ProfileEditorData = {
   email: string;
   phone: string;
   gender: string;
+  maritalStatus: string;
+  country: string;
+  state: string;
+  lga: string;
+  worshipCenterId: string;
+  worshipCenterName: string | null;
   dateOfBirth: string;
   address: string;
   occupation: string;
@@ -52,7 +58,20 @@ export type ProfileEditorData = {
   };
 };
 
-export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
+type CenterOption = {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+};
+
+export function ProfileEditor({
+  initial,
+  centers,
+}: {
+  initial: ProfileEditorData;
+  centers: CenterOption[];
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [form, setForm] = useState(initial);
@@ -126,6 +145,11 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
           name: form.name,
           phone: form.phone,
           gender: form.gender || undefined,
+          maritalStatus: form.maritalStatus || "",
+          country: form.country,
+          state: form.state,
+          lga: form.lga,
+          worshipCenterId: form.worshipCenterId,
           dateOfBirth: form.dateOfBirth || "",
           address: form.address,
           occupation: form.occupation,
@@ -292,6 +316,61 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
                 />
               </FormField>
             </div>
+            <FormField label="Marital status" htmlFor="profile-marital">
+              <Select
+                id="profile-marital"
+                value={form.maritalStatus}
+                onChange={(event) => update("maritalStatus", event.target.value)}
+              >
+                <option value="">Not set</option>
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+                <option value="divorced">Divorced</option>
+                <option value="widowed">Widowed</option>
+                <option value="prefer_not_to_say">Prefer not to say</option>
+              </Select>
+            </FormField>
+            <FormField label="Worship center" htmlFor="profile-center">
+              <Select
+                id="profile-center"
+                value={form.worshipCenterId}
+                onChange={(event) => update("worshipCenterId", event.target.value)}
+              >
+                <option value="">Not set</option>
+                {centers.map((center) => (
+                  <option key={center.id} value={center.id}>
+                    {center.name}
+                    {center.city ? ` — ${center.city}` : ""}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField label="Country" htmlFor="profile-country">
+                <Input
+                  id="profile-country"
+                  value={form.country}
+                  onChange={(event) => update("country", event.target.value)}
+                  autoComplete="country-name"
+                />
+              </FormField>
+              <FormField label="State" htmlFor="profile-state">
+                <Input
+                  id="profile-state"
+                  value={form.state}
+                  onChange={(event) => update("state", event.target.value)}
+                  autoComplete="address-level1"
+                />
+              </FormField>
+            </div>
+            <FormField label="LGA" htmlFor="profile-lga">
+              <Input
+                id="profile-lga"
+                value={form.lga}
+                onChange={(event) => update("lga", event.target.value)}
+                autoComplete="address-level2"
+              />
+            </FormField>
             <FormField label="Address" htmlFor="profile-address">
               <Textarea
                 id="profile-address"
@@ -377,6 +456,17 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
                 </dt>
                 <dd className="mt-0.5 text-charcoal/75">
                   {form.departmentName ?? "General Member"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-charcoal/45">
+                  Worship center
+                </dt>
+                <dd className="mt-0.5 text-charcoal/75">
+                  {centers.find((center) => center.id === form.worshipCenterId)
+                    ?.name ??
+                    form.worshipCenterName ??
+                    "Not set"}
                 </dd>
               </div>
               <div>

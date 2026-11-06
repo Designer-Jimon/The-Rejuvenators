@@ -36,7 +36,7 @@ export default async function AdminMemberDetailPage({
   const detail = await getMemberDetail(id);
   if (!detail) notFound();
 
-  const { user, profile, requestedDepartment } = detail;
+  const { user, profile, requestedDepartment, worshipCenter } = detail;
   const currentMembership = detail.memberships.find(
     (membership) =>
       membership.isActive &&
@@ -71,6 +71,8 @@ export default async function AdminMemberDetailPage({
                 <p className="text-sm text-charcoal/55">
                   {profile.memberCode} ·{" "}
                   {requestedDepartment?.name ?? "No department assigned"}
+                  {" · "}
+                  {worshipCenter?.name ?? "No worship center"}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   <Badge
@@ -157,6 +159,39 @@ export default async function AdminMemberDetailPage({
                 <dd className="mt-1 flex items-center gap-2 text-sm text-charcoal/75">
                   <CalendarDays className="h-4 w-4 text-brand-700" aria-hidden="true" />
                   {formatDate(profile.dateOfBirth)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-charcoal/45">
+                  Marital status
+                </dt>
+                <dd className="mt-1 text-sm text-charcoal/75">
+                  {profile.maritalStatus ? humanize(profile.maritalStatus) : "Not provided"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-charcoal/45">
+                  Worship center
+                </dt>
+                <dd className="mt-1 text-sm text-charcoal/75">
+                  {worshipCenter?.name ?? "Not provided"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-charcoal/45">
+                  State / LGA
+                </dt>
+                <dd className="mt-1 text-sm text-charcoal/75">
+                  {[profile.state, profile.lga].filter(Boolean).join(" · ") ||
+                    "Not provided"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-charcoal/45">
+                  Country
+                </dt>
+                <dd className="mt-1 text-sm text-charcoal/75">
+                  {profile.country || "Not provided"}
                 </dd>
               </div>
             </dl>

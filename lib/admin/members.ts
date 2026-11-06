@@ -18,6 +18,7 @@ import {
   roles,
   userRoles,
   users,
+  worshipCenters,
 } from "@/lib/db/schema";
 import { NOTIFICATION_TYPES } from "@/lib/constants";
 import { logAudit } from "@/lib/audit";
@@ -34,6 +35,7 @@ export type MemberListItem = {
   memberCode: string;
   avatarKey: string | null;
   departmentName: string | null;
+  worshipCenterName: string | null;
   registrationStatus: string;
   memberStatus: string;
   followupStatus: string;
@@ -43,6 +45,7 @@ export type MemberListItem = {
 export async function listMembers(options: {
   status?: string;
   search?: string;
+  centerId?: string;
   limit?: number;
 }) {
   const db = await getDb();
@@ -51,6 +54,9 @@ export async function listMembers(options: {
   if (options.status && options.status !== "all") {
     filters.push(eq(memberProfiles.registrationStatus, options.status as never));
   }
+  if (options.centerId) {
+    filters.push(eq(memberProfiles.worshipCenterId, options.centerId));
+  }
   if (options.search) {
     const term = `%${options.search.trim()}%`;
     const searchFilter = or(
@@ -58,6 +64,9 @@ export async function listMembers(options: {
       like(users.email, term),
       like(users.phone, term),
       like(memberProfiles.memberCode, term),
+      like(memberProfiles.country, term),
+      like(memberProfiles.state, term),
+      like(memberProfiles.lga, term),
     );
     if (searchFilter) filters.push(searchFilter);
   }
@@ -71,6 +80,7 @@ export async function listMembers(options: {
       memberCode: memberProfiles.memberCode,
       avatarKey: memberProfiles.avatarKey,
       departmentName: departments.name,
+      worshipCenterName: worshipCenters.name,
       registrationStatus: memberProfiles.registrationStatus,
       memberStatus: memberProfiles.memberStatus,
       followupStatus: memberProfiles.followupStatus,
@@ -82,6 +92,7 @@ export async function listMembers(options: {
       departments,
       eq(departments.id, memberProfiles.requestedDepartmentId),
     )
+    .leftJoin(worshipCenters, eq(worshipCenters.id, memberProfiles.worshipCenterId))
     .where(filters.length ? and(...filters) : undefined)
     .orderBy(desc(memberProfiles.createdAt))
     .limit(options.limit ?? 100);
@@ -128,6 +139,7 @@ export async function getMemberDetail(memberId: string) {
       user: users,
       profile: memberProfiles,
       requestedDepartment: departments,
+      worshipCenter: worshipCenters,
     })
     .from(users)
     .innerJoin(memberProfiles, eq(memberProfiles.userId, users.id))
@@ -135,6 +147,7 @@ export async function getMemberDetail(memberId: string) {
       departments,
       eq(departments.id, memberProfiles.requestedDepartmentId),
     )
+    .leftJoin(worshipCenters, eq(worshipCenters.id, memberProfiles.worshipCenterId))
     .where(eq(users.id, memberId))
     .limit(1);
 

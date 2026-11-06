@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { memberProfiles, users } from "@/lib/db/schema";
+import { memberProfiles, users, worshipCenters } from "@/lib/db/schema";
 import { requireApiUser } from "@/lib/auth/authorize";
 import { csrfFailure, readJson, sameOrigin } from "@/lib/http";
 import { profileUpdateSchema } from "@/lib/validation";
@@ -47,6 +47,23 @@ export async function PATCH(request: Request) {
   }
 
   const db = await getDb();
+  let worshipCenterId: string | null = parsed.data.worshipCenterId || null;
+  if (worshipCenterId) {
+    const center = await db
+      .select({ id: worshipCenters.id })
+      .from(worshipCenters)
+      .where(eq(worshipCenters.id, worshipCenterId))
+      .limit(1);
+    if (!center[0]) {
+      return NextResponse.json(
+        { error: "Select a valid worship center." },
+        { status: 400 },
+      );
+    }
+  } else {
+    worshipCenterId = null;
+  }
+
   const now = new Date();
   await db
     .update(users)
@@ -61,6 +78,11 @@ export async function PATCH(request: Request) {
     .update(memberProfiles)
     .set({
       gender: parsed.data.gender ?? null,
+      maritalStatus: parsed.data.maritalStatus || null,
+      country: parsed.data.country || null,
+      state: parsed.data.state || null,
+      lga: parsed.data.lga || null,
+      worshipCenterId,
       dateOfBirth: parsed.data.dateOfBirth || null,
       address: parsed.data.address || null,
       occupation: parsed.data.occupation || null,

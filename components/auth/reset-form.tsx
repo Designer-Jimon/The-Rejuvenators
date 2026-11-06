@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { resetPasswordAction, type AuthState } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
-import { FormField, FormMessage, Input } from "@/components/ui/form";
+import { FormField, FormMessage } from "@/components/ui/form";
+import {
+  PasswordChecklist,
+  PasswordInput,
+} from "@/components/ui/password-input";
 
 const initialState: AuthState = {};
 
@@ -13,6 +17,8 @@ export function ResetForm({ token }: { token: string }) {
     resetPasswordAction,
     initialState,
   );
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   if (state.success) {
     return (
@@ -30,21 +36,28 @@ export function ResetForm({ token }: { token: string }) {
       <input type="hidden" name="token" value={token} />
       {state.error ? <FormMessage>{state.error}</FormMessage> : null}
 
-      <FormField label="New password" htmlFor="password" hint="At least 8 characters with a letter and number.">
-        <Input
+      <FormField
+        label="New password"
+        htmlFor="password"
+        hint="Use 8+ characters with uppercase, lowercase and a number."
+      >
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
           required
         />
+        <PasswordChecklist value={password} confirmValue={confirmPassword} />
       </FormField>
       <FormField label="Confirm new password" htmlFor="confirmPassword">
-        <Input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
           autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
           required
         />
       </FormField>

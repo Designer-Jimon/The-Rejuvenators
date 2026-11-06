@@ -12,8 +12,17 @@ const password = z
   .string()
   .min(8, "Use at least 8 characters.")
   .max(128, "Password is too long.")
-  .regex(/[A-Za-z]/, "Include at least one letter.")
+  .regex(/[A-Z]/, "Include at least one uppercase letter.")
+  .regex(/[a-z]/, "Include at least one lowercase letter.")
   .regex(/[0-9]/, "Include at least one number.");
+
+export const maritalStatusValues = [
+  "single",
+  "married",
+  "divorced",
+  "widowed",
+  "prefer_not_to_say",
+] as const;
 
 export const registerSchema = z
   .object({
@@ -23,6 +32,28 @@ export const registerSchema = z
     password,
     confirmPassword: z.string(),
     gender: z.enum(["male", "female", "other", "prefer_not_to_say"]),
+    maritalStatus: z.enum(maritalStatusValues, {
+      error: "Select your marital status.",
+    }),
+    country: z
+      .string()
+      .trim()
+      .min(2, "Enter your country.")
+      .max(80, "Country is too long."),
+    state: z
+      .string()
+      .trim()
+      .min(2, "Enter your state.")
+      .max(80, "State is too long."),
+    lga: z
+      .string()
+      .trim()
+      .min(2, "Enter your LGA.")
+      .max(80, "LGA is too long."),
+    worshipCenterId: z
+      .string()
+      .trim()
+      .min(1, "Select your worship center."),
     dateOfBirth: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter your date of birth.")
@@ -80,6 +111,14 @@ export const profileUpdateSchema = z
     name,
     phone,
     gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional(),
+    maritalStatus: z
+      .enum(maritalStatusValues)
+      .optional()
+      .or(z.literal("")),
+    country: z.string().trim().max(80).optional().default(""),
+    state: z.string().trim().max(80).optional().default(""),
+    lga: z.string().trim().max(80).optional().default(""),
+    worshipCenterId: z.string().trim().max(80).optional().default(""),
     dateOfBirth: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)

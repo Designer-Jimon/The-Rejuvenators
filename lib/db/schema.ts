@@ -193,6 +193,31 @@ export const departments = sqliteTable(
   (table) => [uniqueIndex("departments_slug_unique").on(table.slug)],
 );
 
+export const worshipCenters = sqliteTable(
+  "worship_centers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    address: text("address"),
+    city: text("city"),
+    state: text("state"),
+    country: text("country").default("Nigeria"),
+    phone: text("phone"),
+    email: text("email"),
+    mapUrl: text("map_url"),
+    photoKey: text("photo_key"),
+    serviceTimes: text("service_times"),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    ...timestamps(),
+  },
+  (table) => [
+    uniqueIndex("worship_centers_slug_unique").on(table.slug),
+    index("worship_centers_active_idx").on(table.isActive),
+  ],
+);
+
 export const memberProfiles = sqliteTable(
   "member_profiles",
   {
@@ -202,6 +227,14 @@ export const memberProfiles = sqliteTable(
     memberCode: text("member_code").notNull(),
     gender: text("gender"),
     dateOfBirth: text("date_of_birth"),
+    maritalStatus: text("marital_status"),
+    country: text("country"),
+    state: text("state"),
+    lga: text("lga"),
+    worshipCenterId: text("worship_center_id").references(
+      () => worshipCenters.id,
+      { onDelete: "set null" },
+    ),
     address: text("address"),
     occupation: text("occupation"),
     bio: text("bio"),
@@ -240,6 +273,7 @@ export const memberProfiles = sqliteTable(
     uniqueIndex("member_profiles_code_unique").on(table.memberCode),
     index("member_profiles_status_idx").on(table.registrationStatus),
     index("member_profiles_department_idx").on(table.requestedDepartmentId),
+    index("member_profiles_center_idx").on(table.worshipCenterId),
   ],
 );
 
@@ -826,5 +860,6 @@ export const rateLimits = sqliteTable("rate_limits", {
 
 export type User = typeof users.$inferSelect;
 export type MemberProfile = typeof memberProfiles.$inferSelect;
+export type WorshipCenter = typeof worshipCenters.$inferSelect;
 export type Department = typeof departments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;

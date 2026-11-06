@@ -13,6 +13,7 @@ import {
   sessions,
   userRoles,
   users,
+  worshipCenters,
 } from "@/lib/db/schema";
 import { SESSION_COOKIE, SESSION_TTL_MS } from "@/lib/constants";
 import { hashToken, randomToken } from "./password";
@@ -35,6 +36,12 @@ export type SessionUser = {
     address: string | null;
     occupation: string | null;
     gender: string | null;
+    maritalStatus: string | null;
+    country: string | null;
+    state: string | null;
+    lga: string | null;
+    worshipCenterId: string | null;
+    worshipCenterName: string | null;
     dateOfBirth: string | null;
     requestedDepartmentId: string | null;
     requestedDepartmentName: string | null;
@@ -86,6 +93,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
       user: users,
       profile: memberProfiles,
       departmentName: departments.name,
+      worshipCenterName: worshipCenters.name,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
@@ -94,6 +102,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
       departments,
       eq(departments.id, memberProfiles.requestedDepartmentId),
     )
+    .leftJoin(worshipCenters, eq(worshipCenters.id, memberProfiles.worshipCenterId))
     .where(and(eq(sessions.id, sessionId), gt(sessions.expiresAt, new Date())))
     .limit(1);
 
@@ -130,6 +139,12 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
       address: row.profile?.address ?? null,
       occupation: row.profile?.occupation ?? null,
       gender: row.profile?.gender ?? null,
+      maritalStatus: row.profile?.maritalStatus ?? null,
+      country: row.profile?.country ?? null,
+      state: row.profile?.state ?? null,
+      lga: row.profile?.lga ?? null,
+      worshipCenterId: row.profile?.worshipCenterId ?? null,
+      worshipCenterName: row.worshipCenterName ?? null,
       dateOfBirth: row.profile?.dateOfBirth ?? null,
       requestedDepartmentId: row.profile?.requestedDepartmentId ?? null,
       requestedDepartmentName: row.departmentName ?? null,

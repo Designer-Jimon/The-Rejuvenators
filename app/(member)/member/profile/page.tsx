@@ -1,7 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import { getDb } from "@/lib/db";
-import { departmentMembers, departments } from "@/lib/db/schema";
+import {
+  departmentMembers,
+  departments,
+  worshipCenters,
+} from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth/authorize";
 import { getMemberAttendanceStats } from "@/lib/attendance";
 import { mediaUrl } from "@/lib/media";
@@ -28,14 +32,31 @@ export default async function ProfilePage() {
   const primaryDepartment =
     user.profile.requestedDepartmentName ?? memberships[0]?.name ?? null;
   const attendance = await getMemberAttendanceStats(user.id);
+  const centers = await db
+    .select({
+      id: worshipCenters.id,
+      name: worshipCenters.name,
+      city: worshipCenters.city,
+      state: worshipCenters.state,
+    })
+    .from(worshipCenters)
+    .where(eq(worshipCenters.isActive, true))
+    .orderBy(worshipCenters.sortOrder, worshipCenters.name);
 
   return (
     <ProfileEditor
+      centers={centers}
       initial={{
         name: user.name,
         email: user.email,
         phone: user.phone,
         gender: user.profile.gender ?? "",
+        maritalStatus: user.profile.maritalStatus ?? "",
+        country: user.profile.country ?? "",
+        state: user.profile.state ?? "",
+        lga: user.profile.lga ?? "",
+        worshipCenterId: user.profile.worshipCenterId ?? "",
+        worshipCenterName: user.profile.worshipCenterName ?? null,
         dateOfBirth: user.profile.dateOfBirth ?? "",
         address: user.profile.address ?? "",
         occupation: user.profile.occupation ?? "",

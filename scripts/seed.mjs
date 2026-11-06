@@ -102,6 +102,29 @@ const departments = [
   ["dept_cleaning", "Cleaning Unit", "cleaning-unit", "Keeping the house of God clean and ready.", 6],
 ];
 
+const worshipCenters = [
+  [
+    "center_1",
+    "[Worship Center 1 – edit in Admin]",
+    "worship-center-1",
+    "[Address - edit in Admin]",
+    "[City - edit in Admin]",
+    "[State - edit in Admin]",
+    "[Service times - edit in Admin]",
+    1,
+  ],
+  [
+    "center_2",
+    "[Worship Center 2 – edit in Admin]",
+    "worship-center-2",
+    "[Address - edit in Admin]",
+    "[City - edit in Admin]",
+    "[State - edit in Admin]",
+    "[Service times - edit in Admin]",
+    2,
+  ],
+];
+
 const settings = {
   church_name: "IT IS FINISHED REVIVAL OUTREACH",
   tagline: "A place of revival, restoration and purpose",
@@ -162,6 +185,12 @@ for (const [roleId, permissionIds] of Object.entries(rolePermissions)) {
 for (const [id, name, slug, description, sortOrder] of departments) {
   lines.push(
     `INSERT OR IGNORE INTO departments (id, name, slug, description, sort_order, is_active, created_at, updated_at) VALUES (${q(id)}, ${q(name)}, ${q(slug)}, ${q(description)}, ${sortOrder}, 1, unixepoch() * 1000, unixepoch() * 1000);`,
+  );
+}
+
+for (const [id, name, slug, address, city, state, serviceTimes, sortOrder] of worshipCenters) {
+  lines.push(
+    `INSERT OR IGNORE INTO worship_centers (id, name, slug, address, city, state, country, service_times, is_active, sort_order, created_at, updated_at) VALUES (${q(id)}, ${q(name)}, ${q(slug)}, ${q(address)}, ${q(city)}, ${q(state)}, 'Nigeria', ${q(serviceTimes)}, 1, ${sortOrder}, unixepoch() * 1000, unixepoch() * 1000);`,
   );
 }
 
@@ -338,14 +367,14 @@ for (let index = 0; index < faqs.length; index += 1) {
 lines.push(
   `INSERT OR IGNORE INTO users (id, name, email, phone, password_hash, status, must_change_password, created_at, updated_at) VALUES ('usr_super_admin', ${q(adminName)}, ${q(adminEmail)}, ${q("[Church phone - edit in Admin]")}, ${q(adminHash)}, 'active', 1, unixepoch() * 1000, unixepoch() * 1000);`,
   `INSERT OR IGNORE INTO user_roles (user_id, role_id, assigned_at) SELECT id, 'role_super_admin', unixepoch() * 1000 FROM users WHERE email = ${q(adminEmail)};`,
-  `INSERT OR IGNORE INTO member_profiles (user_id, member_code, gender, registration_status, member_status, followup_status, show_phone, show_email, show_last_seen, approved_at, created_at, updated_at) SELECT id, 'IIF-ADMIN-0001', 'prefer_not_to_say', 'approved', 'active', 'completed', 0, 0, 0, unixepoch() * 1000, unixepoch() * 1000, unixepoch() * 1000 FROM users WHERE email = ${q(adminEmail)};`,
+  `INSERT OR IGNORE INTO member_profiles (user_id, member_code, gender, worship_center_id, registration_status, member_status, followup_status, show_phone, show_email, show_last_seen, approved_at, created_at, updated_at) SELECT id, 'IIF-ADMIN-0001', 'prefer_not_to_say', 'center_1', 'approved', 'active', 'completed', 0, 0, 0, unixepoch() * 1000, unixepoch() * 1000, unixepoch() * 1000 FROM users WHERE email = ${q(adminEmail)};`,
   `INSERT OR IGNORE INTO department_members (id, department_id, user_id, role, is_active, joined_at) SELECT 'dm_admin_content', 'dept_content', id, 'member', 1, unixepoch() * 1000 FROM users WHERE email = ${q(adminEmail)};`,
 );
 
 lines.push(
   `INSERT OR IGNORE INTO users (id, name, email, phone, password_hash, status, must_change_password, created_at, updated_at) VALUES ('usr_test_member', ${q(memberName)}, ${q(memberEmail)}, '+10000000000', ${q(memberHash)}, 'active', 0, unixepoch() * 1000, unixepoch() * 1000);`,
   `INSERT OR IGNORE INTO user_roles (user_id, role_id, assigned_at) SELECT id, 'role_member', unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
-  `INSERT OR IGNORE INTO member_profiles (user_id, member_code, gender, date_of_birth, address, occupation, bio, requested_department_id, registration_status, member_status, followup_status, show_phone, show_email, show_last_seen, approved_at, created_at, updated_at) SELECT id, 'IIF-MEMBER-0001', 'prefer_not_to_say', '1995-01-01', ${q("[Test member address]")}, ${q("Volunteer")}, ${q("Seeded member account for local testing.")}, 'dept_worship', 'approved', 'active', 'completed', 0, 0, 0, unixepoch() * 1000, unixepoch() * 1000, unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
+  `INSERT OR IGNORE INTO member_profiles (user_id, member_code, gender, marital_status, country, state, lga, worship_center_id, date_of_birth, address, occupation, bio, requested_department_id, registration_status, member_status, followup_status, show_phone, show_email, show_last_seen, approved_at, created_at, updated_at) SELECT id, 'IIF-MEMBER-0001', 'prefer_not_to_say', 'prefer_not_to_say', 'Nigeria', ${q("[State]")}, ${q("[LGA]")}, 'center_1', '1995-01-01', ${q("[Test member address]")}, ${q("Volunteer")}, ${q("Seeded member account for local testing.")}, 'dept_worship', 'approved', 'active', 'completed', 0, 0, 0, unixepoch() * 1000, unixepoch() * 1000, unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
   `INSERT OR IGNORE INTO department_members (id, department_id, user_id, role, is_active, joined_at) SELECT 'dm_member_worship', 'dept_worship', id, 'member', 1, unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
 );
 

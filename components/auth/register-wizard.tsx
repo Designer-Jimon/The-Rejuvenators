@@ -5,11 +5,17 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormField, FormMessage, Input, Select, Textarea } from "@/components/ui/form";
+import {
+  PasswordChecklist,
+  PasswordInput,
+  isStrongPassword,
+} from "@/components/ui/password-input";
 import { PhotoPicker } from "@/components/ui/photo-picker";
 import { cn } from "@/lib/utils";
 import { fetchWithTimeout } from "@/lib/client-fetch";
 
 type DepartmentOption = { id: string; name: string };
+type CenterOption = { id: string; name: string; city: string | null; state: string | null };
 
 type FormState = {
   name: string;
@@ -18,6 +24,11 @@ type FormState = {
   password: string;
   confirmPassword: string;
   gender: string;
+  maritalStatus: string;
+  country: string;
+  state: string;
+  lga: string;
+  worshipCenterId: string;
   dateOfBirth: string;
   address: string;
   occupation: string;
@@ -32,6 +43,11 @@ const initialForm: FormState = {
   password: "",
   confirmPassword: "",
   gender: "",
+  maritalStatus: "",
+  country: "Nigeria",
+  state: "",
+  lga: "",
+  worshipCenterId: "",
   dateOfBirth: "",
   address: "",
   occupation: "",
@@ -45,7 +61,13 @@ const steps = [
   { title: "Service", description: "Where would you like to serve?" },
 ];
 
-export function RegisterWizard({ departments }: { departments: DepartmentOption[] }) {
+export function RegisterWizard({
+  departments,
+  centers,
+}: {
+  departments: DepartmentOption[];
+  centers: CenterOption[];
+}) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(initialForm);
   const [avatar, setAvatar] = useState<File | null>(null);
@@ -68,9 +90,10 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
         return setError("Enter a valid email address.");
       }
       if (form.phone.trim().length < 7) return setError("Enter a valid phone number.");
-      if (form.password.length < 8) return setError("Use at least 8 characters for your password.");
-      if (!/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password)) {
-        return setError("Include a letter and a number in your password.");
+      if (!isStrongPassword(form.password)) {
+        return setError(
+          "Use 8+ characters with uppercase, lowercase and a number.",
+        );
       }
       if (form.password !== form.confirmPassword) {
         return setError("Passwords do not match.");
@@ -78,8 +101,15 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
     }
     if (step === 1) {
       if (!form.gender) return setError("Select an option for gender.");
+      if (!form.maritalStatus) return setError("Select your marital status.");
+      if (!form.country.trim()) return setError("Enter your country.");
+      if (!form.state.trim()) return setError("Enter your state.");
+      if (!form.lga.trim()) return setError("Enter your LGA.");
       if (!form.dateOfBirth) return setError("Enter your date of birth.");
       if (form.address.trim().length < 4) return setError("Enter your address.");
+    }
+    if (step === 2) {
+      if (!form.worshipCenterId) return setError("Select your worship center.");
     }
     setStep((current) => Math.min(steps.length - 1, current + 1));
   }
@@ -221,22 +251,28 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
               required
             />
           </FormField>
-          <FormField label="Password" htmlFor="password" hint="At least 8 characters with a letter and number.">
-            <Input
+          <FormField
+            label="Password"
+            htmlFor="password"
+            hint="Use 8+ characters with uppercase, lowercase and a number."
+          >
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               autoComplete="new-password"
               value={form.password}
               onChange={(event) => update("password", event.target.value)}
               required
             />
+            <PasswordChecklist
+              value={form.password}
+              confirmValue={form.confirmPassword}
+            />
           </FormField>
           <FormField label="Confirm password" htmlFor="confirmPassword">
-            <Input
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
               autoComplete="new-password"
               value={form.confirmPassword}
               onChange={(event) => update("confirmPassword", event.target.value)}
@@ -262,6 +298,54 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
               <option value="other">Other</option>
               <option value="prefer_not_to_say">Prefer not to say</option>
             </Select>
+          </FormField>
+          <FormField label="Marital status" htmlFor="maritalStatus">
+            <Select
+              id="maritalStatus"
+              name="maritalStatus"
+              value={form.maritalStatus}
+              onChange={(event) => update("maritalStatus", event.target.value)}
+              required
+            >
+              <option value="">Select an option</option>
+              <option value="single">Single</option>
+              <option value="married">Married</option>
+              <option value="divorced">Divorced</option>
+              <option value="widowed">Widowed</option>
+              <option value="prefer_not_to_say">Prefer not to say</option>
+            </Select>
+          </FormField>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField label="Country" htmlFor="country">
+              <Input
+                id="country"
+                name="country"
+                autoComplete="country-name"
+                value={form.country}
+                onChange={(event) => update("country", event.target.value)}
+                required
+              />
+            </FormField>
+            <FormField label="State" htmlFor="state">
+              <Input
+                id="state"
+                name="state"
+                autoComplete="address-level1"
+                value={form.state}
+                onChange={(event) => update("state", event.target.value)}
+                required
+              />
+            </FormField>
+          </div>
+          <FormField label="LGA" htmlFor="lga">
+            <Input
+              id="lga"
+              name="lga"
+              autoComplete="address-level2"
+              value={form.lga}
+              onChange={(event) => update("lga", event.target.value)}
+              required
+            />
           </FormField>
           <FormField label="Date of birth" htmlFor="dateOfBirth">
             <Input
@@ -334,6 +418,28 @@ export function RegisterWizard({ departments }: { departments: DepartmentOption[
 
       {step === 2 ? (
         <div className="space-y-4">
+          <FormField
+            label="Worship center"
+            htmlFor="worshipCenterId"
+            hint="Choose the center where you fellowship."
+          >
+            <Select
+              id="worshipCenterId"
+              name="worshipCenterId"
+              value={form.worshipCenterId}
+              onChange={(event) => update("worshipCenterId", event.target.value)}
+              required
+            >
+              <option value="">Select your worship center</option>
+              {centers.map((center) => (
+                <option key={center.id} value={center.id}>
+                  {center.name}
+                  {center.city ? ` — ${center.city}` : ""}
+                  {center.state ? `, ${center.state}` : ""}
+                </option>
+              ))}
+            </Select>
+          </FormField>
           <FormField
             label="Department preference"
             htmlFor="departmentId"

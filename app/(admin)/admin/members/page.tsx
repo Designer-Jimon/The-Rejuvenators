@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Search } from "lucide-react";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { worshipCenters } from "@/lib/db/schema";
 import { requirePermission } from "@/lib/auth/authorize";
 import { PERMISSIONS } from "@/lib/constants";
 import { listMembers, type MemberListItem } from "@/lib/admin/members";
@@ -8,7 +11,7 @@ import { formatDate, humanize } from "@/lib/utils";
 import { mediaUrl } from "@/lib/media";
 import { Avatar, Badge, ResponsiveTable } from "@/components/ui/display";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/form";
+import { Input, Select } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Membership" };
@@ -30,7 +33,7 @@ function statusTone(status: string) {
 export default async function AdminMembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; center?: string }>;
 }) {
   const user = await requirePermission(
     PERMISSIONS.memberReview,
@@ -41,8 +44,21 @@ export default async function AdminMembersPage({
     ? params.status!
     : "all";
   const search = (params.q ?? "").trim().slice(0, 80);
+  const centerId = (params.center ?? "").trim().slice(0, 80);
 
-  const members = await listMembers({ status, search, limit: 150 });
+  const db = await getDb();
+  const centers = await db
+    .select({ id: worshipCenters.id, name: worshipCenters.name })
+    .from(worshipCenters)
+    .where(eq(worshipCenters.isActive, true))
+    .orderBy(worshipCenters.sortOrder, worshipCenters.name);
+
+  const members = await listMembers({
+    status,
+    search,
+    centerId: centerId || undefined,
+    limit: 150,
+  });
 
   const columns = [
     {
@@ -81,6 +97,11 @@ export default async function AdminMembersPage({
       key: "department",
       header: "Department",
       render: (member: MemberListItem) => member.departmentName ?? "Not assigned",
+    },
+    {
+      key: "center",
+      header: "Worship center",
+      render: (member: MemberListItem) => member.worshipCenterName ?? "Not set",
     },
     {
       key: "followup",
@@ -123,7 +144,7 @@ export default async function AdminMembersPage({
         {tabs.map((tab) => (
           <Link
             key={tab.key}
-            href={`/admin/members?status=${tab.key}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
+            href={`/admin/members?status=${tab.key}${search ? `&q=${encodeURIComponent(search)}` : ""}${centerId ? `&center=${encodeURIComponent(centerId)}` : ""}`}
             prefetch
             className={cn(
               "inline-flex min-h-11 shrink-0 items-center rounded-2xl border px-4 text-sm font-semibold transition active:scale-[0.98] active:opacity-80",
@@ -159,8 +180,21 @@ export default async function AdminMembersPage({
             className="pl-9"
           />
         </div>
+        <div className="sm:w-64">
+          <label htmlFor="member-center" className="sr-only">
+            Filter by worship center
+          </label>
+          <Select id="member-center" name="center" defaultValue={centerId}>
+            <option value="">All worship centers</option>
+            {centers.map((center) => (
+              <option key={center.id} value={center.id}>
+                {center.name}
+              </option>
+            ))}
+          </Select>
+        </div>
         <Button type="submit" variant="secondary">
-          Search
+          Filter
         </Button>
       </form>
 
