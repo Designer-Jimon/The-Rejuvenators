@@ -24,6 +24,9 @@ const preferenceTypes = [
   NOTIFICATION_TYPES.memberStatus,
   NOTIFICATION_TYPES.leaderAssigned,
   NOTIFICATION_TYPES.appointmentUpdate,
+  NOTIFICATION_TYPES.eventCreated,
+  NOTIFICATION_TYPES.devotionalPublished,
+  NOTIFICATION_TYPES.attendanceFollowup,
   NOTIFICATION_TYPES.general,
 ];
 

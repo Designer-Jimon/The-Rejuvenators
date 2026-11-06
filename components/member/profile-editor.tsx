@@ -40,6 +40,14 @@ export type ProfileEditorData = {
   memberStatus: string | null;
   createdAt: string | null;
   roles: string[];
+  attendance: {
+    sunday: number;
+    midweek: number;
+    special: number;
+    overall: number;
+    totalMarked: number;
+    percentage: number;
+  };
 };
 
 export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
@@ -397,12 +405,45 @@ export function ProfileEditor({ initial }: { initial: ProfileEditorData }) {
           </div>
 
           <div className="surface p-5">
-            <h2 className="font-serif text-lg font-semibold">Attendance</h2>
-            <p className="mt-1 text-sm text-charcoal/60">
-              Attendance tracking launches in a later phase.
-            </p>
-            <div className="mt-4 flex items-center justify-center rounded-2xl bg-brand-50 py-5">
-              <ProgressRing value={0} label="No records yet" />
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h2 className="font-serif text-lg font-semibold">Attendance</h2>
+                <p className="mt-1 text-sm text-charcoal/60">
+                  Across {initial.attendance.totalMarked} marked gathering
+                  {initial.attendance.totalMarked === 1 ? "" : "s"}.
+                </p>
+              </div>
+              <ProgressRing
+                value={initial.attendance.percentage}
+                size={56}
+                stroke={6}
+              />
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-2xl bg-emerald-50 p-3">
+                <p className="font-serif text-xl font-bold text-emerald-800">
+                  {initial.attendance.overall}
+                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800/70">
+                  Present
+                </p>
+              </div>
+              <div className="rounded-2xl bg-brand-50 p-3">
+                <p className="font-serif text-xl font-bold text-brand-800">
+                  {initial.attendance.sunday}
+                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-brand-800/70">
+                  Sunday
+                </p>
+              </div>
+              <div className="rounded-2xl bg-amber-50 p-3">
+                <p className="font-serif text-xl font-bold text-amber-800">
+                  {initial.attendance.midweek}
+                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
+                  Midweek
+                </p>
+              </div>
             </div>
           </div>
         </aside>

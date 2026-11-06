@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getDb } from "@/lib/db";
 import { departmentMembers, departments } from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth/authorize";
+import { getMemberAttendanceStats } from "@/lib/attendance";
 import { mediaUrl } from "@/lib/media";
 import { ProfileEditor } from "@/components/member/profile-editor";
 
@@ -26,6 +27,7 @@ export default async function ProfilePage() {
 
   const primaryDepartment =
     user.profile.requestedDepartmentName ?? memberships[0]?.name ?? null;
+  const attendance = await getMemberAttendanceStats(user.id);
 
   return (
     <ProfileEditor
@@ -49,6 +51,7 @@ export default async function ProfilePage() {
         memberStatus: user.profile.memberStatus,
         createdAt: user.profile.createdAt?.toISOString() ?? null,
         roles: user.roles,
+        attendance,
       }}
     />
   );

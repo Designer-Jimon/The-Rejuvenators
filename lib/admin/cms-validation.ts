@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EVENT_CATEGORIES } from "@/lib/constants";
 
 const short = z.string().trim().max(200);
 const medium = z.string().trim().max(2000);
@@ -46,6 +47,26 @@ export const activitySchema = z.object({
   sortOrder: z.coerce.number().int().min(0).max(9999),
   isPublished: z.boolean(),
 });
+
+export const eventSchema = z
+  .object({
+    id: optionalKey,
+    title: z.string().trim().min(1, "Enter the event name.").max(160),
+    description: medium,
+    category: z.enum(EVENT_CATEGORIES),
+    imageKey: optionalKey,
+    date: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose the event date."),
+    start: z.string().trim().regex(/^\d{2}:\d{2}$/, "Choose a start time."),
+    end: z.string().trim().regex(/^\d{2}:\d{2}$/, "Choose an end time."),
+    venue: short,
+    instructions: long,
+    departments: z.array(z.string().trim().min(1)).default([]),
+    isPublished: z.boolean(),
+  })
+  .refine((data) => data.end > data.start, {
+    message: "The end time must be after the start time.",
+    path: ["end"],
+  });
 
 export const departmentSchema = z.object({
   id: z.string().trim().min(1),

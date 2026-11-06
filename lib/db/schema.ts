@@ -25,6 +25,14 @@ export type MemberStatus = "active" | "inactive";
 export type FollowupStatus = "new" | "contacted" | "in_progress" | "completed";
 export type DepartmentRole = "member" | "leader";
 export type AttendanceStatus = "present" | "absent" | "excused";
+export type EventCategory =
+  | "Sunday Service"
+  | "Rejuvenators Service"
+  | "Night Vigil"
+  | "Revival Program"
+  | "Special Prayer Meeting"
+  | "Bible Study"
+  | "Other";
 export type AppointmentStatus =
   | "pending"
   | "confirmed"
@@ -369,6 +377,11 @@ export const events = sqliteTable(
     title: text("title").notNull(),
     slug: text("slug").notNull(),
     description: text("description"),
+    category: text("category")
+      .$type<EventCategory>()
+      .notNull()
+      .default("Other"),
+    instructions: text("instructions"),
     location: text("location"),
     startsAt: integer("starts_at", { mode: "timestamp_ms" }).notNull(),
     endsAt: integer("ends_at", { mode: "timestamp_ms" }),
@@ -419,42 +432,63 @@ export const attendanceRecords = sqliteTable(
       table.eventId,
       table.userId,
     ),
+    index("attendance_records_event_idx").on(table.eventId),
     index("attendance_records_user_idx").on(table.userId),
   ],
 );
 
-export const attendanceSubmissions = sqliteTable("attendance_submissions", {
-  id: text("id").primaryKey(),
-  eventId: text("event_id")
-    .notNull()
-    .references(() => events.id, { onDelete: "cascade" }),
-  departmentId: text("department_id")
-    .notNull()
-    .references(() => departments.id, { onDelete: "cascade" }),
-  submittedBy: text("submitted_by")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  status: text("status").notNull().default("submitted"),
-  notes: text("notes"),
-  submittedAt: integer("submitted_at", { mode: "timestamp_ms" })
-    .notNull()
-    .default(now),
-});
+export const attendanceSubmissions = sqliteTable(
+  "attendance_submissions",
+  {
+    id: text("id").primaryKey(),
+    eventId: text("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    departmentId: text("department_id")
+      .notNull()
+      .references(() => departments.id, { onDelete: "cascade" }),
+    submittedBy: text("submitted_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("submitted"),
+    notes: text("notes"),
+    presentCount: integer("present_count").notNull().default(0),
+    absentCount: integer("absent_count").notNull().default(0),
+    excusedCount: integer("excused_count").notNull().default(0),
+    submittedAt: integer("submitted_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(now),
+  },
+  (table) => [
+    uniqueIndex("attendance_submissions_event_department_unique").on(
+      table.eventId,
+      table.departmentId,
+    ),
+    index("attendance_submissions_event_idx").on(table.eventId),
+  ],
+);
 
-export const attendanceAudit = sqliteTable("attendance_audit", {
-  id: text("id").primaryKey(),
-  attendanceId: text("attendance_id").references(() => attendanceRecords.id, {
-    onDelete: "cascade",
-  }),
-  action: text("action").notNull(),
-  actorId: text("actor_id").references(() => users.id, {
-    onDelete: "set null",
-  }),
-  details: text("details"),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .notNull()
-    .default(now),
-});
+export const attendanceAudit = sqliteTable(
+  "attendance_audit",
+  {
+    id: text("id").primaryKey(),
+    attendanceId: text("attendance_id").references(() => attendanceRecords.id, {
+      onDelete: "cascade",
+    }),
+    action: text("action").notNull(),
+    actorId: text("actor_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    details: text("details"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(now),
+  },
+  (table) => [
+    index("attendance_audit_attendance_idx").on(table.attendanceId),
+    index("attendance_audit_created_idx").on(table.createdAt),
+  ],
+);
 
 export const sermons = sqliteTable("sermons", {
   id: text("id").primaryKey(),

@@ -1,21 +1,23 @@
 import Link from "next/link";
-import { and, asc, desc, eq, gte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull } from "drizzle-orm";
 import {
   ArrowRight,
   Bell,
-  CalendarDays,
   CheckCircle2,
+  ClipboardCheck,
   Clock3,
   Users,
 } from "lucide-react";
 import { getDb } from "@/lib/db";
 import {
+  departmentLeaders,
   departmentMembers,
   departments,
   events,
   notifications,
 } from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth/authorize";
+import { getMemberAttendanceStats } from "@/lib/attendance";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +34,13 @@ export default async function MemberHomePage() {
   const user = await requireUser("/member");
   const db = await getDb();
 
-  const [memberships, recentNotifications, upcoming] = await Promise.all([
+  const [
+    memberships,
+    recentNotifications,
+    upcoming,
+    attendance,
+    ledDepartments,
+  ] = await Promise.all([
     db
       .select({
         id: departmentMembers.id,
@@ -61,6 +69,18 @@ export default async function MemberHomePage() {
       .where(and(eq(events.isPublished, true), gte(events.startsAt, new Date())))
       .orderBy(asc(events.startsAt))
       .limit(2),
+    getMemberAttendanceStats(user.id),
+    db
+      .select({ id: departments.id, name: departments.name })
+      .from(departmentLeaders)
+      .innerJoin(departments, eq(departments.id, departmentLeaders.departmentId))
+      .where(
+        and(
+          eq(departmentLeaders.userId, user.id),
+          isNull(departmentLeaders.endedAt),
+          eq(departments.isActive, true),
+        ),
+      ),
   ]);
 
   const pending = user.profile.registrationStatus !== "approved";
@@ -148,6 +168,85 @@ export default async function MemberHomePage() {
         />
       </section>
 
+      {ledDepartments.length ? (
+        <section className="surface flex flex-wrap items-center justify-between gap-4 border-brand-700/20 p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-700 text-cream">
+              <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">
+                Unit leader
+              </p>
+              <h2 className="mt-1 font-serif text-lg font-semibold">
+                Mark attendance
+              </h2>
+              <p className="mt-1 text-sm text-charcoal/60">
+                {ledDepartments.map((row) => row.name).join(" · ")}
+              </p>
+            </div>
+          </div>
+          <Link href="/member/events" prefetch>
+            <Button variant="outline" size="sm">
+              Open events
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </Link>
+        </section>
+      ) : null}
+
+      <section className="surface p-5 sm:p-6">
+        <SectionHeader
+          title="Attendance"
+          description="Your recorded attendance across church gatherings."
+          action={
+            <Link href="/member/events" prefetch>
+              <Button variant="outline" size="sm">
+                Open events
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </Link>
+          }
+          className="mb-4"
+        />
+        <div className="flex flex-wrap items-center gap-5">
+          <ProgressRing
+            value={attendance.percentage}
+            label="Attendance rate"
+          />
+          <div className="grid flex-1 grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-emerald-50 p-3 text-center">
+              <p className="font-serif text-2xl font-bold text-emerald-800">
+                {attendance.overall}
+              </p>
+              <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-800/70">
+                Present
+              </p>
+            </div>
+            <div className="rounded-2xl bg-brand-50 p-3 text-center">
+              <p className="font-serif text-2xl font-bold text-brand-800">
+                {attendance.sunday}
+              </p>
+              <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand-800/70">
+                Sunday
+              </p>
+            </div>
+            <div className="rounded-2xl bg-amber-50 p-3 text-center">
+              <p className="font-serif text-2xl font-bold text-amber-800">
+                {attendance.midweek}
+              </p>
+              <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-800/70">
+                Midweek
+              </p>
+            </div>
+          </div>
+          <ClipboardCheck
+            className="hidden h-10 w-10 shrink-0 text-brand-200 sm:block"
+            aria-hidden="true"
+          />
+        </div>
+      </section>
+
       <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
         <section className="surface p-5 sm:p-6">
           <SectionHeader
@@ -231,7 +330,13 @@ export default async function MemberHomePage() {
           <section className="surface p-5">
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-serif text-lg font-semibold">Upcoming</h2>
-              <CalendarDays className="h-5 w-5 text-brand-700" aria-hidden="true" />
+              <Link
+                href="/member/events"
+                prefetch
+                className="text-xs font-semibold text-brand-800 hover:underline active:opacity-70"
+              >
+                View events
+              </Link>
             </div>
             {upcoming.length ? (
               <div className="mt-3 space-y-2">

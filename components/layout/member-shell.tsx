@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import {
   Bell,
   CalendarClock,
+  CalendarDays,
   Cross,
   Home,
   LogOut,
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 
 const navigation = [
   { href: "/member", label: "Home", icon: Home },
+  { href: "/member/events", label: "Events", icon: CalendarDays },
   { href: "/member/appointments", label: "Appointments", icon: CalendarClock },
   { href: "/member/directory", label: "Directory", icon: Users },
   { href: "/member/notifications", label: "Alerts", icon: Bell },
@@ -185,7 +187,7 @@ export function MemberShell({
         className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white/95 backdrop-blur lg:hidden"
         aria-label="Member bottom navigation"
       >
-        <div className="mx-auto grid max-w-md grid-cols-6">
+        <div className="mx-auto grid max-w-xl grid-cols-7">
           {navigation.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);

@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CalendarDays,
   ChevronRight,
+  ClipboardCheck,
   Cross,
   FileText,
   Globe,
@@ -44,6 +45,20 @@ const navigation = [
     icon: CalendarClock,
     exact: false,
     permission: "appointments",
+  },
+  {
+    href: "/admin/attendance",
+    label: "Attendance",
+    icon: ClipboardCheck,
+    exact: false,
+    permission: "membership",
+  },
+  {
+    href: "/admin/events",
+    label: "Events",
+    icon: CalendarDays,
+    exact: false,
+    permission: "content",
   },
   {
     href: "/admin/media",

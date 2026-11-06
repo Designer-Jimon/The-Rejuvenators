@@ -64,6 +64,10 @@ export const NOTIFICATION_TYPES = {
   leaderAssigned: "leader_assigned",
   appointmentRequest: "appointment_request",
   appointmentUpdate: "appointment_update",
+  eventCreated: "event_created",
+  devotionalPublished: "devotional_published",
+  attendanceFollowup: "attendance_followup",
+  adminNotice: "admin_notice",
   general: "general",
 } as const;
 
@@ -75,8 +79,30 @@ export const NOTIFICATION_LABELS: Record<string, string> = {
   leader_assigned: "Unit leader assignments",
   appointment_request: "New appointment requests",
   appointment_update: "Appointment updates",
+  event_created: "New church events",
+  devotional_published: "Daily devotional",
+  attendance_followup: "Attendance follow-up",
+  admin_notice: "Admin notices",
   general: "General announcements",
 };
+
+export const EVENT_CATEGORIES = [
+  "Sunday Service",
+  "Rejuvenators Service",
+  "Night Vigil",
+  "Revival Program",
+  "Special Prayer Meeting",
+  "Bible Study",
+  "Other",
+] as const;
+
+export const DEVOTIONAL_STATUSES = [
+  "draft",
+  "scheduled",
+  "published",
+  "rejected",
+  "failed",
+] as const;
 
 export const DEFAULT_SETTINGS: Record<string, string> = {
   church_name: "IT IS FINISHED REVIVAL OUTREACH",

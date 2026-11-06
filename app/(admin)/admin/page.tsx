@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { desc, eq } from "drizzle-orm";
 import {
   ArrowRight,
+  ClipboardCheck,
   ClipboardList,
   Clock3,
   Settings,
@@ -130,6 +131,27 @@ export default async function AdminOverviewPage() {
           icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
           tone="charcoal"
         />
+      </section>
+
+      <section className="surface flex flex-wrap items-center justify-between gap-4 p-5">
+        <div className="flex items-start gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+            <ClipboardCheck className="h-6 w-6" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="font-serif text-xl font-semibold">Attendance</h2>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-charcoal/60">
+              Review unit submissions, unlock corrections, export records and send
+              follow-ups to members who have been absent.
+            </p>
+          </div>
+        </div>
+        <Link href="/admin/attendance" prefetch>
+          <Button variant="outline">
+            Open attendance
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </Link>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
