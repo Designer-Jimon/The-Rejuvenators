@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth/authorize";
+import { isAdmin, requireUser } from "@/lib/auth/authorize";
 import { mediaUrl } from "@/lib/media";
 import { MemberShell } from "@/components/layout/member-shell";
 
@@ -17,6 +17,7 @@ export default async function MemberLayout({
       avatarUrl={mediaUrl(user.profile.avatarKey)}
       memberCode={user.profile.memberCode}
       unread={user.unreadNotifications}
+      canAccessAdmin={isAdmin(user)}
     >
       {children}
     </MemberShell>

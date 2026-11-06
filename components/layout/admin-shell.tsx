@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Cross,
   FileText,
+  Globe,
   HelpCircle,
   Images,
   LayoutDashboard,
@@ -19,6 +20,7 @@ import {
   Settings,
   Share2,
   Sparkles,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
@@ -244,7 +246,16 @@ export function AdminShell({
             prefetch
             className="flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 transition hover:bg-brand-50 active:scale-[0.98] active:opacity-70"
           >
-            Member view
+            <UserRound className="h-5 w-5" aria-hidden="true" />
+            Member area
+          </Link>
+          <Link
+            href="/"
+            prefetch
+            className="flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold text-charcoal/65 transition hover:bg-brand-50 active:scale-[0.98] active:opacity-70"
+          >
+            <Globe className="h-5 w-5" aria-hidden="true" />
+            View website
           </Link>
           <button
             type="button"
@@ -282,7 +293,25 @@ export function AdminShell({
                 Admin
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Link
+                href="/member"
+                prefetch
+                className="flex min-h-11 items-center gap-2 rounded-2xl border border-brand-100 bg-white px-2.5 text-sm font-semibold text-charcoal/70 transition active:scale-95 active:opacity-70 sm:px-3"
+                aria-label="Member area"
+              >
+                <UserRound className="h-5 w-5" aria-hidden="true" />
+                <span className="hidden sm:inline">Member area</span>
+              </Link>
+              <Link
+                href="/"
+                prefetch
+                className="flex min-h-11 items-center gap-2 rounded-2xl border border-brand-100 bg-white px-2.5 text-sm font-semibold text-charcoal/70 transition active:scale-95 active:opacity-70 sm:px-3"
+                aria-label="View website"
+              >
+                <Globe className="h-5 w-5" aria-hidden="true" />
+                <span className="hidden sm:inline">View website</span>
+              </Link>
               <NotificationBell unread={unread} />
               <span className="hidden text-sm font-semibold text-charcoal/70 sm:block">
                 {name}
@@ -397,7 +426,21 @@ export function AdminShell({
                   "min-h-[52px] w-full",
                 )}
               >
-                Member view
+                <UserRound className="h-5 w-5" aria-hidden="true" />
+                Member area
+              </Link>
+              <Link
+                href="/"
+                prefetch
+                onClick={() => setOpen(false)}
+                className={buttonClasses(
+                  "outline",
+                  "lg",
+                  "min-h-[52px] w-full",
+                )}
+              >
+                <Globe className="h-5 w-5" aria-hidden="true" />
+                View website
               </Link>
               <button
                 type="button"

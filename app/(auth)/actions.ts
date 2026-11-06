@@ -12,7 +12,7 @@ import {
   destroyCurrentSession,
   getSessionUser,
 } from "@/lib/auth/session";
-import { hasPermission } from "@/lib/auth/authorize";
+import { hasPermission, isAdmin } from "@/lib/auth/authorize";
 import { checkRateLimit, clientIpFromHeaders, rateLimitKey } from "@/lib/rate-limit";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { safeNextPath } from "@/lib/utils";
@@ -92,6 +92,10 @@ export async function loginAction(
 
   const next = safeNextPath(parsed.data.next);
   if (next) redirect(next);
+
+  const sessionUser = await getSessionUser();
+  if (sessionUser && isAdmin(sessionUser)) redirect("/admin");
+
   redirect(approved ? "/member" : "/member/profile");
 }
 

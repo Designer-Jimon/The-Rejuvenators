@@ -11,6 +11,7 @@ import {
   Home,
   LogOut,
   Settings,
+  ShieldCheck,
   UserRound,
   Users,
 } from "lucide-react";
@@ -33,12 +34,14 @@ export function MemberShell({
   avatarUrl,
   memberCode,
   unread,
+  canAccessAdmin,
 }: {
   children: ReactNode;
   name: string;
   avatarUrl: string | null;
   memberCode: string | null;
   unread: number;
+  canAccessAdmin: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -149,6 +152,17 @@ export function MemberShell({
               </span>
             </Link>
             <div className="flex items-center gap-2">
+              {canAccessAdmin ? (
+                <Link
+                  href="/admin"
+                  prefetch
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-brand-700 px-3 text-sm font-semibold text-cream shadow-soft transition active:scale-95 active:opacity-80"
+                  aria-label="Open admin dashboard"
+                >
+                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                  Admin
+                </Link>
+              ) : null}
               <NotificationBell unread={unread} />
               <Link
                 href="/member/profile"
