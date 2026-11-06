@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import {
+  Bot,
+  BookOpen,
   Building2,
   CalendarClock,
   CalendarDays,
@@ -17,6 +19,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Mic2,
   Palette,
   Settings,
   Share2,
@@ -59,6 +62,27 @@ const navigation = [
     icon: CalendarDays,
     exact: false,
     permission: "content",
+  },
+  {
+    href: "/admin/sermons",
+    label: "Sermons",
+    icon: Mic2,
+    exact: false,
+    permission: "content",
+  },
+  {
+    href: "/admin/devotionals",
+    label: "Devotionals",
+    icon: BookOpen,
+    exact: false,
+    permission: "content",
+  },
+  {
+    href: "/admin/ai-settings",
+    label: "AI settings",
+    icon: Bot,
+    exact: false,
+    permission: "ai",
   },
   {
     href: "/admin/media",
@@ -135,6 +159,7 @@ export function AdminShell({
   canManageAppointments,
   canManageContent,
   canManageSettings,
+  canManageAi,
 }: {
   children: ReactNode;
   name: string;
@@ -145,6 +170,7 @@ export function AdminShell({
   canManageAppointments: boolean;
   canManageContent: boolean;
   canManageSettings: boolean;
+  canManageAi: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -194,6 +220,7 @@ export function AdminShell({
     if (item.permission === "appointments") return canManageAppointments;
     if (item.permission === "content") return canManageContent;
     if (item.permission === "settings") return canManageSettings;
+    if (item.permission === "ai") return canManageAi;
     return true;
   });
 

@@ -25,6 +25,13 @@ export type MemberStatus = "active" | "inactive";
 export type FollowupStatus = "new" | "contacted" | "in_progress" | "completed";
 export type DepartmentRole = "member" | "leader";
 export type AttendanceStatus = "present" | "absent" | "excused";
+export type DevotionalStatus =
+  | "draft"
+  | "scheduled"
+  | "published"
+  | "rejected"
+  | "failed";
+export type DevotionalRunStatus = "running" | "completed" | "failed";
 export type EventCategory =
   | "Sunday Service"
   | "Rejuvenators Service"
@@ -490,32 +497,69 @@ export const attendanceAudit = sqliteTable(
   ],
 );
 
-export const sermons = sqliteTable("sermons", {
-  id: text("id").primaryKey(),
-  title: text("title").notNull(),
-  speaker: text("speaker"),
-  preachedAt: integer("preached_at", { mode: "timestamp_ms" }),
-  summary: text("summary"),
-  audioUrl: text("audio_url"),
-  videoUrl: text("video_url"),
-  notes: text("notes"),
-  isPublished: integer("is_published", { mode: "boolean" })
-    .notNull()
-    .default(true),
-  ...timestamps(),
-});
+export const sermons = sqliteTable(
+  "sermons",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    speaker: text("speaker"),
+    preachedAt: integer("preached_at", { mode: "timestamp_ms" }),
+    summary: text("summary"),
+    bibleReferences: text("bible_references"),
+    contentText: text("content_text"),
+    audioUrl: text("audio_url"),
+    videoUrl: text("video_url"),
+    notes: text("notes"),
+    sourceFileKey: text("source_file_key"),
+    sourceFileName: text("source_file_name"),
+    sourceContentType: text("source_content_type"),
+    extractionError: text("extraction_error"),
+    isArchived: integer("is_archived", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    isDevotionalSource: integer("is_devotional_source", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    isPublished: integer("is_published", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    ...timestamps(),
+  },
+  (table) => [
+    index("sermons_preached_at_idx").on(table.preachedAt),
+    index("sermons_archived_idx").on(table.isArchived),
+  ],
+);
 
-export const devotionalPlans = sqliteTable("devotional_plans", {
-  id: text("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description"),
-  startDate: text("start_date"),
-  endDate: text("end_date"),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .notNull()
-    .default(now),
-});
+export const devotionalPlans = sqliteTable(
+  "devotional_plans",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    sermonId: text("sermon_id").references(() => sermons.id, {
+      onDelete: "set null",
+    }),
+    startDate: text("start_date"),
+    endDate: text("end_date"),
+    totalDays: integer("total_days").notNull().default(7),
+    status: text("status").$type<DevotionalStatus>().notNull().default("draft"),
+    autoPublish: integer("auto_publish", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    createdBy: text("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(now),
+  },
+  (table) => [
+    index("devotional_plans_status_idx").on(table.status),
+    index("devotional_plans_sermon_idx").on(table.sermonId),
+  ],
+);
 
 export const devotionals = sqliteTable(
   "devotionals",
@@ -524,18 +568,66 @@ export const devotionals = sqliteTable(
     planId: text("plan_id").references(() => devotionalPlans.id, {
       onDelete: "set null",
     }),
+    sourceSermonId: text("source_sermon_id").references(() => sermons.id, {
+      onDelete: "set null",
+    }),
+    dayNumber: integer("day_number"),
     title: text("title").notNull(),
     body: text("body").notNull(),
     scripture: text("scripture"),
+    bibleVerses: text("bible_verses"),
+    declaration: text("declaration"),
+    prayerPoints: text("prayer_points"),
+    status: text("status").$type<DevotionalStatus>().notNull().default("draft"),
     publishDate: text("publish_date").notNull(),
     isPublished: integer("is_published", { mode: "boolean" })
       .notNull()
       .default(true),
+    generatedAt: integer("generated_at", { mode: "timestamp_ms" }),
+    publishedAt: integer("published_at", { mode: "timestamp_ms" }),
+    lastError: text("last_error"),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
       .default(now),
   },
-  (table) => [uniqueIndex("devotionals_date_unique").on(table.publishDate)],
+  (table) => [
+    uniqueIndex("devotionals_date_unique").on(table.publishDate),
+    index("devotionals_status_idx").on(table.status),
+    index("devotionals_plan_idx").on(table.planId),
+  ],
+);
+
+export const devotionalRuns = sqliteTable(
+  "devotional_runs",
+  {
+    id: text("id").primaryKey(),
+    planId: text("plan_id").references(() => devotionalPlans.id, {
+      onDelete: "set null",
+    }),
+    sermonId: text("sermon_id").references(() => sermons.id, {
+      onDelete: "set null",
+    }),
+    runDate: text("run_date").notNull(),
+    status: text("status")
+      .$type<DevotionalRunStatus>()
+      .notNull()
+      .default("running"),
+    totalDays: integer("total_days").notNull().default(0),
+    completedDays: integer("completed_days").notNull().default(0),
+    trigger: text("trigger").notNull().default("cron"),
+    triggeredBy: text("triggered_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    error: text("error"),
+    startedAt: integer("started_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(now),
+    finishedAt: integer("finished_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [
+    index("devotional_runs_date_idx").on(table.runDate),
+    index("devotional_runs_status_idx").on(table.status),
+  ],
 );
 
 export const aiSettings = sqliteTable("ai_settings", {

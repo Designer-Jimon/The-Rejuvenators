@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Mic2 } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { sermons } from "@/lib/db/schema";
@@ -14,7 +14,7 @@ export default async function SermonsPage() {
   const list = await db
     .select()
     .from(sermons)
-    .where(eq(sermons.isPublished, true))
+    .where(and(eq(sermons.isPublished, true), eq(sermons.isArchived, false)))
     .orderBy(desc(sermons.preachedAt));
 
   return (
@@ -39,6 +39,16 @@ export default async function SermonsPage() {
                 <p className="mt-1 text-sm text-charcoal/55">
                   {sermon.speaker || "Speaker to be confirmed"}
                 </p>
+                {sermon.bibleReferences ? (
+                  <p className="mt-2 text-sm font-semibold text-brand-800">
+                    {sermon.bibleReferences}
+                  </p>
+                ) : null}
+                {sermon.isDevotionalSource ? (
+                  <p className="mt-2 inline-flex rounded-full bg-gold-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-gold-900">
+                    Devotional series source
+                  </p>
+                ) : null}
                 {sermon.summary ? (
                   <p className="mt-3 text-sm leading-7 text-charcoal/70">
                     {sermon.summary}

@@ -12,6 +12,7 @@ export const FOOTER_LINKS = [
   { href: "/appointments", label: "Appointments" },
   { href: "/events", label: "Events" },
   { href: "/sermons", label: "Sermons" },
+  { href: "/devotionals", label: "Devotionals" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ] as const;

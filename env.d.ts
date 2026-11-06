@@ -13,6 +13,7 @@ declare global {
     SEED_ADMIN_PASSWORD?: string;
     RESEND_API_KEY?: string;
     EMAIL_FROM?: string;
+    OPENAI_API_KEY?: string;
   }
 }
 

@@ -18,23 +18,23 @@ npm run dev
 - Seed is idempotent. Replace `[Church ... - edit in Admin]` placeholders before launch.
 
 ## Public site
-- Home, About, Vision & Mission, Activities, Departments + detail, FAQ, Contact.
+- Home, About, Vision & Mission, Activities, Departments, FAQ, Contact, Events, Sermons, Devotionals + detail.
 - Appointments at `/appointments`: guest/member request form, available slots, confirmation receipt.
-- Hero text/buttons, content blocks, department photos/leaders, FAQ, contact/social and logo are database-driven.
-- CMS saves revalidate public pages immediately via `revalidatePath`.
+- Hero, content blocks, department photos/leaders, FAQ, contact/social and logo are database-driven; `revalidatePath` updates pages.
 
 ## Performance and navigation
-- `loading.tsx` skeletons; per-request caches for settings, content, nav and logo.
-- Sticky public/member/admin headers with safe-area padding and scroll shadow.
-- `next/link` prefetch, pressed feedback, top route progress bar, mobile route-close menus.
-- Below-fold `content-visibility`; slideshow images use `next/image` with first-slide priority.
+- Skeleton loading, per-request caches, sticky headers with safe-area spacing and route progress bar.
 
 ## Admin CMS (`/admin`)
-- Media Library (R2), Logo & Branding, Slideshow, Website Content, Activities, Departments, FAQ, Social & Contact.
-- Appointments at `/admin/appointments`: approve/decline/suggest/complete, notes, WhatsApp, availability.
-- Requires `appointment.manage` for appointments; content/settings permissions remain enforced with audit logs.
+- Media (R2), branding, slideshow, content, activities, departments, FAQ, social, sermons, devotionals, AI settings.
+- Appointments at `/admin/appointments` (`appointment.manage`): decisions, notes, WhatsApp, availability.
+- Events at `/admin/events`: create/edit/delete, categories, participating units, publish; new events notify members.
+- Attendance at `/admin/attendance`: unit submissions/unlock, reports, CSV export, repeated-absence follow-ups and audit.
+- Unit leaders mark locked attendance at `/member/leadership/[eventId]`; members see events/stats at `/member/events`.
+- Sermons/devotionals at `/admin/sermons` and `/admin/devotionals`; Super Admin `/admin/ai-settings`; cron `0 5 * * *` runs the daily devotional.
 
 ## Data and security
-- Migration `0002_steady_mongoose.sql` adds appointment fields/indexes and seeds appointment settings/permission.
-- Public R2 reads limited to `media/`; state-changing APIs verify origin; admin checks run server-side.
+- Additive migrations: `0002_steady_mongoose.sql` (appointments) and `0003_daffy_young_avengers.sql` (events, attendance, devotionals, sermons).
+- `OPENAI_API_KEY` is a Worker secret: `wrangler secret put OPENAI_API_KEY`; public R2 reads are limited to `media/`.
+- State-changing APIs verify origin; admin/permission checks are server-side with audit logs.
 - Verify: `npm run typecheck`, `npm run build`, `npm run test:security`, `npm run cf:build`.

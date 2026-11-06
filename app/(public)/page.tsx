@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { and, asc, eq, gte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import {
   ArrowRight,
   BookOpen,
@@ -21,6 +21,7 @@ import { getDb } from "@/lib/db";
 import {
   activities,
   departments,
+  devotionals,
   events,
   slideshowImages,
 } from "@/lib/db/schema";
@@ -55,8 +56,21 @@ export const metadata = {
 
 export default async function HomePage() {
   const db = await getDb();
-  const [settings, content, departmentList, upcomingActivities, featuredEvents, slides] =
-    await Promise.all([
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const [
+    settings,
+    content,
+    departmentList,
+    upcomingActivities,
+    featuredEvents,
+    slides,
+    latestDevotional,
+  ] = await Promise.all([
       getSettings(),
       getContentMap(),
       db
@@ -82,12 +96,25 @@ export default async function HomePage() {
         .from(slideshowImages)
         .where(eq(slideshowImages.isActive, true))
         .orderBy(asc(slideshowImages.sortOrder)),
+      db
+        .select()
+        .from(devotionals)
+        .where(
+          and(
+            eq(devotionals.status, "published"),
+            eq(devotionals.isPublished, true),
+            lte(devotionals.publishDate, today),
+          ),
+        )
+        .orderBy(desc(devotionals.publishDate))
+        .limit(1),
     ]);
 
   const intro = getBlock(content, "intro");
   const scripture = getBlock(content, "scripture");
   const pastor = getBlock(content, "pastor_intro");
-  const devotional = getBlock(content, "latest_devotional");
+  const devotionalBlock = getBlock(content, "latest_devotional");
+  const devotional = latestDevotional[0] ?? null;
   const appointment = getBlock(content, "appointment_cta");
 
   const heroActions = {
@@ -401,12 +428,47 @@ export default async function HomePage() {
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
             <BookOpen className="h-5 w-5" aria-hidden="true" />
           </span>
-          <h2 className="mt-4 font-serif text-2xl font-semibold">
-            {devotional.title}
-          </h2>
-          <p className="mt-2 whitespace-pre-line text-base leading-7 text-charcoal/70">
-            {devotional.body}
-          </p>
+          {devotional ? (
+            <>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-brand-700">
+                {formatDate(
+                  new Date(`${devotional.publishDate}T12:00:00+01:00`),
+                )}
+                {devotional.scripture ? ` · ${devotional.scripture}` : ""}
+              </p>
+              <h2 className="mt-1 font-serif text-2xl font-semibold">
+                {devotional.title}
+              </h2>
+              <p className="mt-2 line-clamp-4 whitespace-pre-line text-base leading-7 text-charcoal/70">
+                {devotional.body}
+              </p>
+              <Link
+                href={`/devotionals/${devotional.publishDate}`}
+                prefetch
+                className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-brand-800 hover:underline active:opacity-70"
+              >
+                Read today&apos;s devotional
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2 className="mt-4 font-serif text-2xl font-semibold">
+                {devotionalBlock.title}
+              </h2>
+              <p className="mt-2 whitespace-pre-line text-base leading-7 text-charcoal/70">
+                {devotionalBlock.body}
+              </p>
+              <Link
+                href="/devotionals"
+                prefetch
+                className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-brand-800 hover:underline active:opacity-70"
+              >
+                Visit the devotional library
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </>
+          )}
         </div>
         <div className="rounded-3xl bg-charcoal p-6 text-cream shadow-lift sm:p-7">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-200">

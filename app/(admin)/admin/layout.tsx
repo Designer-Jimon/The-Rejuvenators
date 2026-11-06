@@ -1,5 +1,5 @@
 import { hasPermission, requireAdmin } from "@/lib/auth/authorize";
-import { PERMISSIONS } from "@/lib/constants";
+import { PERMISSIONS, ROLES } from "@/lib/constants";
 import { mediaUrl } from "@/lib/media";
 import { getSettings } from "@/lib/settings";
 import { AdminShell } from "@/components/layout/admin-shell";
@@ -24,6 +24,7 @@ export default async function AdminLayout({
       canManageAppointments={hasPermission(user, PERMISSIONS.appointmentManage)}
       canManageContent={hasPermission(user, PERMISSIONS.contentManage)}
       canManageSettings={hasPermission(user, PERMISSIONS.settingsManage)}
+      canManageAi={user.roles.includes(ROLES.superAdmin)}
     >
       {children}
     </AdminShell>
