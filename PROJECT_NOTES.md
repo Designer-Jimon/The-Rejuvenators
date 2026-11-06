@@ -18,23 +18,22 @@ npm run dev
 - Seed is idempotent. Replace `[Church ... - edit in Admin]` placeholders before launch.
 
 ## Public site
-- Home, About, Vision & Mission, Activities, Departments, FAQ, Contact, Events, Sermons, Devotionals + detail.
+- Home, About, Vision & Mission, Activities, Departments, Worship Centers, FAQ, Contact, Events, Sermons, Devotionals + detail.
 - Appointments at `/appointments`: guest/member request form, available slots, confirmation receipt.
-- Hero, content blocks, department photos/leaders, FAQ, contact/social and logo are database-driven; `revalidatePath` updates pages.
+- Hero, content blocks, department photos/icons/leaders, FAQ, social and logo are database-driven; `revalidatePath` updates pages.
 
 ## Performance and navigation
 - Skeleton loading, per-request caches, sticky headers with safe-area spacing and route progress bar.
 
 ## Admin CMS (`/admin`)
-- Media (R2), branding, slideshow, content, activities, departments, FAQ, social, sermons, devotionals, AI settings.
+- Media (R2), branding, slideshow, content, activities, departments (icons), worship centers, FAQ, social, sermons, devotionals, AI settings.
 - Appointments at `/admin/appointments` (`appointment.manage`): decisions, notes, WhatsApp, availability.
-- Events at `/admin/events`: create/edit/delete, categories, participating units, publish; new events notify members.
+- Events at `/admin/events`: centers, multi-day duration, sessions, live links, home popup, participating units, publish; new events notify members.
 - Attendance at `/admin/attendance`: unit submissions/unlock, reports, CSV export, repeated-absence follow-ups and audit.
-- Unit leaders mark locked attendance at `/member/leadership/[eventId]`; members see events/stats at `/member/events`.
+- Unit leaders mark locked attendance at `/member/leadership/[eventId]`; members see center-scoped events/stats at `/member/events`.
 - Sermons/devotionals at `/admin/sermons` and `/admin/devotionals`; Super Admin `/admin/ai-settings`; cron `0 5 * * *` runs the daily devotional.
 
 ## Data and security
-- Additive migrations: `0002_steady_mongoose.sql` (appointments) and `0003_daffy_young_avengers.sql` (events, attendance, devotionals, sermons).
-- `OPENAI_API_KEY` is a Worker secret: `wrangler secret put OPENAI_API_KEY`; public R2 reads are limited to `media/`.
-- State-changing APIs verify origin; admin/permission checks are server-side with audit logs.
-- Verify: `npm run typecheck`, `npm run build`, `npm run test:security`, `npm run cf:build`.
+- Additive migrations: `0002_steady_mongoose.sql` (appointments), `0003_daffy_young_avengers.sql` (events/attendance/devotionals/sermons), `0004_glorious_maximus.sql` (centers/profile/event extras).
+- Set `APP_URL` for absolute links. `OPENAI_API_KEY` is a Worker secret: `wrangler secret put OPENAI_API_KEY`; public R2 reads are limited to `media/`.
+- State-changing APIs verify origin; admin/permission checks are server-side with audit logs. Verify: `npm run typecheck`, `npm run build`, `npm run test:security`, `npm run cf:build`.
