@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, or } from "drizzle-orm";
 import {
   ArrowRight,
   BookOpen,
@@ -21,8 +21,11 @@ import {
   activities,
   departments,
   devotionals,
+  eventCenters,
+  eventLiveLinks,
   events,
   slideshowImages,
+  worshipCenters,
 } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
 import { getBlock, getContentMap } from "@/lib/content";
@@ -39,6 +42,7 @@ import {
   HeroSlideshow,
   type HeroSlide,
 } from "@/components/public/hero-slideshow";
+import { HomeEventPopup } from "@/components/public/home-event-popup";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +57,15 @@ export const metadata = {
     type: "website",
   },
 };
+
+function lagosTime(value: Date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Lagos",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(value);
+}
 
 export default async function HomePage() {
   const db = await getDb();
@@ -88,7 +101,12 @@ export default async function HomePage() {
       db
         .select()
         .from(events)
-        .where(and(eq(events.isPublished, true), gte(events.startsAt, new Date())))
+        .where(
+          and(
+            eq(events.isPublished, true),
+            or(gte(events.startsAt, new Date()), gte(events.endsAt, new Date())),
+          ),
+        )
         .orderBy(asc(events.startsAt))
         .limit(3),
       db
@@ -109,6 +127,74 @@ export default async function HomePage() {
         .orderBy(desc(devotionals.publishDate))
         .limit(1),
     ]);
+
+  const popupCandidates = await db
+    .select()
+    .from(events)
+    .where(and(eq(events.isPublished, true), eq(events.showOnHomePopup, true)))
+    .orderBy(asc(events.startsAt))
+    .limit(5);
+  const popupEvent =
+    popupCandidates.find(
+      (event) => (event.endsAt ?? event.startsAt).getTime() >= Date.now(),
+    ) ?? null;
+
+  let popup: {
+    id: string;
+    title: string;
+    category: string;
+    description: string | null;
+    location: string | null;
+    startsAt: string;
+    endsAt: string | null;
+    coverUrl: string | null;
+    dateLabel: string;
+    timeLabel: string;
+    liveUrl: string | null;
+    centers: string[];
+  } | null = null;
+
+  if (popupEvent) {
+    const [centerRows, liveRows] = await Promise.all([
+      db
+        .select({ name: worshipCenters.name })
+        .from(eventCenters)
+        .innerJoin(
+          worshipCenters,
+          eq(worshipCenters.id, eventCenters.centerId),
+        )
+        .where(eq(eventCenters.eventId, popupEvent.id)),
+      db
+        .select({ label: eventLiveLinks.label, url: eventLiveLinks.url })
+        .from(eventLiveLinks)
+        .where(
+          and(
+            eq(eventLiveLinks.eventId, popupEvent.id),
+            eq(eventLiveLinks.isActive, true),
+          ),
+        )
+        .orderBy(asc(eventLiveLinks.sortOrder)),
+    ]);
+    popup = {
+      id: popupEvent.id,
+      title: popupEvent.title,
+      category: popupEvent.category,
+      description: popupEvent.description,
+      location: popupEvent.location,
+      startsAt: popupEvent.startsAt.toISOString(),
+      endsAt: popupEvent.endsAt?.toISOString() ?? null,
+      coverUrl: publicMediaUrl(popupEvent.coverKey),
+      dateLabel:
+        popupEvent.durationDays > 1 && popupEvent.endsAt
+          ? `${formatDate(popupEvent.startsAt)} - ${formatDate(popupEvent.endsAt)}`
+          : formatDate(popupEvent.startsAt),
+      timeLabel: popupEvent.endsAt
+        ? `${lagosTime(popupEvent.startsAt)} - ${lagosTime(popupEvent.endsAt)}`
+        : lagosTime(popupEvent.startsAt),
+      liveUrl: liveRows[0]?.url ?? null,
+      centers: centerRows.map((row) => row.name),
+    };
+  }
 
   const intro = getBlock(content, "intro");
   const scripture = getBlock(content, "scripture");
@@ -177,6 +263,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+      {popup ? <HomeEventPopup event={popup} /> : null}
       <HeroSlideshow slides={heroSlides} />
 
       <section className="content-auto mt-6 grid gap-3 sm:grid-cols-3">

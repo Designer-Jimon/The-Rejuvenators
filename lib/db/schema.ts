@@ -430,6 +430,10 @@ export const events = sqliteTable(
     location: text("location"),
     startsAt: integer("starts_at", { mode: "timestamp_ms" }).notNull(),
     endsAt: integer("ends_at", { mode: "timestamp_ms" }),
+    durationDays: integer("duration_days").notNull().default(1),
+    showOnHomePopup: integer("show_on_home_popup", { mode: "boolean" })
+      .notNull()
+      .default(false),
     coverKey: text("cover_key"),
     isPublished: integer("is_published", { mode: "boolean" })
       .notNull()
@@ -452,6 +456,54 @@ export const eventDepartments = sqliteTable(
   (table) => [
     primaryKey({ columns: [table.eventId, table.departmentId] }),
   ],
+);
+
+export const eventCenters = sqliteTable(
+  "event_centers",
+  {
+    eventId: text("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    centerId: text("center_id")
+      .notNull()
+      .references(() => worshipCenters.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.eventId, table.centerId] }),
+    index("event_centers_center_idx").on(table.centerId),
+  ],
+);
+
+export const eventSessions = sqliteTable(
+  "event_sessions",
+  {
+    id: text("id").primaryKey(),
+    eventId: text("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    startsAt: integer("starts_at", { mode: "timestamp_ms" }).notNull(),
+    endsAt: integer("ends_at", { mode: "timestamp_ms" }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    ...timestamps(),
+  },
+  (table) => [index("event_sessions_event_idx").on(table.eventId)],
+);
+
+export const eventLiveLinks = sqliteTable(
+  "event_live_links",
+  {
+    id: text("id").primaryKey(),
+    eventId: text("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    url: text("url").notNull(),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    ...timestamps(),
+  },
+  (table) => [index("event_live_links_event_idx").on(table.eventId)],
 );
 
 export const attendanceRecords = sqliteTable(

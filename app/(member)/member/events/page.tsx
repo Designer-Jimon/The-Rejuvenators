@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { and, asc, desc, eq, gte, inArray, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import {
   ArrowRight,
   CalendarDays,
@@ -9,6 +9,7 @@ import {
   ClipboardCheck,
   Clock3,
   MapPin,
+  Radio,
   Users,
 } from "lucide-react";
 import { getDb } from "@/lib/db";
@@ -17,14 +18,20 @@ import {
   departmentLeaders,
   departmentMembers,
   departments,
+  eventCenters,
   eventDepartments,
+  eventLiveLinks,
   events,
+  eventSessions,
+  worshipCenters,
 } from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth/authorize";
 import { getMemberAttendanceStats } from "@/lib/attendance";
 import { publicMediaUrl } from "@/lib/media";
 import { formatDate } from "@/lib/utils";
 import { PageHero, StatCard, EmptyState, Badge } from "@/components/ui/display";
+import { buttonClasses } from "@/components/ui/button";
+import { LiveCountdown } from "@/components/public/live-countdown";
 
 export const metadata: Metadata = { title: "Events" };
 export const dynamic = "force-dynamic";
@@ -47,6 +54,9 @@ export default async function MemberEventsPage() {
     upcoming,
     past,
     links,
+    centerLinks,
+    sessionList,
+    liveLinkList,
     stats,
     leaderRows,
     membershipRows,
@@ -56,15 +66,26 @@ export default async function MemberEventsPage() {
         .select()
         .from(events)
         .where(
-          and(eq(events.isPublished, true), gte(events.startsAt, now)),
+          and(
+            eq(events.isPublished, true),
+            or(gte(events.startsAt, now), gte(events.endsAt, now)),
+          ),
         )
         .orderBy(asc(events.startsAt)),
       db
         .select()
         .from(events)
-        .where(and(eq(events.isPublished, true), lt(events.startsAt, now)))
+        .where(
+          and(
+            eq(events.isPublished, true),
+            or(
+              lt(events.endsAt, now),
+              and(isNull(events.endsAt), lt(events.startsAt, now)),
+            ),
+          ),
+        )
         .orderBy(desc(events.startsAt))
-        .limit(6),
+        .limit(10),
       db
         .select({
           eventId: eventDepartments.eventId,
@@ -73,6 +94,23 @@ export default async function MemberEventsPage() {
         })
         .from(eventDepartments)
         .innerJoin(departments, eq(departments.id, eventDepartments.departmentId)),
+      db
+        .select({
+          eventId: eventCenters.eventId,
+          centerId: eventCenters.centerId,
+          centerName: worshipCenters.name,
+        })
+        .from(eventCenters)
+        .innerJoin(worshipCenters, eq(worshipCenters.id, eventCenters.centerId)),
+      db
+        .select()
+        .from(eventSessions)
+        .orderBy(asc(eventSessions.startsAt), asc(eventSessions.sortOrder)),
+      db
+        .select()
+        .from(eventLiveLinks)
+        .where(eq(eventLiveLinks.isActive, true))
+        .orderBy(asc(eventLiveLinks.sortOrder)),
       getMemberAttendanceStats(user.id),
       db
         .select({
@@ -146,6 +184,37 @@ export default async function MemberEventsPage() {
       .filter((link) => myDepartments.has(link.departmentId))
       .map((link) => link.eventId),
   );
+
+  const centersByEvent = new Map<string, { id: string; name: string }[]>();
+  for (const link of centerLinks) {
+    centersByEvent.set(link.eventId, [
+      ...(centersByEvent.get(link.eventId) ?? []),
+      { id: link.centerId, name: link.centerName },
+    ]);
+  }
+  const sessionsByEvent = new Map<string, typeof sessionList>();
+  for (const session of sessionList) {
+    sessionsByEvent.set(session.eventId, [
+      ...(sessionsByEvent.get(session.eventId) ?? []),
+      session,
+    ]);
+  }
+  const liveLinksByEvent = new Map<string, typeof liveLinkList>();
+  for (const link of liveLinkList) {
+    liveLinksByEvent.set(link.eventId, [
+      ...(liveLinksByEvent.get(link.eventId) ?? []),
+      link,
+    ]);
+  }
+  const memberCenterId = user.profile.worshipCenterId;
+  const isForMember = (eventId: string) => {
+    const centers = centersByEvent.get(eventId) ?? [];
+    if (!centers.length) return true;
+    if (!memberCenterId) return true;
+    return centers.some((center) => center.id === memberCenterId);
+  };
+  const visibleUpcoming = upcoming.filter((event) => isForMember(event.id));
+  const visiblePast = past.filter((event) => isForMember(event.id));
 
   return (
     <div className="space-y-6">
@@ -223,9 +292,9 @@ export default async function MemberEventsPage() {
           <h2 className="font-serif text-xl font-semibold">Upcoming</h2>
           <CalendarDays className="h-5 w-5 text-brand-700" aria-hidden="true" />
         </div>
-        {upcoming.length ? (
+        {visibleUpcoming.length ? (
           <div className="space-y-3">
-            {upcoming.map((event) => {
+            {visibleUpcoming.map((event) => {
               const assigned = departmentsByEvent.get(event.id) ?? [];
               return (
                 <article
@@ -254,10 +323,27 @@ export default async function MemberEventsPage() {
                       {myDepartmentIds.has(event.id) ? (
                         <Badge tone="gold">Your unit</Badge>
                       ) : null}
+                      {(centersByEvent.get(event.id) ?? []).some(
+                        (center) => center.id === memberCenterId,
+                      ) ? (
+                        <Badge tone="success">Your center</Badge>
+                      ) : null}
                     </div>
                     <h3 className="mt-2 font-serif text-xl font-semibold">
                       {event.title}
                     </h3>
+                    <LiveCountdown
+                      startsAt={event.startsAt.toISOString()}
+                      endsAt={event.endsAt?.toISOString() ?? null}
+                      className="mt-1"
+                    />
+                    {(centersByEvent.get(event.id) ?? []).length ? (
+                      <p className="mt-2 text-xs font-semibold text-charcoal/50">
+                        {(centersByEvent.get(event.id) ?? [])
+                          .map((center) => center.name)
+                          .join(" · ")}
+                      </p>
+                    ) : null}
                     <div className="mt-2 space-y-1.5 text-sm text-charcoal/65">
                       <p className="flex items-center gap-2">
                         <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -286,6 +372,50 @@ export default async function MemberEventsPage() {
                         {event.instructions}
                       </p>
                     ) : null}
+                    {(sessionsByEvent.get(event.id) ?? []).length ? (
+                      <div className="mt-3 rounded-2xl border border-brand-100 p-4">
+                        <p className="text-xs font-bold uppercase tracking-wide text-brand-700">
+                          Programme
+                        </p>
+                        <ul className="mt-2 space-y-2">
+                          {(sessionsByEvent.get(event.id) ?? []).map(
+                            (session) => (
+                              <li
+                                key={session.id}
+                                className="flex flex-wrap items-baseline justify-between gap-1 text-sm"
+                              >
+                                <span className="font-semibold text-charcoal/80">
+                                  {session.title}
+                                </span>
+                                <span className="text-xs text-charcoal/55">
+                                  {formatDate(session.startsAt)} ·{" "}
+                                  {lagosTime(session.startsAt)}
+                                  {session.endsAt
+                                    ? ` – ${lagosTime(session.endsAt)}`
+                                    : ""}
+                                </span>
+                              </li>
+                            ),
+                          )}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {(liveLinksByEvent.get(event.id) ?? []).length ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {(liveLinksByEvent.get(event.id) ?? []).map((link) => (
+                          <a
+                            key={link.id}
+                            href={link.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={buttonClasses("gold", "sm")}
+                          >
+                            <Radio className="h-4 w-4" aria-hidden="true" />
+                            {link.label}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
                     {assigned.length ? (
                       <p className="mt-3 text-xs text-charcoal/50">
                         Participating: {assigned.join(" · ")}
@@ -304,11 +434,11 @@ export default async function MemberEventsPage() {
         )}
       </section>
 
-      {past.length ? (
+      {visiblePast.length ? (
         <section className="surface p-5">
           <h2 className="font-serif text-xl font-semibold">Recent events</h2>
           <div className="mt-3 space-y-2">
-            {past.map((event) => {
+            {visiblePast.map((event) => {
               const status = myAttendanceByEvent.get(event.id);
               return (
                 <div

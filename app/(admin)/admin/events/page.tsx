@@ -6,9 +6,13 @@ import { CalendarDays, Clock3, MapPin, Plus, Trash2 } from "lucide-react";
 import { getDb } from "@/lib/db";
 import {
   departments,
+  eventCenters,
   eventDepartments,
+  eventLiveLinks,
   events,
+  eventSessions,
   mediaLibrary,
+  worshipCenters,
 } from "@/lib/db/schema";
 import { requirePermission } from "@/lib/auth/authorize";
 import { EVENT_CATEGORIES, PERMISSIONS } from "@/lib/constants";
@@ -18,6 +22,10 @@ import { FormMessage, Input, Label, Select, Textarea } from "@/components/ui/for
 import { SubmitButton } from "@/components/ui/submit-button";
 import { EmptyState } from "@/components/ui/display";
 import { ImagePicker } from "@/components/admin/image-picker";
+import {
+  EventLiveLinksEditor,
+  EventSessionsEditor,
+} from "@/components/admin/event-extra-fields";
 import { deleteEvent, saveEvent } from "./actions";
 
 export const metadata: Metadata = { title: "Events" };
@@ -56,13 +64,27 @@ export default async function AdminEventsPage({
   const tab = params.tab === "completed" ? "completed" : "upcoming";
   const db = await getDb();
 
-  const [eventList, departmentList, links, media] = await Promise.all([
+  const [
+    eventList,
+    departmentList,
+    centerList,
+    links,
+    centerLinks,
+    sessionList,
+    liveLinkList,
+    media,
+  ] = await Promise.all([
     db.select().from(events).orderBy(asc(events.startsAt)),
     db
       .select()
       .from(departments)
       .where(eq(departments.isActive, true))
       .orderBy(asc(departments.sortOrder), asc(departments.name)),
+    db
+      .select({ id: worshipCenters.id, name: worshipCenters.name })
+      .from(worshipCenters)
+      .where(eq(worshipCenters.isActive, true))
+      .orderBy(asc(worshipCenters.sortOrder), asc(worshipCenters.name)),
     db
       .select({
         eventId: eventDepartments.eventId,
@@ -71,15 +93,30 @@ export default async function AdminEventsPage({
       })
       .from(eventDepartments)
       .innerJoin(departments, eq(departments.id, eventDepartments.departmentId)),
+    db
+      .select({
+        eventId: eventCenters.eventId,
+        centerId: eventCenters.centerId,
+        name: worshipCenters.name,
+      })
+      .from(eventCenters)
+      .innerJoin(worshipCenters, eq(worshipCenters.id, eventCenters.centerId)),
+    db
+      .select()
+      .from(eventSessions)
+      .orderBy(asc(eventSessions.startsAt), asc(eventSessions.sortOrder)),
+    db
+      .select()
+      .from(eventLiveLinks)
+      .orderBy(asc(eventLiveLinks.sortOrder), asc(eventLiveLinks.createdAt)),
     db.select().from(mediaLibrary).orderBy(desc(mediaLibrary.createdAt)),
   ]);
 
   const now = Date.now();
-  const visible = eventList.filter((event) =>
-    tab === "completed"
-      ? event.startsAt.getTime() < now
-      : event.startsAt.getTime() >= now,
-  );
+  const visible = eventList.filter((event) => {
+    const endsAt = (event.endsAt ?? event.startsAt).getTime();
+    return tab === "completed" ? endsAt < now : endsAt >= now;
+  });
   const pickerMedia = media.map((item) => ({
     id: item.id,
     key: item.key,
@@ -91,6 +128,27 @@ export default async function AdminEventsPage({
     departmentsByEvent.set(link.eventId, [
       ...(departmentsByEvent.get(link.eventId) ?? []),
       link.name,
+    ]);
+  }
+  const centersByEvent = new Map<string, string[]>();
+  for (const link of centerLinks) {
+    centersByEvent.set(link.eventId, [
+      ...(centersByEvent.get(link.eventId) ?? []),
+      link.name,
+    ]);
+  }
+  const sessionsByEvent = new Map<string, typeof sessionList>();
+  for (const session of sessionList) {
+    sessionsByEvent.set(session.eventId, [
+      ...(sessionsByEvent.get(session.eventId) ?? []),
+      session,
+    ]);
+  }
+  const liveLinksByEvent = new Map<string, typeof liveLinkList>();
+  for (const link of liveLinkList) {
+    liveLinksByEvent.set(link.eventId, [
+      ...(liveLinksByEvent.get(link.eventId) ?? []),
+      link,
     ]);
   }
 
@@ -140,6 +198,7 @@ export default async function AdminEventsPage({
               idPrefix="new"
               media={pickerMedia}
               departments={departmentList}
+              centers={centerList}
             />
             <SubmitButton pendingLabel="Saving event...">Add event</SubmitButton>
           </form>
@@ -177,6 +236,11 @@ export default async function AdminEventsPage({
                       <span className="rounded-full bg-charcoal/5 px-2.5 py-1 text-xs font-semibold text-charcoal/60">
                         {event.isPublished ? "Published" : "Hidden"}
                       </span>
+                      {event.showOnHomePopup ? (
+                        <span className="rounded-full bg-gold-200/60 px-2.5 py-1 text-xs font-semibold text-gold-500">
+                          Home popup
+                        </span>
+                      ) : null}
                     </div>
                     <h2 className="mt-2 font-serif text-xl font-semibold">
                       {event.title}
@@ -184,7 +248,9 @@ export default async function AdminEventsPage({
                     <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-charcoal/60">
                       <span className="inline-flex items-center gap-1">
                         <CalendarDays className="h-4 w-4" aria-hidden="true" />
-                        {formatDate(event.startsAt)}
+                        {event.durationDays > 1 && event.endsAt
+                          ? `${formatDate(event.startsAt)} – ${formatDate(event.endsAt)}`
+                          : formatDate(event.startsAt)}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Clock3 className="h-4 w-4" aria-hidden="true" />
@@ -201,7 +267,12 @@ export default async function AdminEventsPage({
                     </p>
                     {eventDepartmentsList.length ? (
                       <p className="mt-2 text-xs text-charcoal/50">
-                        {eventDepartmentsList.join(" · ")}
+                        Units: {eventDepartmentsList.join(" · ")}
+                      </p>
+                    ) : null}
+                    {(centersByEvent.get(event.id) ?? []).length ? (
+                      <p className="mt-1 text-xs text-charcoal/50">
+                        Centers: {(centersByEvent.get(event.id) ?? []).join(" · ")}
                       </p>
                     ) : null}
                     <div className="mt-3">
@@ -230,10 +301,27 @@ export default async function AdminEventsPage({
                       idPrefix={event.id}
                       media={pickerMedia}
                       departments={departmentList}
+                      centers={centerList}
                       event={event}
                       selectedDepartments={links
                         .filter((link) => link.eventId === event.id)
                         .map((link) => link.departmentId)}
+                      selectedCenters={centerLinks
+                        .filter((link) => link.eventId === event.id)
+                        .map((link) => link.centerId)}
+                      sessions={(sessionsByEvent.get(event.id) ?? []).map(
+                        (session) => ({
+                          title: session.title,
+                          date: lagosDate(session.startsAt),
+                          start: lagosTime(session.startsAt),
+                          end: session.endsAt
+                            ? lagosTime(session.endsAt)
+                            : lagosTime(session.startsAt),
+                        }),
+                      )}
+                      liveLinks={(liveLinksByEvent.get(event.id) ?? []).map(
+                        (link) => ({ label: link.label, url: link.url }),
+                      )}
                     />
                     <SubmitButton pendingLabel="Saving event...">
                       Save event
@@ -263,8 +351,12 @@ function EventFields({
   idPrefix,
   media,
   departments: departmentList,
+  centers: centerList,
   event,
   selectedDepartments = [],
+  selectedCenters = [],
+  sessions = [],
+  liveLinks = [],
 }: {
   idPrefix: string;
   media: Array<{
@@ -274,6 +366,7 @@ function EventFields({
     altText: string | null;
   }>;
   departments: Array<{ id: string; name: string }>;
+  centers: Array<{ id: string; name: string }>;
   event?: {
     title: string;
     description: string | null;
@@ -282,10 +375,15 @@ function EventFields({
     location: string | null;
     startsAt: Date;
     endsAt: Date | null;
+    durationDays: number;
+    showOnHomePopup: boolean;
     coverKey: string | null;
     isPublished: boolean;
   };
   selectedDepartments?: string[];
+  selectedCenters?: string[];
+  sessions?: Array<{ title: string; date: string; start: string; end: string }>;
+  liveLinks?: Array<{ label: string; url: string }>;
 }) {
   return (
     <>
@@ -324,7 +422,7 @@ function EventFields({
           maxLength={2000}
         />
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <div>
           <Label htmlFor={`date-${idPrefix}`}>Date</Label>
           <Input
@@ -355,6 +453,17 @@ function EventFields({
               event?.endsAt ? lagosTime(event.endsAt) : "11:00"
             }
             required
+          />
+        </div>
+        <div>
+          <Label htmlFor={`days-${idPrefix}`}>Number of days</Label>
+          <Input
+            id={`days-${idPrefix}`}
+            name="durationDays"
+            type="number"
+            min={1}
+            max={60}
+            defaultValue={event?.durationDays ?? 1}
           />
         </div>
       </div>
@@ -403,6 +512,51 @@ function EventFields({
           ))}
         </div>
       </fieldset>
+      <fieldset>
+        <legend className="field-label">Worship centers</legend>
+        <p className="mt-1 text-xs text-charcoal/50">
+          Leave all unchecked for a church-wide event. Members see events for
+          their center and church-wide events.
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {centerList.length ? (
+            centerList.map((center) => (
+              <label
+                key={center.id}
+                className="flex min-h-12 items-center gap-2 rounded-2xl border border-brand-200 bg-white px-3 text-sm font-semibold"
+              >
+                <input
+                  type="checkbox"
+                  name="centers"
+                  value={center.id}
+                  defaultChecked={selectedCenters.includes(center.id)}
+                />
+                {center.name}
+              </label>
+            ))
+          ) : (
+            <p className="text-sm text-charcoal/50">
+              No worship centers yet. Add them under Settings.
+            </p>
+          )}
+        </div>
+      </fieldset>
+      <EventSessionsEditor
+        idPrefix={`sessions-${idPrefix}`}
+        initialSessions={sessions}
+      />
+      <EventLiveLinksEditor
+        idPrefix={`links-${idPrefix}`}
+        initialLinks={liveLinks}
+      />
+      <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-brand-200 bg-white px-4 text-sm font-semibold">
+        <input
+          type="checkbox"
+          name="showOnHomePopup"
+          defaultChecked={event?.showOnHomePopup ?? false}
+        />
+        Show as a popup on the home page
+      </label>
       <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-brand-200 bg-white px-4 text-sm font-semibold">
         <input
           type="checkbox"

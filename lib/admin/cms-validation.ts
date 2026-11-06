@@ -61,12 +61,39 @@ export const eventSchema = z
     venue: short,
     instructions: long,
     departments: z.array(z.string().trim().min(1)).default([]),
+    centers: z.array(z.string().trim().min(1)).default([]),
+    durationDays: z.coerce.number().int().min(1).max(60).default(1),
+    showOnHomePopup: z.boolean(),
     isPublished: z.boolean(),
   })
   .refine((data) => data.end > data.start, {
     message: "The end time must be after the start time.",
     path: ["end"],
   });
+
+export const eventSessionInput = z
+  .object({
+    title: z.string().trim().min(1, "Enter the session title.").max(160),
+    date: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose the session date."),
+    start: z.string().trim().regex(/^\d{2}:\d{2}$/, "Choose a session start time."),
+    end: z.string().trim().regex(/^\d{2}:\d{2}$/, "Choose a session end time."),
+  })
+  .refine((data) => data.end > data.start, {
+    message: "A session end time must be after its start time.",
+    path: ["end"],
+  });
+
+export const eventLiveLinkInput = z.object({
+  label: z.string().trim().min(1, "Enter a link label.").max(120),
+  url: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (value) => /^https?:\/\/.+/i.test(value),
+      "Enter a full http(s) live stream link.",
+    ),
+});
 
 export const departmentSchema = z.object({
   id: optionalKey,
