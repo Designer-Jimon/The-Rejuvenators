@@ -372,24 +372,32 @@ export async function runAiTest() {
   }
   const db = await getDb();
   const { env } = await getCloudflareContext({ async: true });
-  const result = await runDailyDevotional({
-    db,
-    env,
-    trigger: "manual",
-    triggeredBy: user.id,
-  });
+  let message = "";
+  let failed = false;
+  try {
+    const result = await runDailyDevotional({
+      db,
+      env,
+      trigger: "manual",
+      triggeredBy: user.id,
+    });
+    message = result.message;
+    failed = result.status === "failed";
+  } catch (error) {
+    message =
+      error instanceof Error ? error.message : "The AI test could not run.";
+    failed = true;
+  }
   await logAudit({
     actorId: user.id,
     action: "devotional.run_test",
     entityType: "ai_settings",
-    details: result.message,
+    details: message,
   });
   revalidatePath("/admin/ai-settings");
   revalidatePath("/admin/devotionals");
   redirect(
-    `/admin/ai-settings?${result.status === "failed" ? "error" : "saved"}=${encodeURIComponent(
-      result.message,
-    )}`,
+    `/admin/ai-settings?${failed ? "error" : "saved"}=${encodeURIComponent(message)}`,
   );
 }
 
@@ -420,22 +428,28 @@ export async function saveAiSettings(formData: FormData) {
 
   const db = await getDb();
   const now = new Date();
-  const values = [
+  const values: Array<[string, string]> = [
     [AI_SETTING_KEYS.provider, provider],
     [AI_SETTING_KEYS.baseUrl, baseUrl],
     [AI_SETTING_KEYS.model, model],
     [AI_SETTING_KEYS.systemPrompt, systemPrompt],
     [AI_SETTING_KEYS.temperature, String(temperature)],
   ];
-  for (const [key, value] of values) {
-    await db
+  const statements = values.map(([key, value]) =>
+    db
       .insert(aiSettings)
       .values({ key, value, updatedAt: now })
       .onConflictDoUpdate({
         target: aiSettings.key,
         set: { value, updatedAt: now },
-      });
-  }
+      }),
+  );
+  await db.batch(
+    statements as [
+      (typeof statements)[number],
+      ...(typeof statements)[number][],
+    ],
+  );
   await logAudit({
     actorId: user.id,
     action: "ai_settings.updated",

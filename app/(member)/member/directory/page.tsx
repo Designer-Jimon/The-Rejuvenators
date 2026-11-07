@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/utils";
 import { Avatar, Badge, EmptyState, PageHero } from "@/components/ui/display";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/form";
+import { MessageMemberButton } from "@/components/member/message-member-button";
 
 export const metadata: Metadata = { title: "Member directory" };
 export const dynamic = "force-dynamic";
@@ -180,6 +181,14 @@ export default async function DirectoryPage({
                     </p>
                   )}
                 </div>
+
+                {!isSelf ? (
+                  <MessageMemberButton userId={member.id} name={member.name} />
+                ) : null}
+
+                {!isSelf ? (
+                  <MessageMemberButton userId={member.id} name={member.name} />
+                ) : null}
 
                 <p className="mt-auto pt-3 text-xs text-charcoal/40">
                   Member since {formatDate(member.createdAt)}

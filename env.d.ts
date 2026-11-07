@@ -1,9 +1,14 @@
-import type { D1Database, R2Bucket } from "@cloudflare/workers-types";
+import type {
+  D1Database,
+  DurableObjectNamespace,
+  R2Bucket,
+} from "@cloudflare/workers-types";
 
 declare global {
   interface CloudflareEnv {
     DB: D1Database;
     MEDIA: R2Bucket;
+    REALTIME: DurableObjectNamespace;
     ASSETS?: Fetcher;
     NEXTJS_ENV?: string;
     APP_NAME?: string;

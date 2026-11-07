@@ -233,7 +233,7 @@ export default async function AdminAttendancePage({
         />
       </section>
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
         {tabs.map((item) => {
           const Icon = item.icon;
           return (
@@ -243,8 +243,8 @@ export default async function AdminAttendancePage({
               prefetch
               className={
                 tab === item.key
-                  ? "inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-brand-700 bg-brand-700 px-3.5 text-sm font-semibold text-cream"
-                  : "inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-brand-200 bg-white px-3.5 text-sm font-semibold text-charcoal/70"
+                  ? "inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-2xl border border-brand-700 bg-brand-700 px-3.5 text-sm font-semibold text-cream"
+                  : "inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-2xl border border-brand-200 bg-white px-3.5 text-sm font-semibold text-charcoal/70"
               }
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
@@ -409,7 +409,7 @@ export default async function AdminAttendancePage({
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h2 className="font-serif text-lg font-semibold">{row.name}</h2>
-                    <p className="mt-0.5 text-sm text-charcoal/55">
+                    <p className="mt-0.5 break-all text-sm text-charcoal/55">
                       {row.memberCode ?? "Member"} · {row.email}
                     </p>
                   </div>

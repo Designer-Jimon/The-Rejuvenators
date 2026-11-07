@@ -11,6 +11,7 @@ import {
   Cross,
   Home,
   LogOut,
+  MessageCircle,
   Settings,
   ShieldCheck,
   UserRound,
@@ -25,10 +26,15 @@ const navigation = [
   { href: "/member/events", label: "Events", icon: CalendarDays },
   { href: "/member/appointments", label: "Appointments", icon: CalendarClock },
   { href: "/member/directory", label: "Directory", icon: Users },
+  { href: "/member/chat", label: "Chat", icon: MessageCircle },
   { href: "/member/notifications", label: "Alerts", icon: Bell },
   { href: "/member/profile", label: "Profile", icon: UserRound },
   { href: "/member/settings", label: "Settings", icon: Settings },
 ];
+
+const mobileNavigation = navigation.filter(
+  (item) => item.href !== "/member/notifications",
+);
 
 export function MemberShell({
   children,
@@ -36,6 +42,7 @@ export function MemberShell({
   avatarUrl,
   memberCode,
   unread,
+  unreadChat,
   canAccessAdmin,
 }: {
   children: ReactNode;
@@ -43,6 +50,7 @@ export function MemberShell({
   avatarUrl: string | null;
   memberCode: string | null;
   unread: number;
+  unreadChat: number;
   canAccessAdmin: boolean;
 }) {
   const pathname = usePathname();
@@ -97,6 +105,12 @@ export function MemberShell({
         <nav className="flex-1 space-y-1 p-3" aria-label="Member">
           {navigation.map((item) => {
             const Icon = item.icon;
+            const badge =
+              item.href === "/member/notifications"
+                ? unread
+                : item.href === "/member/chat"
+                  ? unreadChat
+                  : 0;
             return (
               <Link
                 key={item.href}
@@ -111,9 +125,9 @@ export function MemberShell({
               >
                 <Icon className="h-5 w-5" aria-hidden="true" />
                 {item.label}
-                {item.href === "/member/notifications" && unread > 0 ? (
+                {badge > 0 ? (
                   <span className="ml-auto rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold text-brand-800">
-                    {unread}
+                    {badge > 9 ? "9+" : badge}
                   </span>
                 ) : null}
               </Link>
@@ -188,9 +202,10 @@ export function MemberShell({
         aria-label="Member bottom navigation"
       >
         <div className="mx-auto grid max-w-xl grid-cols-7">
-          {navigation.map((item) => {
+          {mobileNavigation.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
+            const badge = item.href === "/member/chat" ? unreadChat : 0;
             return (
               <Link
                 key={item.href}
@@ -204,8 +219,10 @@ export function MemberShell({
               >
                 <Icon className="h-5 w-5" aria-hidden="true" />
                 {item.label}
-                {item.href === "/member/notifications" && unread > 0 ? (
-                  <span className="absolute right-[26%] top-1.5 h-2 w-2 rounded-full bg-brand-700" />
+                {badge > 0 ? (
+                  <span className="absolute right-[26%] top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-700 px-1 text-[9px] font-bold text-cream">
+                    {badge > 9 ? "9+" : badge}
+                  </span>
                 ) : null}
               </Link>
             );

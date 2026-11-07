@@ -728,17 +728,33 @@ export const aiSettings = sqliteTable("ai_settings", {
     .default(now),
 });
 
-export const conversations = sqliteTable("conversations", {
-  id: text("id").primaryKey(),
-  type: text("type").notNull().default("direct"),
-  title: text("title"),
-  createdBy: text("created_by").references(() => users.id, {
-    onDelete: "set null",
-  }),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .notNull()
-    .default(now),
-});
+export const conversations = sqliteTable(
+  "conversations",
+  {
+    id: text("id").primaryKey(),
+    type: text("type").notNull().default("direct"),
+    title: text("title"),
+    pairKey: text("pair_key"),
+    departmentId: text("department_id").references(() => departments.id, {
+      onDelete: "cascade",
+    }),
+    createdBy: text("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    lastMessageAt: integer("last_message_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(now),
+  },
+  (table) => [
+    uniqueIndex("conversations_pair_unique")
+      .on(table.pairKey)
+      .where(sql`${table.pairKey} IS NOT NULL`),
+    uniqueIndex("conversations_department_unique")
+      .on(table.departmentId)
+      .where(sql`${table.departmentId} IS NOT NULL`),
+  ],
+);
 
 export const conversationParticipants = sqliteTable(
   "conversation_participants",
@@ -775,11 +791,25 @@ export const messages = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
+    kind: text("kind").notNull().default("text"),
+    replyToId: text("reply_to_id"),
+    attachmentKey: text("attachment_key"),
+    attachmentName: text("attachment_name"),
+    attachmentType: text("attachment_type"),
+    attachmentSize: integer("attachment_size"),
+    editedAt: integer("edited_at", { mode: "timestamp_ms" }),
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
       .default(now),
   },
-  (table) => [index("messages_conversation_idx").on(table.conversationId)],
+  (table) => [
+    index("messages_conversation_idx").on(
+      table.conversationId,
+      table.createdAt,
+    ),
+    index("messages_sender_idx").on(table.senderId),
+  ],
 );
 
 export const messageReads = sqliteTable(

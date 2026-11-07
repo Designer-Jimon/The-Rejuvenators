@@ -36,6 +36,13 @@
       "when": 1793999505598,
       "tag": "0004_glorious_maximus",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794015423809,
+      "tag": "0005_freezing_lady_vermin",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,12 @@
 import { z } from "zod";
+import {
+  canonicalCountry,
+  isKnownCountry,
+  isKnownLga,
+  isKnownState,
+  lgasForLocation,
+  statesForCountry,
+} from "@/lib/locations";
 
 const name = z.string().trim().min(2, "Please enter your full name.").max(120);
 const email = z.string().trim().toLowerCase().email("Enter a valid email address.");
@@ -74,6 +82,31 @@ export const registerSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match.",
     path: ["confirmPassword"],
+  })
+  .superRefine((data, context) => {
+    if (!isKnownCountry(data.country)) {
+      context.addIssue({
+        code: "custom",
+        message: "Select your country from the list.",
+        path: ["country"],
+      });
+      return;
+    }
+    if (canonicalCountry(data.country) !== "Nigeria") return;
+    if (!isKnownState(data.country, data.state)) {
+      context.addIssue({
+        code: "custom",
+        message: "Select your state from the list.",
+        path: ["state"],
+      });
+    }
+    if (!isKnownLga(data.country, data.state, data.lga)) {
+      context.addIssue({
+        code: "custom",
+        message: "Select your LGA from the list.",
+        path: ["lga"],
+      });
+    }
   });
 
 export const loginSchema = z.object({
@@ -131,7 +164,35 @@ export const profileUpdateSchema = z
     showEmail: z.boolean().optional().default(false),
     showLastSeen: z.boolean().optional().default(false),
   })
-  .strict();
+  .strict()
+  .superRefine((data, context) => {
+    if (!data.country) return;
+    if (!isKnownCountry(data.country)) {
+      context.addIssue({
+        code: "custom",
+        message: "Select your country from the list.",
+        path: ["country"],
+      });
+      return;
+    }
+    const states = statesForCountry(data.country);
+    if (states.length && data.state && !isKnownState(data.country, data.state)) {
+      context.addIssue({
+        code: "custom",
+        message: "Select your state from the list.",
+        path: ["state"],
+      });
+      return;
+    }
+    const lgas = lgasForLocation(data.country, data.state);
+    if (lgas.length && data.lga && !isKnownLga(data.country, data.state, data.lga)) {
+      context.addIssue({
+        code: "custom",
+        message: "Select your LGA from the list.",
+        path: ["lga"],
+      });
+    }
+  });
 
 export const adminActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("approve") }),

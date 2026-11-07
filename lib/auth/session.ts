@@ -58,21 +58,22 @@ export type SessionUser = {
 
 async function loadRolesAndPermissions(userId: string) {
   const db = await getDb();
-  const roleRows = await db
-    .select({ key: roles.key })
-    .from(userRoles)
-    .innerJoin(roles, eq(roles.id, userRoles.roleId))
-    .where(eq(userRoles.userId, userId));
-
-  const permissionRows = await db
-    .selectDistinct({ key: permissionsTable.key })
-    .from(userRoles)
-    .innerJoin(rolePermissions, eq(rolePermissions.roleId, userRoles.roleId))
-    .innerJoin(
-      permissionsTable,
-      eq(permissionsTable.id, rolePermissions.permissionId),
-    )
-    .where(eq(userRoles.userId, userId));
+  const [roleRows, permissionRows] = await Promise.all([
+    db
+      .select({ key: roles.key })
+      .from(userRoles)
+      .innerJoin(roles, eq(roles.id, userRoles.roleId))
+      .where(eq(userRoles.userId, userId)),
+    db
+      .selectDistinct({ key: permissionsTable.key })
+      .from(userRoles)
+      .innerJoin(rolePermissions, eq(rolePermissions.roleId, userRoles.roleId))
+      .innerJoin(
+        permissionsTable,
+        eq(permissionsTable.id, rolePermissions.permissionId),
+      )
+      .where(eq(userRoles.userId, userId)),
+  ]);
 
   return {
     roles: roleRows.map((row) => row.key),
@@ -109,17 +110,18 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const row = rows[0];
   if (!row || row.user.status !== "active") return null;
 
-  const [{ value: unread }] = await db
-    .select({ value: count() })
-    .from(notifications)
-    .where(
-      and(
-        eq(notifications.userId, row.user.id),
-        eq(notifications.isRead, false),
+  const [[{ value: unread }], access] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, row.user.id),
+          eq(notifications.isRead, false),
+        ),
       ),
-    );
-
-  const access = await loadRolesAndPermissions(row.user.id);
+    loadRolesAndPermissions(row.user.id),
+  ]);
 
   return {
     id: row.user.id,

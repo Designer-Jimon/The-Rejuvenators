@@ -129,15 +129,16 @@ export function LeaderAttendanceForm({
                       }))
                     }
                     aria-pressed={active}
+                    aria-label={`Mark ${member.name} ${option.label.toLowerCase()}`}
                     className={cn(
-                      "flex min-h-11 items-center justify-center gap-1 rounded-xl border text-xs font-semibold transition active:scale-[0.98]",
+                      "flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-xl border px-1 text-[11px] font-semibold transition active:scale-[0.98] sm:px-2 sm:text-xs",
                       active
                         ? option.selected
                         : "border-brand-100 bg-white text-charcoal/60",
                     )}
                   >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                    {option.label}
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{option.label}</span>
                   </button>
                 );
               })}
@@ -146,7 +147,7 @@ export function LeaderAttendanceForm({
         ))}
       </div>
 
-      <div className="sticky bottom-20 z-20 rounded-2xl border border-brand-200 bg-white/95 p-3 shadow-lift backdrop-blur lg:bottom-4">
+      <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 rounded-2xl border border-brand-200 bg-white/95 p-3 shadow-lift backdrop-blur lg:bottom-4">
         <SubmitButton pendingLabel="Submitting attendance..." className="w-full">
           Submit attendance
         </SubmitButton>

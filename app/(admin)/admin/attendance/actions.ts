@@ -9,6 +9,10 @@ import { requirePermission } from "@/lib/auth/authorize";
 import { NOTIFICATION_TYPES, PERMISSIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/audit";
 import { notifyUser } from "@/lib/notifications";
+import {
+  getOrCreateDirectConversation,
+  sendChatMessage,
+} from "@/lib/chat";
 
 function back(tab: string, key: "saved" | "error", message: string): never {
   redirect(`/admin/attendance?tab=${tab}&${key}=${encodeURIComponent(message)}`);
@@ -70,13 +74,31 @@ export async function sendAttendanceFollowup(formData: FormData) {
     .limit(1);
   if (!member) back("followups", "error", "Member not found.");
 
+  const body =
+    message ||
+    "We noticed you have missed a few recent gatherings. The church family would love to hear from you.";
+  let conversationId: string | null = null;
+  if (member.id !== user.id) {
+    try {
+      conversationId = await getOrCreateDirectConversation(
+        user.id,
+        member.id,
+      );
+      await sendChatMessage({
+        conversationId,
+        senderId: user.id,
+        body,
+        notify: false,
+      });
+    } catch {
+      conversationId = null;
+    }
+  }
   await notifyUser(member.id, {
     type: NOTIFICATION_TYPES.attendanceFollowup,
     title: "We missed you",
-    body:
-      message ||
-      "We noticed you have missed a few recent gatherings. The church family would love to hear from you.",
-    link: "/member/events",
+    body,
+    link: conversationId ? `/member/chat?c=${conversationId}` : "/member/events",
   });
   await logAudit({
     actorId: user.id,

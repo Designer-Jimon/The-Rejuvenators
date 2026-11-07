@@ -4,7 +4,17 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { FormField, FormMessage, Input, Select, Textarea } from "@/components/ui/form";
+import {
+  COUNTRIES,
+  canonicalCountry,
+  isKnownCountry,
+  isKnownLga,
+  isKnownState,
+  lgasForLocation,
+  statesForCountry,
+} from "@/lib/locations";
 import {
   PasswordChecklist,
   PasswordInput,
@@ -77,9 +87,34 @@ export function RegisterWizard({
   const [done, setDone] = useState(false);
 
   const progress = useMemo(() => ((step + 1) / steps.length) * 100, [step]);
+  const countryOptions = useMemo(
+    () => COUNTRIES.map((country) => country.name),
+    [],
+  );
+  const stateOptions = useMemo(
+    () => statesForCountry(form.country),
+    [form.country],
+  );
+  const lgaOptions = useMemo(
+    () => lgasForLocation(form.country, form.state),
+    [form.country, form.state],
+  );
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateCountry(value: string) {
+    setForm((current) => ({
+      ...current,
+      country: value,
+      state: "",
+      lga: "",
+    }));
+  }
+
+  function updateState(value: string) {
+    setForm((current) => ({ ...current, state: value, lga: "" }));
   }
 
   function next() {
@@ -102,9 +137,20 @@ export function RegisterWizard({
     if (step === 1) {
       if (!form.gender) return setError("Select an option for gender.");
       if (!form.maritalStatus) return setError("Select your marital status.");
-      if (!form.country.trim()) return setError("Enter your country.");
+      if (!form.country.trim()) return setError("Select your country.");
+      if (!isKnownCountry(form.country)) {
+        return setError("Select your country from the list.");
+      }
       if (!form.state.trim()) return setError("Enter your state.");
-      if (!form.lga.trim()) return setError("Enter your LGA.");
+      if (canonicalCountry(form.country) === "Nigeria") {
+        if (!isKnownState(form.country, form.state)) {
+          return setError("Select your state from the list.");
+        }
+        if (!form.lga.trim()) return setError("Select your LGA.");
+        if (!isKnownLga(form.country, form.state, form.lga)) {
+          return setError("Select your LGA from the list.");
+        }
+      }
       if (!form.dateOfBirth) return setError("Enter your date of birth.");
       if (form.address.trim().length < 4) return setError("Enter your address.");
     }
@@ -317,35 +363,57 @@ export function RegisterWizard({
           </FormField>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="Country" htmlFor="country">
-              <Input
+              <Combobox
                 id="country"
                 name="country"
-                autoComplete="country-name"
                 value={form.country}
-                onChange={(event) => update("country", event.target.value)}
-                required
+                onChange={updateCountry}
+                options={countryOptions}
+                placeholder="Search countries..."
               />
             </FormField>
             <FormField label="State" htmlFor="state">
-              <Input
-                id="state"
-                name="state"
-                autoComplete="address-level1"
-                value={form.state}
-                onChange={(event) => update("state", event.target.value)}
-                required
-              />
+              {stateOptions.length ? (
+                <Combobox
+                  id="state"
+                  name="state"
+                  value={form.state}
+                  onChange={updateState}
+                  options={stateOptions}
+                  placeholder="Search states..."
+                />
+              ) : (
+                <Input
+                  id="state"
+                  name="state"
+                  autoComplete="address-level1"
+                  value={form.state}
+                  onChange={(event) => updateState(event.target.value)}
+                  required
+                />
+              )}
             </FormField>
           </div>
           <FormField label="LGA" htmlFor="lga">
-            <Input
-              id="lga"
-              name="lga"
-              autoComplete="address-level2"
-              value={form.lga}
-              onChange={(event) => update("lga", event.target.value)}
-              required
-            />
+            {lgaOptions.length ? (
+              <Combobox
+                id="lga"
+                name="lga"
+                value={form.lga}
+                onChange={(value) => update("lga", value)}
+                options={lgaOptions}
+                placeholder="Search LGAs..."
+              />
+            ) : (
+              <Input
+                id="lga"
+                name="lga"
+                autoComplete="address-level2"
+                value={form.lga}
+                onChange={(event) => update("lga", event.target.value)}
+                required
+              />
+            )}
           </FormField>
           <FormField label="Date of birth" htmlFor="dateOfBirth">
             <Input

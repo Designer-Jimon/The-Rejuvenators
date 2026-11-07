@@ -5,6 +5,7 @@ import {
   eq,
   isNull,
   like,
+  ne,
   or,
   type SQL,
 } from "drizzle-orm";
@@ -24,6 +25,10 @@ import { NOTIFICATION_TYPES } from "@/lib/constants";
 import { logAudit } from "@/lib/audit";
 import { notifyUser } from "@/lib/notifications";
 import { getSettings } from "@/lib/settings";
+import {
+  getOrCreateDepartmentConversation,
+  syncDepartmentConversation,
+} from "@/lib/chat";
 import type { AdminActionInput } from "@/lib/validation";
 import type { SessionUser } from "@/lib/auth/session";
 
@@ -102,27 +107,30 @@ export async function listMembers(options: {
 
 export async function getAdminCounts() {
   const db = await getDb();
-  const [pending] = await db
-    .select({ value: count() })
-    .from(memberProfiles)
-    .where(eq(memberProfiles.registrationStatus, "pending"));
-  const [approved] = await db
-    .select({ value: count() })
-    .from(memberProfiles)
-    .where(eq(memberProfiles.registrationStatus, "approved"));
-  const [active] = await db
-    .select({ value: count() })
-    .from(memberProfiles)
-    .where(
-      and(
-        eq(memberProfiles.registrationStatus, "approved"),
-        eq(memberProfiles.memberStatus, "active"),
-      ),
-    );
-  const [departmentCount] = await db
-    .select({ value: count() })
-    .from(departments)
-    .where(eq(departments.isActive, true));
+  const [[pending], [approved], [active], [departmentCount]] =
+    await Promise.all([
+      db
+        .select({ value: count() })
+        .from(memberProfiles)
+        .where(eq(memberProfiles.registrationStatus, "pending")),
+      db
+        .select({ value: count() })
+        .from(memberProfiles)
+        .where(eq(memberProfiles.registrationStatus, "approved")),
+      db
+        .select({ value: count() })
+        .from(memberProfiles)
+        .where(
+          and(
+            eq(memberProfiles.registrationStatus, "approved"),
+            eq(memberProfiles.memberStatus, "active"),
+          ),
+        ),
+      db
+        .select({ value: count() })
+        .from(departments)
+        .where(eq(departments.isActive, true)),
+    ]);
 
   return {
     pending: Number(pending?.value ?? 0),
@@ -154,52 +162,60 @@ export async function getMemberDetail(memberId: string) {
   const row = rows[0];
   if (!row) return null;
 
-  const roleRows = await db
-    .select({ key: roles.key, label: roles.label })
-    .from(userRoles)
-    .innerJoin(roles, eq(roles.id, userRoles.roleId))
-    .where(eq(userRoles.userId, memberId));
-
-  const memberships = await db
-    .select({
-      id: departmentMembers.id,
-      departmentId: departmentMembers.departmentId,
-      departmentName: departments.name,
-      role: departmentMembers.role,
-      isActive: departmentMembers.isActive,
-      joinedAt: departmentMembers.joinedAt,
-    })
-    .from(departmentMembers)
-    .innerJoin(departments, eq(departments.id, departmentMembers.departmentId))
-    .where(eq(departmentMembers.userId, memberId))
-    .orderBy(desc(departmentMembers.joinedAt));
-
-  const leaderHistory = await db
-    .select({
-      id: departmentLeaders.id,
-      departmentName: departments.name,
-      startedAt: departmentLeaders.startedAt,
-      endedAt: departmentLeaders.endedAt,
-    })
-    .from(departmentLeaders)
-    .innerJoin(departments, eq(departments.id, departmentLeaders.departmentId))
-    .where(eq(departmentLeaders.userId, memberId))
-    .orderBy(desc(departmentLeaders.startedAt));
-
-  const audit = await db
-    .select()
-    .from(auditLogs)
-    .where(
-      and(eq(auditLogs.entityType, "member"), eq(auditLogs.entityId, memberId)),
-    )
-    .orderBy(desc(auditLogs.createdAt))
-    .limit(30);
-
-  const departmentList = await db
-    .select({ id: departments.id, name: departments.name })
-    .from(departments)
-    .where(eq(departments.isActive, true))
-    .orderBy(departments.sortOrder);
+  const [roleRows, memberships, leaderHistory, audit, departmentList] =
+    await Promise.all([
+      db
+        .select({ key: roles.key, label: roles.label })
+        .from(userRoles)
+        .innerJoin(roles, eq(roles.id, userRoles.roleId))
+        .where(eq(userRoles.userId, memberId)),
+      db
+        .select({
+          id: departmentMembers.id,
+          departmentId: departmentMembers.departmentId,
+          departmentName: departments.name,
+          role: departmentMembers.role,
+          isActive: departmentMembers.isActive,
+          joinedAt: departmentMembers.joinedAt,
+        })
+        .from(departmentMembers)
+        .innerJoin(
+          departments,
+          eq(departments.id, departmentMembers.departmentId),
+        )
+        .where(eq(departmentMembers.userId, memberId))
+        .orderBy(desc(departmentMembers.joinedAt)),
+      db
+        .select({
+          id: departmentLeaders.id,
+          departmentName: departments.name,
+          startedAt: departmentLeaders.startedAt,
+          endedAt: departmentLeaders.endedAt,
+        })
+        .from(departmentLeaders)
+        .innerJoin(
+          departments,
+          eq(departments.id, departmentLeaders.departmentId),
+        )
+        .where(eq(departmentLeaders.userId, memberId))
+        .orderBy(desc(departmentLeaders.startedAt)),
+      db
+        .select()
+        .from(auditLogs)
+        .where(
+          and(
+            eq(auditLogs.entityType, "member"),
+            eq(auditLogs.entityId, memberId),
+          ),
+        )
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(30),
+      db
+        .select({ id: departments.id, name: departments.name })
+        .from(departments)
+        .where(eq(departments.isActive, true))
+        .orderBy(departments.sortOrder),
+    ]);
 
   return {
     ...row,
@@ -285,6 +301,10 @@ export async function performAdminAction(
           target: [departmentMembers.departmentId, departmentMembers.userId],
           set: { isActive: true, joinedAt: now },
         });
+      await getOrCreateDepartmentConversation(
+        row.profile.requestedDepartmentId,
+        actor.id,
+      );
     }
 
     await notifyUser(memberId, {
@@ -351,6 +371,23 @@ export async function performAdminAction(
         target: [departmentMembers.departmentId, departmentMembers.userId],
         set: { isActive: true },
       });
+
+    await getOrCreateDepartmentConversation(department.id, actor.id);
+    if (
+      row.profile.requestedDepartmentId &&
+      row.profile.requestedDepartmentId !== department.id
+    ) {
+      await db
+        .update(departmentMembers)
+        .set({ isActive: false })
+        .where(
+          and(
+            eq(departmentMembers.userId, memberId),
+            ne(departmentMembers.departmentId, department.id),
+          ),
+        );
+      await syncDepartmentConversation(row.profile.requestedDepartmentId);
+    }
 
     await notifyUser(memberId, {
       type: NOTIFICATION_TYPES.general,
@@ -420,6 +457,7 @@ export async function performAdminAction(
       startedAt: now,
       assignedBy: actor.id,
     });
+    await syncDepartmentConversation(departmentId);
 
     await notifyUser(memberId, {
       type: NOTIFICATION_TYPES.leaderAssigned,
@@ -454,6 +492,7 @@ export async function performAdminAction(
           isNull(departmentLeaders.endedAt),
         ),
       );
+    await syncDepartmentConversation(departmentId);
     await notifyUser(memberId, {
       type: NOTIFICATION_TYPES.general,
       title: "Unit leadership update",
@@ -468,10 +507,24 @@ export async function performAdminAction(
   }
 
   if (input.action === "set_status") {
+    const memberships = await db
+      .select({ departmentId: departmentMembers.departmentId })
+      .from(departmentMembers)
+      .where(
+        and(
+          eq(departmentMembers.userId, memberId),
+          eq(departmentMembers.isActive, true),
+        ),
+      );
     await db
       .update(memberProfiles)
       .set({ memberStatus: input.status, updatedAt: now })
       .where(eq(memberProfiles.userId, memberId));
+    await Promise.all(
+      [...new Set(memberships.map((row) => row.departmentId))].map((id) =>
+        syncDepartmentConversation(id),
+      ),
+    );
     await notifyUser(memberId, {
       type: NOTIFICATION_TYPES.memberStatus,
       title: "Membership status updated",

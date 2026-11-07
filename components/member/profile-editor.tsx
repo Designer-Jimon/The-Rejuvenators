@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Camera, ImagePlus, LockKeyhole, Save } from "lucide-react";
 import { PhotoPicker } from "@/components/ui/photo-picker";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Avatar,
   Badge,
@@ -20,6 +21,11 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { compressImageSafe } from "@/lib/client-image";
 import { fetchWithTimeout } from "@/lib/client-fetch";
+import {
+  COUNTRIES,
+  lgasForLocation,
+  statesForCountry,
+} from "@/lib/locations";
 import { formatDate } from "@/lib/utils";
 
 export type ProfileEditorData = {
@@ -95,6 +101,32 @@ export function ProfileEditor({
     const filled = fields.filter((value) => Boolean(value && String(value).trim())).length;
     return Math.round((filled / fields.length) * 100);
   }, [form, avatarUrl]);
+
+  const countryOptions = useMemo(
+    () => COUNTRIES.map((country) => country.name),
+    [],
+  );
+  const stateOptions = useMemo(
+    () => statesForCountry(form.country),
+    [form.country],
+  );
+  const lgaOptions = useMemo(
+    () => lgasForLocation(form.country, form.state),
+    [form.country, form.state],
+  );
+
+  function updateCountry(value: string) {
+    setForm((current) => ({
+      ...current,
+      country: value,
+      state: "",
+      lga: "",
+    }));
+  }
+
+  function updateState(value: string) {
+    setForm((current) => ({ ...current, state: value, lga: "" }));
+  }
 
   function update<K extends keyof ProfileEditorData>(
     key: K,
@@ -347,29 +379,50 @@ export function ProfileEditor({
             </FormField>
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField label="Country" htmlFor="profile-country">
-                <Input
+                <Combobox
                   id="profile-country"
                   value={form.country}
-                  onChange={(event) => update("country", event.target.value)}
-                  autoComplete="country-name"
+                  onChange={updateCountry}
+                  options={countryOptions}
+                  placeholder="Search countries..."
                 />
               </FormField>
               <FormField label="State" htmlFor="profile-state">
-                <Input
-                  id="profile-state"
-                  value={form.state}
-                  onChange={(event) => update("state", event.target.value)}
-                  autoComplete="address-level1"
-                />
+                {stateOptions.length ? (
+                  <Combobox
+                    id="profile-state"
+                    value={form.state}
+                    onChange={updateState}
+                    options={stateOptions}
+                    placeholder="Search states..."
+                  />
+                ) : (
+                  <Input
+                    id="profile-state"
+                    value={form.state}
+                    onChange={(event) => updateState(event.target.value)}
+                    autoComplete="address-level1"
+                  />
+                )}
               </FormField>
             </div>
             <FormField label="LGA" htmlFor="profile-lga">
-              <Input
-                id="profile-lga"
-                value={form.lga}
-                onChange={(event) => update("lga", event.target.value)}
-                autoComplete="address-level2"
-              />
+              {lgaOptions.length ? (
+                <Combobox
+                  id="profile-lga"
+                  value={form.lga}
+                  onChange={(value) => update("lga", value)}
+                  options={lgaOptions}
+                  placeholder="Search LGAs..."
+                />
+              ) : (
+                <Input
+                  id="profile-lga"
+                  value={form.lga}
+                  onChange={(event) => update("lga", event.target.value)}
+                  autoComplete="address-level2"
+                />
+              )}
             </FormField>
             <FormField label="Address" htmlFor="profile-address">
               <Textarea

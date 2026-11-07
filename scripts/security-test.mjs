@@ -155,6 +155,42 @@ try {
   passed += 1;
   console.log("PASS  Valid profile updates still succeed for the member.");
 
+  const anonymousChat = await fetch(`${baseUrl}/api/chat/conversations`, {
+    headers: { Origin: baseUrl },
+  });
+  assert(
+    anonymousChat.status === 401,
+    `Expected anonymous chat access to return 401, got ${anonymousChat.status}.`,
+  );
+  passed += 1;
+  console.log("PASS  Anonymous chat access is rejected with 401.");
+
+  const memberChat = await fetch(`${baseUrl}/api/chat/conversations`, {
+    headers: { Origin: baseUrl, Cookie: cookie },
+  });
+  assert(
+    memberChat.status === 200,
+    `Expected authenticated chat list to return 200, got ${memberChat.status}.`,
+  );
+  passed += 1;
+  console.log("PASS  Authenticated members can load their conversations.");
+
+  const crossOriginChat = await fetch(`${baseUrl}/api/chat/conversations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Origin: "null",
+      Cookie: cookie,
+    },
+    body: JSON.stringify({ userId: adminId }),
+  });
+  assert(
+    crossOriginChat.status === 403,
+    `Expected an unverifiable chat origin to return 403, got ${crossOriginChat.status}.`,
+  );
+  passed += 1;
+  console.log("PASS  Chat creation with an unverifiable origin is blocked.");
+
   console.log(`\nAll ${passed} security checks passed.`);
 } catch (error) {
   console.error(`\nSECURITY TEST FAILED: ${error instanceof Error ? error.message : error}`);

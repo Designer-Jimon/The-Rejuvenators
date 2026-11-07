@@ -16,7 +16,8 @@
     "db:migrate:remote": "wrangler d1 migrations apply itisfinished-db --remote",
     "db:seed": "node scripts/seed.mjs --local",
     "db:seed:remote": "node scripts/seed.mjs --remote",
-    "test:security": "node scripts/security-test.mjs"
+    "test:security": "node scripts/security-test.mjs",
+    "test:locations": "node scripts/check-locations.mjs"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "1.20.15",

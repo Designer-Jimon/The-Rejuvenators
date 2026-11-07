@@ -11,8 +11,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireAdmin();
-  const settings = await getSettings();
+  const [user, settings] = await Promise.all([requireAdmin(), getSettings()]);
 
   return (
     <AdminShell

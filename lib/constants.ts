@@ -67,6 +67,7 @@ export const NOTIFICATION_TYPES = {
   eventCreated: "event_created",
   devotionalPublished: "devotional_published",
   attendanceFollowup: "attendance_followup",
+  chatMessage: "chat_message",
   adminNotice: "admin_notice",
   general: "general",
 } as const;
@@ -82,6 +83,7 @@ export const NOTIFICATION_LABELS: Record<string, string> = {
   event_created: "New church events",
   devotional_published: "Daily devotional",
   attendance_followup: "Attendance follow-up",
+  chat_message: "Chat messages",
   admin_notice: "Admin notices",
   general: "General announcements",
 };
