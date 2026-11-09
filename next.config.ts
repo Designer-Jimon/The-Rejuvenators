@@ -5,21 +5,30 @@ if (process.env.NODE_ENV === "development") {
   initOpenNextCloudflareForDev();
 }
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "media-src 'self' blob:",
-  "font-src 'self'",
-  "connect-src 'self' ws: wss:",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' ws: wss: https:",
+  "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
+  "upgrade-insecure-requests",
 ].join("; ");
 
-const securityHeaders = [
+const devHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+];
+
+const productionHeaders = [
   { key: "Content-Security-Policy", value: contentSecurityPolicy },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -31,6 +40,8 @@ const securityHeaders = [
     value: "max-age=31536000; includeSubDomains",
   },
 ];
+
+const securityHeaders = isProduction ? productionHeaders : devHeaders;
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
