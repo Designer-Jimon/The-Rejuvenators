@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   CalendarClock,
@@ -57,6 +57,8 @@ export function MemberShell({
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -64,6 +66,21 @@ export function MemberShell({
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   async function logout() {
     setLoggingOut(true);
@@ -77,11 +94,11 @@ export function MemberShell({
 
   return (
     <div className="min-h-[100dvh] bg-cream">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-brand-100 bg-white lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col overflow-hidden border-r border-brand-100 bg-white lg:flex">
         <Link
           href="/"
           prefetch
-          className="flex items-center gap-2.5 border-b border-brand-100 px-5 py-5 active:opacity-80"
+          className="flex shrink-0 items-center gap-2.5 border-b border-brand-100 px-5 py-5 active:opacity-80"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-gradient text-cream">
             <Cross className="h-5 w-5" aria-hidden="true" />
@@ -93,7 +110,7 @@ export function MemberShell({
             </span>
           </span>
         </Link>
-        <div className="flex items-center gap-3 border-b border-brand-100 px-5 py-4">
+        <div className="flex shrink-0 items-center gap-3 border-b border-brand-100 px-5 py-4">
           <Avatar name={name} src={avatarUrl} size="md" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{name}</p>
@@ -102,7 +119,10 @@ export function MemberShell({
             </p>
           </div>
         </div>
-        <nav className="flex-1 space-y-1 p-3" aria-label="Member">
+        <nav
+          className="flex-1 space-y-1 overflow-y-auto p-3"
+          aria-label="Member"
+        >
           {navigation.map((item) => {
             const Icon = item.icon;
             const badge =
@@ -134,7 +154,7 @@ export function MemberShell({
             );
           })}
         </nav>
-        <div className="border-t border-brand-100 p-3">
+        <div className="shrink-0 border-t border-brand-100 p-3">
           <button
             type="button"
             onClick={logout}
@@ -179,15 +199,70 @@ export function MemberShell({
                   Admin
                 </Link>
               ) : null}
-              <NotificationBell unread={unread} />
               <Link
-                href="/member/profile"
+                href="/member/chat"
                 prefetch
-                className="flex h-11 w-11 items-center justify-center rounded-full transition active:scale-95 active:opacity-70"
-                aria-label="My profile"
+                className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 bg-white text-charcoal/70 transition active:scale-95 active:opacity-70"
+                aria-label={
+                  unreadChat > 0
+                    ? `Messages, ${unreadChat} unread`
+                    : "Messages"
+                }
               >
-                <Avatar name={name} src={avatarUrl} size="sm" />
+                <MessageCircle className="h-5 w-5" aria-hidden="true" />
+                {unreadChat > 0 ? (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-700 px-1 text-[10px] font-bold text-cream">
+                    {unreadChat > 9 ? "9+" : unreadChat}
+                  </span>
+                ) : null}
               </Link>
+              <NotificationBell unread={unread} />
+              <div className="relative" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((current) => !current)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full transition active:scale-95 active:opacity-70"
+                  aria-label="Account menu"
+                  aria-expanded={menuOpen}
+                >
+                  <Avatar name={name} src={avatarUrl} size="sm" />
+                </button>
+                {menuOpen ? (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-soft">
+                    <div className="border-b border-brand-100 px-4 py-3">
+                      <p className="truncate text-sm font-semibold">{name}</p>
+                      <p className="truncate text-xs text-charcoal/50">
+                        {memberCode ?? "Member"}
+                      </p>
+                    </div>
+                    <Link
+                      href="/member/profile"
+                      prefetch
+                      className="flex min-h-11 items-center gap-2 px-4 text-sm font-semibold text-charcoal/70 hover:bg-brand-50"
+                    >
+                      <UserRound className="h-4 w-4" aria-hidden="true" />
+                      My profile
+                    </Link>
+                    <Link
+                      href="/member/settings"
+                      prefetch
+                      className="flex min-h-11 items-center gap-2 px-4 text-sm font-semibold text-charcoal/70 hover:bg-brand-50"
+                    >
+                      <Settings className="h-4 w-4" aria-hidden="true" />
+                      Settings
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={logout}
+                      disabled={loggingOut}
+                      className="flex min-h-11 w-full items-center gap-2 border-t border-brand-100 px-4 text-sm font-semibold text-charcoal/70 hover:bg-brand-50"
+                    >
+                      <LogOut className="h-4 w-4" aria-hidden="true" />
+                      {loggingOut ? "Logging out..." : "Log out"}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </header>

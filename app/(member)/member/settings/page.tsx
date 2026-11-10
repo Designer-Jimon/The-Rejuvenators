@@ -12,6 +12,7 @@ import {
 import { PageHero } from "@/components/ui/display";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form";
+import { LogoutButton } from "@/components/ui/logout-button";
 import { updateNotificationPreferences } from "../actions";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -151,6 +152,14 @@ export default async function MemberSettingsPage({
           <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-4 text-sm leading-6 text-charcoal/60">
             Signed in as <span className="font-semibold">{user.email}</span>.
             Contact the church office if you need to change your email address.
+          </div>
+
+          <div className="surface p-5">
+            <h2 className="font-serif text-lg font-semibold">Account</h2>
+            <p className="mt-1 text-xs leading-5 text-charcoal/55">
+              Sign out of this device when you are finished.
+            </p>
+            <LogoutButton className="mt-4 w-full" />
           </div>
         </aside>
       </div>

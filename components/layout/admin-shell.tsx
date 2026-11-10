@@ -20,9 +20,11 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircle,
   Mic2,
   Palette,
   Settings,
+  ShieldAlert,
   Share2,
   Sparkles,
   UserRound,
@@ -34,126 +36,183 @@ import { Avatar } from "@/components/ui/display";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const navigation = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact: boolean;
+  permission?: "membership" | "appointments" | "content" | "settings" | "ai";
+  badge?: "chat";
+};
+
+type NavGroup = { title: string; items: NavItem[] };
+
+const navigationGroups: NavGroup[] = [
   {
-    href: "/admin/members",
-    label: "Membership",
-    icon: Users,
-    exact: false,
-    permission: "membership",
+    title: "Overview",
+    items: [
+      { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
+      {
+        href: "/member/chat",
+        label: "Messages",
+        icon: MessageCircle,
+        exact: false,
+        badge: "chat",
+      },
+    ],
   },
   {
-    href: "/admin/appointments",
-    label: "Appointments",
-    icon: CalendarClock,
-    exact: false,
-    permission: "appointments",
+    title: "People",
+    items: [
+      {
+        href: "/admin/members",
+        label: "Membership",
+        icon: Users,
+        exact: false,
+        permission: "membership",
+      },
+      {
+        href: "/admin/appointments",
+        label: "Appointments",
+        icon: CalendarClock,
+        exact: false,
+        permission: "appointments",
+      },
+      {
+        href: "/admin/attendance",
+        label: "Attendance",
+        icon: ClipboardCheck,
+        exact: false,
+        permission: "membership",
+      },
+      {
+        href: "/admin/chat-moderation",
+        label: "Chat moderation",
+        icon: ShieldAlert,
+        exact: false,
+        permission: "membership",
+      },
+    ],
   },
   {
-    href: "/admin/attendance",
-    label: "Attendance",
-    icon: ClipboardCheck,
-    exact: false,
-    permission: "membership",
+    title: "Church life",
+    items: [
+      {
+        href: "/admin/events",
+        label: "Events",
+        icon: CalendarDays,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/sermons",
+        label: "Sermons",
+        icon: Mic2,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/devotionals",
+        label: "Devotionals",
+        icon: BookOpen,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/activities",
+        label: "Activities",
+        icon: CalendarDays,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/departments",
+        label: "Departments",
+        icon: Building2,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/worship-centers",
+        label: "Worship centers",
+        icon: Church,
+        exact: false,
+        permission: "settings",
+      },
+    ],
   },
   {
-    href: "/admin/events",
-    label: "Events",
-    icon: CalendarDays,
-    exact: false,
-    permission: "content",
+    title: "Website",
+    items: [
+      {
+        href: "/admin/content",
+        label: "Website text",
+        icon: FileText,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/pastor",
+        label: "Pastor",
+        icon: UserRound,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/media",
+        label: "Media library",
+        icon: Images,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/branding",
+        label: "Logo & branding",
+        icon: Palette,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/slideshow",
+        label: "Homepage slideshow",
+        icon: Sparkles,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/faqs",
+        label: "FAQ",
+        icon: HelpCircle,
+        exact: false,
+        permission: "content",
+      },
+      {
+        href: "/admin/social",
+        label: "Social & contact",
+        icon: Share2,
+        exact: false,
+        permission: "settings",
+      },
+    ],
   },
   {
-    href: "/admin/sermons",
-    label: "Sermons",
-    icon: Mic2,
-    exact: false,
-    permission: "content",
-  },
-  {
-    href: "/admin/devotionals",
-    label: "Devotionals",
-    icon: BookOpen,
-    exact: false,
-    permission: "content",
-  },
-  {
-    href: "/admin/ai-settings",
-    label: "AI settings",
-    icon: Bot,
-    exact: false,
-    permission: "ai",
-  },
-  {
-    href: "/admin/media",
-    label: "Media library",
-    icon: Images,
-    exact: false,
-    permission: "content",
-  },
-  {
-    href: "/admin/branding",
-    label: "Logo & branding",
-    icon: Palette,
-    exact: false,
-    permission: "content",
-  },
-  {
-    href: "/admin/slideshow",
-    label: "Homepage slideshow",
-    icon: Sparkles,
-    exact: false,
-    permission: "content",
-  },
-  {
-    href: "/admin/content",
-    label: "Website content",
-    icon: FileText,
-    exact: false,
-    permission: "content",
-  },
-  {
-    href: "/admin/activities",
-    label: "Activities",
-    icon: CalendarDays,
-    exact: false,
-    permission: "content",
-  },
-  {
-    href: "/admin/departments",
-    label: "Departments",
-    icon: Building2,
-    exact: false,
-    permission: "content",
-  },
-  {
-    href: "/admin/worship-centers",
-    label: "Worship centers",
-    icon: Church,
-    exact: false,
-    permission: "settings",
-  },
-  {
-    href: "/admin/faqs",
-    label: "FAQ",
-    icon: HelpCircle,
-    exact: false,
-    permission: "content",
-  },
-  {
-    href: "/admin/social",
-    label: "Social & contact",
-    icon: Share2,
-    exact: false,
-    permission: "settings",
-  },
-  {
-    href: "/admin/settings",
-    label: "Site settings",
-    icon: Settings,
-    exact: false,
-    permission: "settings",
+    title: "System",
+    items: [
+      {
+        href: "/admin/ai-settings",
+        label: "AI settings",
+        icon: Bot,
+        exact: false,
+        permission: "ai",
+      },
+      {
+        href: "/admin/settings",
+        label: "Site settings",
+        icon: Settings,
+        exact: false,
+        permission: "settings",
+      },
+    ],
   },
 ];
 
@@ -163,6 +222,7 @@ export function AdminShell({
   avatarUrl,
   logoUrl,
   unread,
+  unreadChat,
   canManageMembers,
   canManageAppointments,
   canManageContent,
@@ -174,6 +234,7 @@ export function AdminShell({
   avatarUrl: string | null;
   logoUrl: string | null;
   unread: number;
+  unreadChat: number;
   canManageMembers: boolean;
   canManageAppointments: boolean;
   canManageContent: boolean;
@@ -185,6 +246,9 @@ export function AdminShell({
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(navigationGroups.map((group) => [group.title, true])),
+  );
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -223,36 +287,81 @@ export function AdminShell({
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
 
-  const items = navigation.filter((item) => {
+  const allowed = (item: NavItem) => {
     if (item.permission === "membership") return canManageMembers;
     if (item.permission === "appointments") return canManageAppointments;
     if (item.permission === "content") return canManageContent;
     if (item.permission === "settings") return canManageSettings;
     if (item.permission === "ai") return canManageAi;
     return true;
-  });
+  };
+
+  const groups = navigationGroups
+    .map((group) => ({ ...group, items: group.items.filter(allowed) }))
+    .filter((group) => group.items.length > 0);
+
+  const groupIsOpen = (group: NavGroup) =>
+    openGroups[group.title] ??
+    group.items.some((item) => isActive(item.href, item.exact));
+
+  const toggleGroup = (title: string) =>
+    setOpenGroups((current) => ({
+      ...current,
+      [title]: !(current[title] ?? true),
+    }));
 
   const nav = (
-    <nav className="flex-1 space-y-1 p-3" aria-label="Admin">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const active = isActive(item.href, item.exact);
+    <nav className="flex-1 space-y-3 overflow-y-auto p-3" aria-label="Admin">
+      {groups.map((group) => {
+        const expanded = groupIsOpen(group);
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            prefetch
-            onClick={() => setOpen(false)}
-            className={cn(
-              "flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold transition active:scale-[0.98] active:opacity-80",
-              active
-                ? "bg-brand-700 text-cream shadow-soft"
-                : "text-charcoal/70 hover:bg-brand-50 hover:text-brand-800",
-            )}
-          >
-            <Icon className="h-5 w-5" aria-hidden="true" />
-            {item.label}
-          </Link>
+          <div key={group.title}>
+            <button
+              type="button"
+              onClick={() => toggleGroup(group.title)}
+              aria-expanded={expanded}
+              className="flex min-h-9 w-full items-center justify-between gap-2 rounded-xl px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-charcoal/40 transition hover:text-brand-700"
+            >
+              {group.title}
+              <ChevronRight
+                className={cn(
+                  "h-3.5 w-3.5 transition-transform",
+                  expanded && "rotate-90",
+                )}
+                aria-hidden="true"
+              />
+            </button>
+            {expanded ? (
+              <div className="mt-1 space-y-1">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href, item.exact);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      prefetch
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-sm font-semibold transition active:scale-[0.98] active:opacity-80",
+                        active
+                          ? "bg-brand-700 text-cream shadow-soft"
+                          : "text-charcoal/70 hover:bg-brand-50 hover:text-brand-800",
+                      )}
+                    >
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {item.badge === "chat" && unreadChat > 0 ? (
+                        <span className="rounded-full bg-brand-100 px-1.5 py-0.5 text-[10px] font-bold text-brand-800">
+                          {unreadChat > 99 ? "99+" : unreadChat}
+                        </span>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
         );
       })}
     </nav>
@@ -260,11 +369,11 @@ export function AdminShell({
 
   return (
     <div className="min-h-[100dvh] bg-cream">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-brand-100 bg-white lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col overflow-hidden border-r border-brand-100 bg-white lg:flex">
         <Link
           href="/admin"
           prefetch
-          className="flex items-center gap-2.5 border-b border-brand-100 px-5 py-5 active:opacity-80"
+          className="flex shrink-0 items-center gap-2.5 border-b border-brand-100 px-5 py-5 active:opacity-80"
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
             {logoUrl ? (
@@ -286,7 +395,7 @@ export function AdminShell({
           </span>
         </Link>
         {nav}
-        <div className="border-t border-brand-100 p-3">
+        <div className="shrink-0 border-t border-brand-100 p-3">
           <div className="mb-2 flex items-center gap-3 px-2">
             <Avatar name={name} src={avatarUrl} size="sm" />
             <p className="truncate text-sm font-semibold">{name}</p>
@@ -428,37 +537,70 @@ export function AdminShell({
             aria-label="Admin mobile"
           >
             <div className="flex flex-col">
-              {items.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href, item.exact);
+              {groups.map((group) => {
+                const expanded = groupIsOpen(group);
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    prefetch
-                    onClick={() => setOpen(false)}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "flex min-h-14 w-full items-center gap-3 border-b border-brand-100 py-2 text-lg font-semibold transition active:opacity-70",
-                      active ? "text-brand-800" : "text-charcoal/80",
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        "h-5 w-5 shrink-0",
-                        active ? "text-brand-700" : "text-charcoal/40",
-                      )}
-                      aria-hidden="true"
-                    />
-                    <span className="flex-1">{item.label}</span>
-                    <ChevronRight
-                      className={cn(
-                        "h-5 w-5 shrink-0",
-                        active ? "text-brand-700" : "text-charcoal/30",
-                      )}
-                      aria-hidden="true"
-                    />
-                  </Link>
+                  <div key={group.title} className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.title)}
+                      aria-expanded={expanded}
+                      className="flex min-h-11 w-full items-center justify-between gap-2 border-b border-brand-100 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-charcoal/40"
+                    >
+                      {group.title}
+                      <ChevronRight
+                        className={cn(
+                          "h-4 w-4 transition-transform",
+                          expanded && "rotate-90",
+                        )}
+                        aria-hidden="true"
+                      />
+                    </button>
+                    {expanded
+                      ? group.items.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActive(item.href, item.exact);
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              prefetch
+                              onClick={() => setOpen(false)}
+                              aria-current={active ? "page" : undefined}
+                              className={cn(
+                                "flex min-h-14 w-full items-center gap-3 border-b border-brand-100 py-2 text-lg font-semibold transition active:opacity-70",
+                                active ? "text-brand-800" : "text-charcoal/80",
+                              )}
+                            >
+                              <Icon
+                                className={cn(
+                                  "h-5 w-5 shrink-0",
+                                  active
+                                    ? "text-brand-700"
+                                    : "text-charcoal/40",
+                                )}
+                                aria-hidden="true"
+                              />
+                              <span className="flex-1">{item.label}</span>
+                              {item.badge === "chat" && unreadChat > 0 ? (
+                                <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-800">
+                                  {unreadChat > 99 ? "99+" : unreadChat}
+                                </span>
+                              ) : null}
+                              <ChevronRight
+                                className={cn(
+                                  "h-5 w-5 shrink-0",
+                                  active
+                                    ? "text-brand-700"
+                                    : "text-charcoal/30",
+                                )}
+                                aria-hidden="true"
+                              />
+                            </Link>
+                          );
+                        })
+                      : null}
+                  </div>
                 );
               })}
             </div>

@@ -28,6 +28,7 @@ import { PageHero, Badge } from "@/components/ui/display";
 import { FormField, FormMessage, Textarea } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { LeaderAttendanceForm } from "@/components/member/leader-attendance-form";
+import { LogoutButton } from "@/components/ui/logout-button";
 import { requestAttendanceUnlock } from "../actions";
 
 export const metadata: Metadata = { title: "Mark attendance" };
@@ -293,6 +294,10 @@ export default async function LeaderAttendancePage({
           </section>
         );
       })}
+
+      <div className="flex justify-end">
+        <LogoutButton />
+      </div>
     </div>
   );
 }
