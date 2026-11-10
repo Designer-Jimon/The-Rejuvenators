@@ -1,7 +1,6 @@
 export const CONTENT_SETTING_KEYS = [
   "church_name",
   "tagline",
-  "pastor_name",
   "hero_headline",
   "hero_subheadline",
   "hero_primary_label",
@@ -11,6 +10,41 @@ export const CONTENT_SETTING_KEYS = [
   "welcome_title",
   "welcome_body",
 ] as const;
+
+export const CONTACT_SETTING_KEYS = [
+  "address",
+  "phone",
+  "email",
+  "service_sunday",
+  "service_weekday",
+  "map_url",
+] as const;
+
+export const FOOTER_SETTING_KEYS = [
+  "footer_note",
+  "facebook_url",
+  "instagram_url",
+  "youtube_url",
+  "whatsapp_group_url",
+] as const;
+
+export const ALL_CONTENT_SETTING_KEYS = [
+  ...CONTENT_SETTING_KEYS,
+  ...CONTACT_SETTING_KEYS,
+  ...FOOTER_SETTING_KEYS,
+] as const;
+
+export const CONTENT_AREA_BLOCKS: Record<string, string[]> = {
+  home: ["latest_devotional", "appointment_cta"],
+  about: [
+    "about_story",
+    "scripture",
+    "core_values",
+    "what_we_believe",
+    "spiritual_mandate",
+  ],
+  vision: ["intro", "vision", "mission", "closing"],
+};
 
 export const EDITABLE_BLOCK_KEYS = [
   "about_story",
@@ -22,7 +56,6 @@ export const EDITABLE_BLOCK_KEYS = [
   "core_values",
   "what_we_believe",
   "spiritual_mandate",
-  "pastor_intro",
   "latest_devotional",
   "appointment_cta",
 ] as const;
@@ -39,6 +72,17 @@ export const CONTENT_SETTING_LABELS: Record<string, string> = {
   hero_secondary_href: "Secondary button link",
   welcome_title: "Home welcome title",
   welcome_body: "Home welcome message",
+  address: "Church address",
+  phone: "Phone",
+  email: "Email",
+  service_sunday: "Sunday service time",
+  service_weekday: "Midweek service time",
+  map_url: "Map link",
+  footer_note: "Footer note",
+  facebook_url: "Facebook URL",
+  instagram_url: "Instagram URL",
+  youtube_url: "YouTube URL",
+  whatsapp_group_url: "WhatsApp invite link",
 };
 
 export const CONTENT_BLOCK_LABELS: Record<string, string> = {
@@ -51,7 +95,6 @@ export const CONTENT_BLOCK_LABELS: Record<string, string> = {
   core_values: "About - Core values",
   what_we_believe: "About - What we believe",
   spiritual_mandate: "About - Spiritual mandate",
-  pastor_intro: "Home/About - Pastor introduction",
   latest_devotional: "Home - Latest devotional",
   appointment_cta: "Home - Appointment call-to-action",
 };

@@ -52,15 +52,17 @@ export function Tabs({
           </button>
         ))}
       </div>
-      {current ? (
+      {items.map((item) => (
         <div
+          key={item.id}
           role="tabpanel"
-          id={`${baseId}-panel-${current.id}`}
-          aria-labelledby={`${baseId}-tab-${current.id}`}
+          id={`${baseId}-panel-${item.id}`}
+          aria-labelledby={`${baseId}-tab-${item.id}`}
+          hidden={current?.id !== item.id}
         >
-          {current.content}
+          {item.content}
         </div>
-      ) : null}
+      ))}
     </div>
   );
 }

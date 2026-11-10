@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Compass, Flame, HeartHandshake } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { getBlock, getContentMap } from "@/lib/content";
+import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
 import { PageHero, SectionHeader } from "@/components/ui/display";
 
@@ -104,16 +105,40 @@ export default async function AboutPage() {
       </section>
 
       <section className="content-auto mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <div className="rounded-3xl bg-charcoal p-6 text-cream shadow-lift sm:p-7">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-200">
-            {pastor.title}
-          </p>
-          <p className="mt-3 font-serif text-3xl font-bold text-white">
-            {settings.pastor_name}
-          </p>
-          <p className="mt-4 whitespace-pre-line text-base leading-7 text-cream/75">
-            {pastor.body}
-          </p>
+        <div className="overflow-hidden rounded-3xl bg-charcoal text-cream shadow-lift">
+          {settings.pastor_photo_key ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={publicMediaUrl(settings.pastor_photo_key) ?? ""}
+              alt={settings.pastor_name}
+              className="h-56 w-full object-cover object-top sm:h-64"
+            />
+          ) : (
+            <div className="flex h-44 items-center justify-center bg-charcoal/80 text-cream/50">
+              <Flame className="h-10 w-10" aria-hidden="true" />
+            </div>
+          )}
+          <div className="p-6 sm:p-7">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-200">
+              {settings.pastor_title || pastor.title}
+            </p>
+            <p className="mt-3 font-serif text-3xl font-bold text-white">
+              {settings.pastor_name}
+            </p>
+            <p className="mt-4 whitespace-pre-line text-base leading-7 text-cream/75">
+              {settings.pastor_bio || pastor.body}
+            </p>
+            {settings.pastor_about ? (
+              <p className="mt-3 whitespace-pre-line text-sm leading-7 text-cream/65">
+                {settings.pastor_about}
+              </p>
+            ) : null}
+            {settings.pastor_quote ? (
+              <p className="mt-4 border-l-2 border-gold-300 pl-3 text-sm italic leading-7 text-gold-100">
+                {settings.pastor_quote}
+              </p>
+            ) : null}
+          </div>
         </div>
         <div className="surface p-6 sm:p-7">
           <h2 className="font-serif text-2xl font-semibold">{closing.title}</h2>

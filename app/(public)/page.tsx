@@ -457,16 +457,30 @@ export default async function HomePage() {
       </section>
 
       <section className="content-auto mt-14 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <div className="rounded-3xl bg-gradient-to-br from-brand-800 to-ember-600 p-7 text-cream shadow-lift">
+        <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-brand-800 to-ember-600 text-cream shadow-lift">
+          {settings.pastor_photo_key ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={publicMediaUrl(settings.pastor_photo_key) ?? ""}
+              alt={settings.pastor_name}
+              className="h-56 w-full object-cover object-top sm:h-64"
+            />
+          ) : null}
+          <div className="p-7">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-200">
-            {pastor.title}
+            {settings.pastor_title || pastor.title}
           </p>
           <p className="mt-3 font-serif text-3xl font-bold text-white">
             {settings.pastor_name}
           </p>
           <p className="mt-4 text-base leading-7 text-cream/85">
-            {pastor.body}
+            {settings.pastor_bio || pastor.body}
           </p>
+          {settings.pastor_quote ? (
+            <p className="mt-3 border-l-2 border-gold-300 pl-3 text-sm italic leading-7 text-gold-100">
+              {settings.pastor_quote}
+            </p>
+          ) : null}
           <Link
             href="/about"
             prefetch
@@ -475,6 +489,7 @@ export default async function HomePage() {
             About the church
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
+          </div>
         </div>
         <div>
           <SectionHeader

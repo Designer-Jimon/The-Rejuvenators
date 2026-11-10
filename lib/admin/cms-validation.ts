@@ -136,7 +136,6 @@ export const faqSchema = z.object({
 export const websiteContentSchema = z.object({
   church_name: z.string().trim().min(1).max(160),
   tagline: short,
-  pastor_name: short,
   hero_headline: short,
   hero_subheadline: medium,
   hero_primary_label: short,
@@ -145,6 +144,17 @@ export const websiteContentSchema = z.object({
   hero_secondary_href: link,
   welcome_title: short,
   welcome_body: medium,
+  address: medium,
+  phone: short,
+  email: short,
+  service_sunday: short,
+  service_weekday: short,
+  map_url: link,
+  footer_note: medium,
+  facebook_url: link,
+  instagram_url: link,
+  youtube_url: link,
+  whatsapp_group_url: link,
   blocks: z.array(
     z.object({
       key: z.string().trim().min(1).max(120),
@@ -152,6 +162,15 @@ export const websiteContentSchema = z.object({
       body: long,
     }),
   ),
+});
+
+export const pastorProfileSchema = z.object({
+  pastor_name: z.string().trim().min(1, "Enter the pastor's name.").max(160),
+  pastor_title: z.string().trim().max(160),
+  pastor_bio: z.string().trim().max(8000),
+  pastor_about: z.string().trim().max(2000),
+  pastor_quote: z.string().trim().max(2000),
+  pastor_photo_key: optionalKey,
 });
 
 export const socialSettingsSchema = z.object({

@@ -110,6 +110,11 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   church_name: "IT IS FINISHED REVIVAL OUTREACH",
   tagline: "A place of revival, restoration and purpose",
   pastor_name: "Pastor David Obidimalor",
+  pastor_title: "Lead Pastor",
+  pastor_bio: "[Edit in Admin: Pastor biography]",
+  pastor_about: "[Edit in Admin: About the pastor]",
+  pastor_quote: "",
+  pastor_photo_key: "",
   hero_headline: "Come as you are. Leave renewed.",
   hero_subheadline:
     "A Christ-centred family raising believers for revival, service and purpose.",
@@ -136,6 +141,8 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   appointment_start: "09:00",
   appointment_end: "17:00",
   appointment_slot_minutes: "30",
+  announcement_group_enabled: "1",
+  announcement_allow_replies: "0",
 };
 
 export const PUBLIC_NAV = [

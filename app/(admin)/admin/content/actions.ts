@@ -8,7 +8,7 @@ import { requirePermission } from "@/lib/auth/authorize";
 import { PERMISSIONS } from "@/lib/constants";
 import { websiteContentSchema } from "@/lib/admin/cms-validation";
 import {
-  CONTENT_SETTING_KEYS,
+  ALL_CONTENT_SETTING_KEYS,
   EDITABLE_BLOCK_KEYS,
 } from "@/lib/admin/cms-keys";
 import { logAudit } from "@/lib/audit";
@@ -20,7 +20,7 @@ export async function saveWebsiteContent(formData: FormData) {
   );
 
   const settings: Record<string, string> = {};
-  for (const key of CONTENT_SETTING_KEYS) {
+  for (const key of ALL_CONTENT_SETTING_KEYS) {
     settings[key] = String(formData.get(key) ?? "");
   }
 
@@ -41,7 +41,7 @@ export async function saveWebsiteContent(formData: FormData) {
 
   const db = await getDb();
   const now = new Date();
-  for (const key of CONTENT_SETTING_KEYS) {
+  for (const key of ALL_CONTENT_SETTING_KEYS) {
     const value = parsed.data[key];
     await db
       .insert(siteSettings)
@@ -74,7 +74,7 @@ export async function saveWebsiteContent(formData: FormData) {
     actorId: user.id,
     action: "content.updated",
     entityType: "content",
-    details: `Updated ${CONTENT_SETTING_KEYS.length} settings and ${blocks.length} content sections.`,
+    details: `Updated ${ALL_CONTENT_SETTING_KEYS.length} settings and ${blocks.length} content sections.`,
   });
 
   revalidatePath("/", "layout");
