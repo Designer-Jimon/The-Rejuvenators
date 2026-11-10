@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Compass, Flame, HeartHandshake } from "lucide-react";
 import { getSettings } from "@/lib/settings";
+import { CHURCH_NAME, CHURCH_TAGLINE } from "@/lib/branding";
 import { getBlock, getContentMap } from "@/lib/content";
 import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
@@ -11,12 +12,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "About us",
-  description:
-    "The story, foundation and heart of IT IS FINISHED REVIVAL OUTREACH.",
+  description: `The story, foundation and heart of ${CHURCH_NAME}.`,
   openGraph: {
-    title: "About IT IS FINISHED REVIVAL OUTREACH",
-    description:
-      "The story, foundation and heart of IT IS FINISHED REVIVAL OUTREACH.",
+    title: `About ${CHURCH_NAME}`,
+    description: `The story, foundation and heart of ${CHURCH_NAME}.`,
     type: "website",
   },
 };
@@ -43,7 +42,7 @@ export default async function AboutPage() {
       <PageHero
         eyebrow="About"
         title="A family built on the finished work of Christ"
-        description={`${settings.tagline}. We gather to worship, grow in the Word and serve our community.`}
+        description={`${settings.tagline?.trim() || CHURCH_TAGLINE}. We gather to worship, grow in the Word and serve our community.`}
       />
 
       <section className="content-auto mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">

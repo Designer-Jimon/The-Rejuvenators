@@ -28,6 +28,7 @@ import {
   worshipCenters,
 } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
+import { CHURCH_NAME } from "@/lib/branding";
 import { getBlock, getContentMap } from "@/lib/content";
 import { DepartmentIcon } from "@/lib/department-icons";
 import { publicMediaUrl } from "@/lib/media";
@@ -48,10 +49,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Home",
-  description:
-    "IT IS FINISHED REVIVAL OUTREACH - a Christ-centred family provoking revival through worship, the Word and service.",
+  description: `${CHURCH_NAME} - a Christ-centred family provoking revival through worship, the Word and service.`,
   openGraph: {
-    title: "IT IS FINISHED REVIVAL OUTREACH",
+    title: CHURCH_NAME,
     description:
       "A Christ-centred family provoking revival through worship, the Word and service.",
     type: "website",
@@ -214,7 +214,7 @@ export default async function HomePage() {
   const heroSlides: HeroSlide[] = slides.length
     ? slides.map((slide, index) => ({
         id: slide.id,
-        eyebrow: settings.church_name,
+        eyebrow: settings.church_name?.trim() || CHURCH_NAME,
         title: slide.headline || settings.hero_headline,
         subtitle: slide.subheadline || settings.hero_subheadline,
         imageUrl: publicMediaUrl(slide.imageKey),
@@ -226,7 +226,7 @@ export default async function HomePage() {
     : [
         {
           id: "welcome",
-          eyebrow: settings.church_name,
+          eyebrow: settings.church_name?.trim() || CHURCH_NAME,
           title: settings.hero_headline,
           subtitle: settings.hero_subheadline,
           gradient: "brand",
@@ -296,7 +296,7 @@ export default async function HomePage() {
           <SectionHeader
             eyebrow="Welcome"
             title={settings.welcome_title}
-            description={`${settings.church_name}. ${settings.welcome_body}`}
+            description={`${settings.church_name?.trim() || CHURCH_NAME}. ${settings.welcome_body}`}
           />
           <div className="rounded-3xl border border-brand-100 bg-white p-5 shadow-soft sm:p-6">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold-200/60 text-gold-500">

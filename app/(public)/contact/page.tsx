@@ -15,6 +15,7 @@ import {
 import { getDb } from "@/lib/db";
 import { worshipCenters } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
+import { CHURCH_NAME } from "@/lib/branding";
 import { getBlock, getContentMap } from "@/lib/content";
 import { buttonClasses } from "@/components/ui/button";
 import { PageHero, SectionHeader } from "@/components/ui/display";
@@ -23,10 +24,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description:
-    "Contact IT IS FINISHED REVIVAL OUTREACH - address, phone, email, service times and appointment requests.",
+  description: `Contact ${CHURCH_NAME} - address, phone, email, service times and appointment requests.`,
   openGraph: {
-    title: "Contact | IT IS FINISHED REVIVAL OUTREACH",
+    title: `Contact | ${CHURCH_NAME}`,
     description:
       "Address, phone, email, service times and appointment requests.",
     type: "website",
@@ -71,7 +71,7 @@ export default async function ContactPage() {
       <PageHero
         eyebrow="Connect"
         title="We would love to hear from you"
-        description={`Reach out with questions about ${settings.church_name}, membership or visiting.`}
+        description={`Reach out with questions about ${settings.church_name?.trim() || CHURCH_NAME}, membership or visiting.`}
       />
 
       <section className="content-auto mt-8 grid gap-4 sm:grid-cols-2">

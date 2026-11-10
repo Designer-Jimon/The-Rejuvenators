@@ -3,14 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  ChevronRight,
-  Cross,
-  LayoutDashboard,
-  Menu,
-  X,
-} from "lucide-react";
+import { ChevronRight, LayoutDashboard, Menu, X } from "lucide-react";
 import { Button, buttonClasses } from "@/components/ui/button";
+import { Logo } from "@/components/branding/logo";
 import { cn } from "@/lib/utils";
 
 const mobilePrimaryClass =
@@ -18,6 +13,7 @@ const mobilePrimaryClass =
 
 export function PublicHeader({
   churchName,
+  tagline,
   logoUrl,
   links,
   isLoggedIn,
@@ -26,6 +22,7 @@ export function PublicHeader({
   userName,
 }: {
   churchName: string;
+  tagline: string;
   logoUrl?: string | null;
   links: ReadonlyArray<{ href: string; label: string }>;
   isLoggedIn: boolean;
@@ -96,24 +93,13 @@ export function PublicHeader({
             className="flex min-h-11 items-center gap-2.5 active:opacity-80"
             aria-label={`${churchName} home`}
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream shadow-soft">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={logoUrl}
-                  alt=""
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <Cross className="h-5 w-5" aria-hidden="true" />
-              )}
-            </span>
+            <Logo src={logoUrl} className="shadow-soft" />
             <span className="max-w-[190px] leading-tight sm:max-w-none">
               <span className="block font-serif text-sm font-bold uppercase tracking-wide text-brand-800 sm:text-base">
                 {churchName}
               </span>
               <span className="block text-[10px] uppercase tracking-[0.18em] text-charcoal/45">
-                Revival Outreach
+                {tagline}
               </span>
             </span>
           </Link>
@@ -204,18 +190,7 @@ export function PublicHeader({
               className="flex min-h-11 min-w-0 items-center gap-2.5 active:opacity-80"
               aria-label={`${churchName} home`}
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
-                {logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={logoUrl}
-                    alt=""
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <Cross className="h-5 w-5" aria-hidden="true" />
-                )}
-              </span>
+              <Logo src={logoUrl} />
               <span className="min-w-0 truncate font-serif text-sm font-bold uppercase tracking-wide text-brand-800">
                 {churchName}
               </span>

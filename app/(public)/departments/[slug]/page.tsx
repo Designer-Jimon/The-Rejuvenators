@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, UserRound } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { departments } from "@/lib/db/schema";
 import { DepartmentIcon } from "@/lib/department-icons";
+import { CHURCH_NAME } from "@/lib/branding";
 import { getSettings } from "@/lib/settings";
 import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
@@ -39,7 +40,7 @@ export async function generateMetadata({
     title: department.name,
     description,
     openGraph: {
-      title: `${department.name} | IT IS FINISHED REVIVAL OUTREACH`,
+      title: `${department.name} | ${CHURCH_NAME}`,
       description,
       type: "website",
     },
@@ -163,7 +164,7 @@ export default async function DepartmentDetailPage({
             will confirm your placement.
           </p>
           <p className="mt-4 text-sm text-cream/70">
-            {settings.church_name}
+            {settings.church_name?.trim() || CHURCH_NAME}
           </p>
         </aside>
       </section>

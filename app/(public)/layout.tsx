@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  Cross,
   Facebook,
   Instagram,
   Mail,
@@ -12,8 +11,10 @@ import {
 import { getSessionUser } from "@/lib/auth/session";
 import { isAdmin } from "@/lib/auth/authorize";
 import { getSettings, getLogoUrl } from "@/lib/settings";
+import { CHURCH_NAME, CHURCH_TAGLINE } from "@/lib/branding";
 import { getPublicNav, FOOTER_LINKS } from "@/lib/navigation";
 import { PublicHeader } from "@/components/layout/public-header";
+import { Logo } from "@/components/branding/logo";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,8 @@ export default async function PublicLayout({
   return (
     <div className="flex min-h-[100dvh] flex-col overflow-x-clip">
       <PublicHeader
-        churchName={settings.church_name}
+        churchName={settings.church_name?.trim() || CHURCH_NAME}
+        tagline={settings.tagline?.trim() || CHURCH_TAGLINE}
         logoUrl={logoUrl}
         links={nav}
         isLoggedIn={Boolean(user)}
@@ -62,24 +64,13 @@ export default async function PublicLayout({
                 prefetch
                 className="flex items-center gap-2.5 active:opacity-80"
               >
-                <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
-                  {logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src="/api/branding/logo"
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Cross className="h-5 w-5" aria-hidden="true" />
-                  )}
-                </span>
+                <Logo src={logoUrl} />
                 <span className="font-serif text-base font-bold uppercase text-brand-800">
-                  {settings.church_name}
+                  {settings.church_name?.trim() || CHURCH_NAME}
                 </span>
               </Link>
               <p className="mt-3 text-base leading-7 text-charcoal/65">
-                {settings.tagline}
+                {settings.tagline?.trim() || CHURCH_TAGLINE}
               </p>
               <p className="mt-3 text-sm leading-6 text-charcoal/50">
                 {settings.footer_note}
@@ -178,7 +169,8 @@ export default async function PublicLayout({
           </div>
           <div className="mt-8 flex flex-col gap-2 border-t border-brand-100 pt-6 text-xs text-charcoal/45 sm:flex-row sm:items-center sm:justify-between">
             <p>
-              &copy; {new Date().getFullYear()} {settings.church_name}. All rights
+              &copy; {new Date().getFullYear()}{" "}
+              {settings.church_name?.trim() || CHURCH_NAME}. All rights
               reserved.
             </p>
             <p>Built for the revival family.</p>

@@ -1,7 +1,8 @@
 import { hasPermission, requireAdmin } from "@/lib/auth/authorize";
 import { PERMISSIONS, ROLES } from "@/lib/constants";
 import { mediaUrl } from "@/lib/media";
-import { getSettings } from "@/lib/settings";
+import { getSettings, getLogoUrl } from "@/lib/settings";
+import { CHURCH_NAME } from "@/lib/branding";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { totalChatUnread } from "@/lib/chat";
 
@@ -13,16 +14,18 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAdmin();
-  const [settings, unreadChat] = await Promise.all([
+  const [settings, unreadChat, logoUrl] = await Promise.all([
     getSettings(),
     totalChatUnread(user.id),
+    getLogoUrl(),
   ]);
 
   return (
     <AdminShell
       name={user.name}
       avatarUrl={mediaUrl(user.profile.avatarKey)}
-      logoUrl={settings.logo_key ? "/api/branding/logo" : null}
+      churchName={settings.church_name?.trim() || CHURCH_NAME}
+      logoUrl={logoUrl}
       unread={user.unreadNotifications}
       unreadChat={unreadChat}
       canManageMembers={hasPermission(user, PERMISSIONS.memberReview)}

@@ -6,6 +6,7 @@ import { CalendarDays, Clock3, MapPin } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { activities } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
+import { CHURCH_NAME } from "@/lib/branding";
 import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
 import { Badge, EmptyState, PageHero, SectionHeader } from "@/components/ui/display";
@@ -14,10 +15,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Activities",
-  description:
-    "Weekly services, prayer meetings, Bible study and special revival programs at IT IS FINISHED REVIVAL OUTREACH.",
+  description: `Weekly services, prayer meetings, Bible study and special revival programs at ${CHURCH_NAME}.`,
   openGraph: {
-    title: "Activities | IT IS FINISHED REVIVAL OUTREACH",
+    title: `Activities | ${CHURCH_NAME}`,
     description:
       "Weekly services, prayer meetings, Bible study and special revival programs.",
     type: "website",
@@ -40,7 +40,7 @@ export default async function ActivitiesPage() {
       <PageHero
         eyebrow="Activities"
         title="Our weekly rhythm and special gatherings"
-        description={`Come and be part of what God is doing at ${settings.church_name}.`}
+        description={`Come and be part of what God is doing at ${settings.church_name?.trim() || CHURCH_NAME}.`}
       />
 
       <section className="content-auto mt-10">

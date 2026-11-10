@@ -126,8 +126,8 @@ const worshipCenters = [
 ];
 
 const settings = {
-  church_name: "IT IS FINISHED REVIVAL OUTREACH",
-  tagline: "A place of revival, restoration and purpose",
+  church_name: "IT IS FINISHED REVIVAL OUTREACH INTERNATIONAL",
+  tagline: "Provoking Revival",
   pastor_name: "Pastor David Obidimalor",
   pastor_title: "Lead Pastor",
   pastor_bio: "[Edit in Admin: Pastor biography]",
@@ -144,7 +144,7 @@ const settings = {
   logo_key: "",
   welcome_title: "You are welcome home",
   welcome_body:
-    "IT IS FINISHED REVIVAL OUTREACH is a place of worship, healing and growth. Whether you are new to faith or returning, there is a place for you here.",
+    "IT IS FINISHED REVIVAL OUTREACH INTERNATIONAL is a place of worship, healing and growth. Whether you are new to faith or returning, there is a place for you here.",
   address: "[Church address - edit in Admin]",
   phone: "[Church phone - edit in Admin]",
   email: "[Church email - edit in Admin]",
@@ -155,7 +155,7 @@ const settings = {
   instagram_url: "",
   youtube_url: "",
   map_url: "",
-  footer_note: "Built for the IT IS FINISHED REVIVAL OUTREACH family.",
+  footer_note: "Built for the IT IS FINISHED REVIVAL OUTREACH INTERNATIONAL family.",
   appointment_days: "1,2,3,4,5",
   appointment_start: "09:00",
   appointment_end: "17:00",
@@ -224,7 +224,7 @@ const contentBlocks = [
     "block_intro",
     "intro",
     "A mandate of revival",
-    "Revival is the heartbeat of God in this time. Anytime darkness covers the earth to the point that wickedness and oppression increase (Isaiah 60:2), what we need is Revival (Isaiah 60:1). \"IT IS FINISHED\" was the last word our Lord and Saviour Jesus uttered at the cross and was the beginning of Revival for mankind. The commission is named IT IS FINISHED REVIVAL OUTREACH from that word (John 19:30).",
+    "Revival is the heartbeat of God in this time. Anytime darkness covers the earth to the point that wickedness and oppression increase (Isaiah 60:2), what we need is Revival (Isaiah 60:1). \"IT IS FINISHED\" was the last word our Lord and Saviour Jesus uttered at the cross and was the beginning of Revival for mankind. The commission is named IT IS FINISHED REVIVAL OUTREACH INTERNATIONAL from that word (John 19:30).",
   ],
   [
     "block_vision",

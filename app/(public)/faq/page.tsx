@@ -5,6 +5,7 @@ import { MessageCircle } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { faqs } from "@/lib/db/schema";
 import { getSettings } from "@/lib/settings";
+import { CHURCH_NAME } from "@/lib/branding";
 import { buttonClasses } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/accordion";
 import { EmptyState, PageHero } from "@/components/ui/display";
@@ -13,10 +14,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "FAQ",
-  description:
-    "Answers to common questions about IT IS FINISHED REVIVAL OUTREACH - location, service times, membership, departments, appointments and devotionals.",
+  description: `Answers to common questions about ${CHURCH_NAME} - location, service times, membership, departments, appointments and devotionals.`,
   openGraph: {
-    title: "FAQ | IT IS FINISHED REVIVAL OUTREACH",
+    title: `FAQ | ${CHURCH_NAME}`,
     description:
       "Answers to common questions about the church, membership and activities.",
     type: "website",
@@ -39,7 +39,7 @@ export default async function FaqPage() {
       <PageHero
         eyebrow="FAQ"
         title="Questions? We have answers"
-        description={`Common questions about ${settings.church_name}, visiting, membership and getting involved.`}
+        description={`Common questions about ${settings.church_name?.trim() || CHURCH_NAME}, visiting, membership and getting involved.`}
       />
 
       <section className="content-auto mt-8">

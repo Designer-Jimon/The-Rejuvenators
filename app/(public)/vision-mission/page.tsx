@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Compass, Flame, Target } from "lucide-react";
 import { getSettings } from "@/lib/settings";
+import { CHURCH_NAME } from "@/lib/branding";
 import { getBlock, getContentMap } from "@/lib/content";
 import { buttonClasses } from "@/components/ui/button";
 import { PageHero, SectionHeader } from "@/components/ui/display";
@@ -10,12 +11,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Vision & Mission",
-  description:
-    "The vision and mission of IT IS FINISHED REVIVAL OUTREACH - provoking revival in this end time.",
+  description: `The vision and mission of ${CHURCH_NAME} - provoking revival in this end time.`,
   openGraph: {
-    title: "Vision & Mission | IT IS FINISHED REVIVAL OUTREACH",
-    description:
-      "The vision and mission of IT IS FINISHED REVIVAL OUTREACH - provoking revival in this end time.",
+    title: `Vision & Mission | ${CHURCH_NAME}`,
+    description: `The vision and mission of ${CHURCH_NAME} - provoking revival in this end time.`,
     type: "website",
   },
 };
@@ -40,7 +39,7 @@ export default async function VisionMissionPage() {
       <PageHero
         eyebrow="Vision & Mission"
         title="Revival is our mandate"
-        description={`${settings.church_name} exists to provoke revival and to make Jesus known.`}
+        description={`${settings.church_name?.trim() || CHURCH_NAME} exists to provoke revival and to make Jesus known.`}
       />
 
       <section className="content-auto mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">

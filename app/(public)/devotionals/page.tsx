@@ -4,13 +4,13 @@ import { and, desc, eq, lte } from "drizzle-orm";
 import { ArrowRight, BookOpen, CalendarDays } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { devotionals } from "@/lib/db/schema";
+import { CHURCH_NAME } from "@/lib/branding";
 import { formatDate } from "@/lib/utils";
 import { EmptyState, PageHero } from "@/components/ui/display";
 
 export const metadata: Metadata = {
   title: "Daily devotionals",
-  description:
-    "Daily devotionals from It Is Finished Revival Outreach, generated from the preached word and grounded in Scripture.",
+  description: `Daily devotionals from ${CHURCH_NAME}, generated from the preached word and grounded in Scripture.`,
 };
 export const dynamic = "force-dynamic";
 

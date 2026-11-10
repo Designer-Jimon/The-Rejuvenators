@@ -8,7 +8,6 @@ import {
   Bell,
   CalendarClock,
   CalendarDays,
-  Cross,
   Home,
   LogOut,
   MessageCircle,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "./notification-bell";
 import { Avatar } from "@/components/ui/display";
+import { Logo } from "@/components/branding/logo";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -41,6 +41,8 @@ export function MemberShell({
   name,
   avatarUrl,
   memberCode,
+  churchName,
+  logoUrl,
   unread,
   unreadChat,
   canAccessAdmin,
@@ -49,6 +51,8 @@ export function MemberShell({
   name: string;
   avatarUrl: string | null;
   memberCode: string | null;
+  churchName: string;
+  logoUrl: string | null;
   unread: number;
   unreadChat: number;
   canAccessAdmin: boolean;
@@ -100,11 +104,9 @@ export function MemberShell({
           prefetch
           className="flex shrink-0 items-center gap-2.5 border-b border-brand-100 px-5 py-5 active:opacity-80"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-gradient text-cream">
-            <Cross className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <span className="font-serif text-sm font-bold uppercase leading-tight text-brand-800">
-            It Is Finished
+          <Logo src={logoUrl} />
+          <span className="min-w-0 font-serif text-sm font-bold uppercase leading-tight text-brand-800">
+            <span className="block truncate">{churchName}</span>
             <span className="block text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-charcoal/45">
               Member platform
             </span>
@@ -180,9 +182,7 @@ export function MemberShell({
               prefetch
               className="flex min-h-11 items-center gap-2 active:opacity-80"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-cream">
-                <Cross className="h-4 w-4" aria-hidden="true" />
-              </span>
+              <Logo src={logoUrl} className="h-9 w-9 rounded-xl" />
               <span className="font-serif text-sm font-bold text-brand-800">
                 Member
               </span>

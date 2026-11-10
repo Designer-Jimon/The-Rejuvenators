@@ -12,6 +12,7 @@ import {
   Save,
 } from "lucide-react";
 import { Badge } from "@/components/ui/display";
+import { CHURCH_NAME } from "@/lib/branding";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { FormField, Input, Select, Textarea } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
@@ -86,7 +87,7 @@ export function AppointmentAdminCard({
   const displayWhen = formatAppointmentWhen(displayDate, displayTime);
   const message = [
     `Hello ${appointment.fullName},`,
-    `This is IT IS FINISHED REVIVAL OUTREACH about your appointment request for ${appointment.purpose}.`,
+    `This is ${CHURCH_NAME} about your appointment request for ${appointment.purpose}.`,
     `Current status: ${appointment.status}.`,
     `Requested time: ${displayWhen}.`,
     appointment.adminNote ? `Note: ${appointment.adminNote}` : "",

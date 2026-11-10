@@ -1,3 +1,5 @@
+import { CHURCH_NAME, CHURCH_TAGLINE } from "@/lib/branding";
+
 export const SESSION_COOKIE = "iif_session";
 export const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
@@ -107,8 +109,8 @@ export const DEVOTIONAL_STATUSES = [
 ] as const;
 
 export const DEFAULT_SETTINGS: Record<string, string> = {
-  church_name: "IT IS FINISHED REVIVAL OUTREACH",
-  tagline: "A place of revival, restoration and purpose",
+  church_name: CHURCH_NAME,
+  tagline: CHURCH_TAGLINE,
   pastor_name: "Pastor David Obidimalor",
   pastor_title: "Lead Pastor",
   pastor_bio: "[Edit in Admin: Pastor biography]",
@@ -125,7 +127,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   logo_key: "",
   welcome_title: "You are welcome home",
   welcome_body:
-    "IT IS FINISHED REVIVAL OUTREACH is a place of worship, healing and growth. Whether you are new to faith or returning, there is a place for you here.",
+    `${CHURCH_NAME} is a place of worship, healing and growth. Whether you are new to faith or returning, there is a place for you here.`,
   address: "[Church address - edit in Admin]",
   phone: "[Church phone - edit in Admin]",
   email: "[Church email - edit in Admin]",
@@ -136,7 +138,7 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   instagram_url: "",
   youtube_url: "",
   map_url: "",
-  footer_note: "Built for the IT IS FINISHED REVIVAL OUTREACH family.",
+  footer_note: `Built for the ${CHURCH_NAME} family.`,
   appointment_days: "1,2,3,4,5",
   appointment_start: "09:00",
   appointment_end: "17:00",
@@ -177,7 +179,7 @@ export const DEFAULT_CONTENT_BLOCKS: Record<string, ContentBlockDefault> = {
   intro: {
     key: "intro",
     title: "A mandate of revival",
-    body: "Revival is the heartbeat of God in this time. Anytime darkness covers the earth to the point that wickedness and oppression increase (Isaiah 60:2), what we need is Revival (Isaiah 60:1). \"IT IS FINISHED\" was the last word our Lord and Saviour Jesus uttered at the cross and was the beginning of Revival for mankind. The commission is named IT IS FINISHED REVIVAL OUTREACH from that word (John 19:30).",
+    body: `Revival is the heartbeat of God in this time. Anytime darkness covers the earth to the point that wickedness and oppression increase (Isaiah 60:2), what we need is Revival (Isaiah 60:1). "IT IS FINISHED" was the last word our Lord and Saviour Jesus uttered at the cross and was the beginning of Revival for mankind. The commission is named ${CHURCH_NAME} from that word (John 19:30).`,
   },
   vision: {
     key: "vision",
@@ -227,7 +229,7 @@ export const DEFAULT_CONTENT_BLOCKS: Record<string, ContentBlockDefault> = {
 };
 
 export const MEMBER_REGISTRATION_MESSAGE = (departmentName: string) =>
-  `A new member has registered with IT IS FINISHED REVIVAL OUTREACH and has expressed interest in serving God through the ${departmentName} Department.`;
+  `A new member has registered with ${CHURCH_NAME} and has expressed interest in serving God through the ${departmentName} Department.`;
 
 export const SETTING_FIELDS: Array<{
   key: string;

@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/settings";
+import {
+  CHURCH_LOGO_PATH,
+  CHURCH_NAME,
+  CHURCH_SHORT_NAME,
+  CHURCH_TAGLINE,
+} from "@/lib/branding";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const settings = await getSettings();
-  const name = settings.church_name || "Church";
+  const name = settings.church_name?.trim() || CHURCH_NAME;
   const manifest = {
     name,
-    short_name: name.length > 24 ? "Church" : name,
-    description: settings.tagline || settings.welcome_body || name,
+    short_name: CHURCH_SHORT_NAME,
+    description: settings.tagline?.trim() || CHURCH_TAGLINE,
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -17,12 +23,12 @@ export async function GET() {
     theme_color: "#8B1A1A",
     icons: [
       {
-        src: "/api/branding/logo",
+        src: CHURCH_LOGO_PATH,
         sizes: "any",
         purpose: "any",
       },
       {
-        src: "/api/branding/logo",
+        src: CHURCH_LOGO_PATH,
         sizes: "any",
         purpose: "maskable",
       },

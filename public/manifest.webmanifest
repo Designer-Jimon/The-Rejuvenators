@@ -1,7 +1,7 @@
 {
-  "name": "IT IS FINISHED REVIVAL OUTREACH",
-  "short_name": "It Is Finished",
-  "description": "Church website and member platform for IT IS FINISHED REVIVAL OUTREACH.",
+  "name": "IT IS FINISHED REVIVAL OUTREACH INTERNATIONAL",
+  "short_name": "IT IS FINISHED",
+  "description": "IT IS FINISHED REVIVAL OUTREACH INTERNATIONAL - Provoking Revival.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFBF7",
@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icons/icon.svg",
+      "src": "/api/branding/logo",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

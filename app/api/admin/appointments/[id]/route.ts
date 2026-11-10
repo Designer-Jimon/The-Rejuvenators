@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db";
 import { appointments } from "@/lib/db/schema";
 import { requireApiUser } from "@/lib/auth/authorize";
 import { PERMISSIONS, NOTIFICATION_TYPES } from "@/lib/constants";
+import { CHURCH_NAME } from "@/lib/branding";
 import { logAudit } from "@/lib/audit";
 import { getSettings } from "@/lib/settings";
 import { notifyUser } from "@/lib/notifications";
@@ -169,7 +170,7 @@ export async function PATCH(
       details: `${result.notificationTitle} for ${result.current.fullName}.`,
     });
 
-    const message = `Hello ${result.current.fullName}, ${result.notificationBody} - IT IS FINISHED REVIVAL OUTREACH`;
+    const message = `Hello ${result.current.fullName}, ${result.notificationBody} - ${CHURCH_NAME}`;
 
     return NextResponse.json({
       ok: true,

@@ -6,6 +6,7 @@ import { ArrowRight, HeartHandshake, UserRound } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { departments } from "@/lib/db/schema";
 import { DepartmentIcon } from "@/lib/department-icons";
+import { CHURCH_NAME } from "@/lib/branding";
 import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
 import { EmptyState, PageHero } from "@/components/ui/display";
@@ -14,10 +15,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Departments",
-  description:
-    "Find your place in the house. Explore the departments of IT IS FINISHED REVIVAL OUTREACH.",
+  description: `Find your place in the house. Explore the departments of ${CHURCH_NAME}.`,
   openGraph: {
-    title: "Departments | IT IS FINISHED REVIVAL OUTREACH",
+    title: `Departments | ${CHURCH_NAME}`,
     description:
       "Find your place in the house and serve shoulder to shoulder.",
     type: "website",

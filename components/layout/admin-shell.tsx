@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Church,
   ClipboardCheck,
-  Cross,
   FileText,
   Globe,
   HelpCircle,
@@ -34,6 +33,7 @@ import {
 import { NotificationBell } from "./notification-bell";
 import { Avatar } from "@/components/ui/display";
 import { buttonClasses } from "@/components/ui/button";
+import { Logo } from "@/components/branding/logo";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -220,6 +220,7 @@ export function AdminShell({
   children,
   name,
   avatarUrl,
+  churchName,
   logoUrl,
   unread,
   unreadChat,
@@ -232,6 +233,7 @@ export function AdminShell({
   children: ReactNode;
   name: string;
   avatarUrl: string | null;
+  churchName: string;
   logoUrl: string | null;
   unread: number;
   unreadChat: number;
@@ -375,22 +377,11 @@ export function AdminShell({
           prefetch
           className="flex shrink-0 items-center gap-2.5 border-b border-brand-100 px-5 py-5 active:opacity-80"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={logoUrl}
-                alt=""
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <Cross className="h-5 w-5" aria-hidden="true" />
-            )}
-          </span>
-          <span className="font-serif text-sm font-bold uppercase leading-tight text-brand-800">
+          <Logo src={logoUrl} />
+          <span className="min-w-0 font-serif text-sm font-bold uppercase leading-tight text-brand-800">
             Admin
-            <span className="block text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-charcoal/45">
-              It Is Finished
+            <span className="block truncate text-[10px] font-sans font-semibold uppercase tracking-[0.18em] text-charcoal/45">
+              {churchName}
             </span>
           </span>
         </Link>
@@ -501,24 +492,13 @@ export function AdminShell({
               onClick={() => setOpen(false)}
               className="flex min-h-11 min-w-0 items-center gap-2.5 active:opacity-80"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-gradient text-cream">
-                {logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={logoUrl}
-                    alt=""
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <Cross className="h-5 w-5" aria-hidden="true" />
-                )}
-              </span>
+              <Logo src={logoUrl} />
               <span className="min-w-0">
                 <span className="block truncate font-serif text-sm font-bold uppercase tracking-wide text-brand-800">
                   Admin
                 </span>
                 <span className="block truncate text-[10px] uppercase tracking-[0.18em] text-charcoal/45">
-                  {name}
+                  {churchName}
                 </span>
               </span>
             </Link>

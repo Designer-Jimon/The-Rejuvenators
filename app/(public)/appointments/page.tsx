@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CalendarDays, Clock3, Mail, Phone } from "lucide-react";
 import { getSessionUser } from "@/lib/auth/session";
 import { getSettings } from "@/lib/settings";
+import { CHURCH_NAME } from "@/lib/branding";
 import { getBlock, getContentMap } from "@/lib/content";
 import { buttonClasses } from "@/components/ui/button";
 import { PageHero } from "@/components/ui/display";
@@ -13,10 +14,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Book an appointment",
-  description:
-    "Book a pastoral appointment with Pastor David Obidimalor at IT IS FINISHED REVIVAL OUTREACH.",
+  description: `Book a pastoral appointment at ${CHURCH_NAME}.`,
   openGraph: {
-    title: "Book an appointment | IT IS FINISHED REVIVAL OUTREACH",
+    title: `Book an appointment | ${CHURCH_NAME}`,
     description:
       "Request a pastoral appointment with Pastor David Obidimalor.",
     type: "website",

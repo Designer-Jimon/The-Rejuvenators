@@ -5,6 +5,7 @@ import { asc, eq } from "drizzle-orm";
 import { Church, Mail, MapPin, Phone } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { worshipCenters } from "@/lib/db/schema";
+import { CHURCH_NAME } from "@/lib/branding";
 import { publicMediaUrl } from "@/lib/media";
 import { buttonClasses } from "@/components/ui/button";
 import { EmptyState, PageHero } from "@/components/ui/display";
@@ -13,10 +14,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Worship Centers",
-  description:
-    "Find an IT IS FINISHED REVIVAL OUTREACH worship center near you.",
+  description: `Find a ${CHURCH_NAME} worship center near you.`,
   openGraph: {
-    title: "Worship Centers | IT IS FINISHED REVIVAL OUTREACH",
+    title: `Worship Centers | ${CHURCH_NAME}`,
     description: "Find a worship center near you and plan your visit.",
     type: "website",
   },

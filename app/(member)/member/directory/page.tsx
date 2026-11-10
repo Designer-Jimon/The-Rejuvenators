@@ -8,6 +8,7 @@ import {
   users,
 } from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth/authorize";
+import { CHURCH_NAME } from "@/lib/branding";
 import { mediaUrl } from "@/lib/media";
 import { formatDate } from "@/lib/utils";
 import { Avatar, Badge, EmptyState, PageHero } from "@/components/ui/display";
@@ -71,7 +72,7 @@ export default async function DirectoryPage({
       <PageHero
         eyebrow="The family"
         title="Member directory"
-        description="Connect with the IT IS FINISHED REVIVAL OUTREACH family. Contact details appear only when a member chooses to share them."
+        description={`Connect with the ${CHURCH_NAME} family. Contact details appear only when a member chooses to share them.`}
       />
 
       <form

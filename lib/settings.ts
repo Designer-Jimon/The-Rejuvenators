@@ -2,6 +2,7 @@ import { cache } from "react";
 import { getDb } from "@/lib/db";
 import { siteSettings } from "@/lib/db/schema";
 import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { CHURCH_LOGO_PATH } from "@/lib/branding";
 
 export const getSettings = cache(async () => {
   const db = await getDb();
@@ -18,7 +19,4 @@ export async function getSetting(key: string) {
   return settings[key] ?? "";
 }
 
-export const getLogoUrl = cache(async () => {
-  const settings = await getSettings();
-  return settings.logo_key ? "/api/branding/logo" : null;
-});
+export const getLogoUrl = cache(async () => CHURCH_LOGO_PATH);

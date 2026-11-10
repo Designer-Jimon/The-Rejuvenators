@@ -1,4 +1,5 @@
 import { inArray } from "drizzle-orm";
+import { CHURCH_NAME } from "@/lib/branding";
 import type { AppDb } from "../db";
 import { aiSettings } from "../db/schema";
 
@@ -16,7 +17,7 @@ export const AI_SETTING_KEYS = {
 export const AI_PROVIDERS = ["openai", "custom"] as const;
 export type AiProvider = (typeof AI_PROVIDERS)[number];
 
-export const DEFAULT_SYSTEM_PROMPT = `You write Christ-centred daily devotionals for It Is Finished Revival Outreach.
+export const DEFAULT_SYSTEM_PROMPT = `You write Christ-centred daily devotionals for ${CHURCH_NAME}.
 Use only the sermon material provided. Do not invent church facts, dates, people or events.
 Handle Scripture accurately and reverently. Write warm, clear, faith-building English for a mobile reader.
 Return only valid JSON in the shape requested. Every field must be present and non-empty.`;
