@@ -105,7 +105,7 @@ const departments = [
 const worshipCenters = [
   [
     "center_1",
-    "[Worship Center 1 – edit in Admin]",
+    "[Worship Center 1 - edit in Admin]",
     "worship-center-1",
     "[Address - edit in Admin]",
     "[City - edit in Admin]",
@@ -115,7 +115,7 @@ const worshipCenters = [
   ],
   [
     "center_2",
-    "[Worship Center 2 – edit in Admin]",
+    "[Worship Center 2 - edit in Admin]",
     "worship-center-2",
     "[Address - edit in Admin]",
     "[City - edit in Admin]",
@@ -129,6 +129,11 @@ const settings = {
   church_name: "IT IS FINISHED REVIVAL OUTREACH",
   tagline: "A place of revival, restoration and purpose",
   pastor_name: "Pastor David Obidimalor",
+  pastor_title: "Lead Pastor",
+  pastor_bio: "[Edit in Admin: Pastor biography]",
+  pastor_about: "[Edit in Admin: About the pastor]",
+  pastor_quote: "",
+  pastor_photo_key: "",
   hero_headline: "Come as you are. Leave renewed.",
   hero_subheadline:
     "A Christ-centred family raising believers for revival, service and purpose.",
@@ -155,6 +160,8 @@ const settings = {
   appointment_start: "09:00",
   appointment_end: "17:00",
   appointment_slot_minutes: "30",
+  announcement_group_enabled: "1",
+  announcement_allow_replies: "0",
 };
 
 const lines = [
@@ -377,6 +384,23 @@ lines.push(
   `INSERT OR IGNORE INTO member_profiles (user_id, member_code, gender, marital_status, country, state, lga, worship_center_id, date_of_birth, address, occupation, bio, requested_department_id, registration_status, member_status, followup_status, show_phone, show_email, show_last_seen, approved_at, created_at, updated_at) SELECT id, 'IIF-MEMBER-0001', 'prefer_not_to_say', 'prefer_not_to_say', 'Nigeria', ${q("[State]")}, ${q("[LGA]")}, 'center_1', '1995-01-01', ${q("[Test member address]")}, ${q("Volunteer")}, ${q("Seeded member account for local testing.")}, 'dept_worship', 'approved', 'active', 'completed', 0, 0, 0, unixepoch() * 1000, unixepoch() * 1000, unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
   `INSERT OR IGNORE INTO department_members (id, department_id, user_id, role, is_active, joined_at) SELECT 'dm_member_worship', 'dept_worship', id, 'member', 1, unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
 );
+
+lines.push(
+  `UPDATE conversations SET is_archived = 1 WHERE type = 'department' AND center_id IS NULL;`,
+  `INSERT OR IGNORE INTO conversations (id, type, title, pair_key, created_by, is_archived, created_at) VALUES ('conv_all_centers', 'announcement', 'All Centers Announcements', 'all-centers', (SELECT id FROM users WHERE email = ${q(adminEmail)}), 0, unixepoch() * 1000);`,
+  `INSERT OR IGNORE INTO conversation_participants (id, conversation_id, user_id, joined_at) SELECT 'cp_all_centers_' || mp.user_id, 'conv_all_centers', mp.user_id, unixepoch() * 1000 FROM member_profiles mp JOIN users u ON u.id = mp.user_id WHERE mp.registration_status = 'approved' AND mp.member_status = 'active' AND u.status = 'active';`,
+);
+
+for (const [departmentId, departmentName] of departments) {
+  for (const [centerId, centerName] of worshipCenters) {
+    const conversationId = `conv_dc_${departmentId}_${centerId}`;
+    const title = `${departmentName} - ${centerName}`;
+    lines.push(
+      `INSERT OR IGNORE INTO conversations (id, type, title, department_id, center_id, created_by, is_archived, created_at) VALUES (${q(conversationId)}, 'department', ${q(title)}, ${q(departmentId)}, ${q(centerId)}, (SELECT id FROM users WHERE email = ${q(adminEmail)}), 0, unixepoch() * 1000);`,
+      `INSERT OR IGNORE INTO conversation_participants (id, conversation_id, user_id, joined_at) SELECT 'cp_${departmentId}_${centerId}_' || mp.user_id, ${q(conversationId)}, mp.user_id, unixepoch() * 1000 FROM member_profiles mp JOIN users u ON u.id = mp.user_id WHERE mp.requested_department_id = ${q(departmentId)} AND mp.worship_center_id = ${q(centerId)} AND mp.registration_status = 'approved' AND mp.member_status = 'active' AND u.status = 'active';`,
+    );
+  }
+}
 
 lines.push(
   `INSERT OR IGNORE INTO notification_preferences (id, user_id, type, in_app, email, whatsapp) SELECT 'np_admin_reg', id, 'member_registration', 1, 0, 0 FROM users WHERE email = ${q(adminEmail)};`,

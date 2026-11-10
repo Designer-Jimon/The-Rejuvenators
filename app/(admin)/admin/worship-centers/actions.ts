@@ -4,12 +4,16 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq, ne } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { worshipCenters } from "@/lib/db/schema";
+import { memberProfiles, worshipCenters } from "@/lib/db/schema";
 import { requirePermission } from "@/lib/auth/authorize";
 import { PERMISSIONS } from "@/lib/constants";
 import { worshipCenterSchema } from "@/lib/admin/cms-validation";
 import { logAudit } from "@/lib/audit";
 import { slugify } from "@/lib/utils";
+import {
+  archiveCenterConversations,
+  ensureCenterGroups,
+} from "@/lib/chat";
 
 function parseCenter(formData: FormData) {
   return worshipCenterSchema.safeParse({
@@ -112,6 +116,13 @@ export async function saveWorshipCenter(formData: FormData) {
       entityId: id,
       details: `Updated worship center ${parsed.data.name}.`,
     });
+
+    if (parsed.data.isActive) {
+      await ensureCenterGroups(id);
+    } else {
+      await archiveCenterConversations(id);
+    }
+
     done("saved");
   }
 
@@ -143,6 +154,9 @@ export async function saveWorshipCenter(formData: FormData) {
     entityId: newId,
     details: `Created worship center ${parsed.data.name}.`,
   });
+  if (parsed.data.isActive) {
+    await ensureCenterGroups(newId);
+  }
   done("created");
 }
 
@@ -163,6 +177,18 @@ export async function deleteWorshipCenter(formData: FormData) {
   const row = rows[0];
   if (!row) fail("Worship center not found.");
 
+  const members = await db
+    .select({ id: memberProfiles.userId })
+    .from(memberProfiles)
+    .where(eq(memberProfiles.worshipCenterId, id))
+    .limit(1);
+  if (members[0]) {
+    fail(
+      "This center still has members. Move them to another center before deleting.",
+    );
+  }
+
+  await archiveCenterConversations(id);
   await db.delete(worshipCenters).where(eq(worshipCenters.id, id));
   await logAudit({
     actorId: user.id,

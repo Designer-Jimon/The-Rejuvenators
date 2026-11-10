@@ -26,8 +26,8 @@ import { logAudit } from "@/lib/audit";
 import { notifyUser } from "@/lib/notifications";
 import { getSettings } from "@/lib/settings";
 import {
-  getOrCreateDepartmentConversation,
   syncDepartmentConversation,
+  syncUserChatGroups,
 } from "@/lib/chat";
 import type { AdminActionInput } from "@/lib/validation";
 import type { SessionUser } from "@/lib/auth/session";
@@ -301,11 +301,8 @@ export async function performAdminAction(
           target: [departmentMembers.departmentId, departmentMembers.userId],
           set: { isActive: true, joinedAt: now },
         });
-      await getOrCreateDepartmentConversation(
-        row.profile.requestedDepartmentId,
-        actor.id,
-      );
     }
+    await syncUserChatGroups(memberId);
 
     await notifyUser(memberId, {
       type: NOTIFICATION_TYPES.memberApproved,
@@ -372,7 +369,6 @@ export async function performAdminAction(
         set: { isActive: true },
       });
 
-    await getOrCreateDepartmentConversation(department.id, actor.id);
     if (
       row.profile.requestedDepartmentId &&
       row.profile.requestedDepartmentId !== department.id
@@ -388,6 +384,7 @@ export async function performAdminAction(
         );
       await syncDepartmentConversation(row.profile.requestedDepartmentId);
     }
+    await syncUserChatGroups(memberId);
 
     await notifyUser(memberId, {
       type: NOTIFICATION_TYPES.general,
@@ -458,6 +455,7 @@ export async function performAdminAction(
       assignedBy: actor.id,
     });
     await syncDepartmentConversation(departmentId);
+    await syncUserChatGroups(memberId);
 
     await notifyUser(memberId, {
       type: NOTIFICATION_TYPES.leaderAssigned,
@@ -493,6 +491,7 @@ export async function performAdminAction(
         ),
       );
     await syncDepartmentConversation(departmentId);
+    await syncUserChatGroups(memberId);
     await notifyUser(memberId, {
       type: NOTIFICATION_TYPES.general,
       title: "Unit leadership update",
@@ -525,6 +524,7 @@ export async function performAdminAction(
         syncDepartmentConversation(id),
       ),
     );
+    await syncUserChatGroups(memberId);
     await notifyUser(memberId, {
       type: NOTIFICATION_TYPES.memberStatus,
       title: "Membership status updated",

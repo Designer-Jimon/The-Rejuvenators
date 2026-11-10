@@ -5,6 +5,7 @@ import { memberProfiles, users, worshipCenters } from "@/lib/db/schema";
 import { requireApiUser } from "@/lib/auth/authorize";
 import { csrfFailure, readJson, sameOrigin } from "@/lib/http";
 import { profileUpdateSchema } from "@/lib/validation";
+import { syncUserChatGroups } from "@/lib/chat";
 
 const forbiddenFields = [
   "departmentId",
@@ -93,6 +94,8 @@ export async function PATCH(request: Request) {
       updatedAt: now,
     })
     .where(eq(memberProfiles.userId, user.id));
+
+  await syncUserChatGroups(user.id);
 
   return NextResponse.json({ ok: true });
 }

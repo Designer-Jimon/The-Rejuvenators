@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
-import { requireUser } from "@/lib/auth/authorize";
-import { getOrCreateDepartmentConversation, listChatContacts, listChatConversations } from "@/lib/chat";
+import { and, eq, isNull } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { departmentLeaders } from "@/lib/db/schema";
+import { hasPermission, requireUser } from "@/lib/auth/authorize";
+import { PERMISSIONS } from "@/lib/constants";
+import { getSettings } from "@/lib/settings";
+import {
+  ANNOUNCEMENT_REPLIES_KEY,
+  listChatContacts,
+  listChatConversations,
+  syncUserChatGroups,
+} from "@/lib/chat";
 import { ChatWorkspace } from "@/components/member/chat-workspace";
 
 export const metadata: Metadata = { title: "Messages" };
@@ -14,20 +24,27 @@ export default async function ChatPage({
   const user = await requireUser("/member/chat");
   const { c } = await searchParams;
 
-  if (user.profile.requestedDepartmentId) {
-    try {
-      await getOrCreateDepartmentConversation(
-        user.profile.requestedDepartmentId,
-        user.id,
-      );
-    } catch {
-      /* A department chat is optional; direct messages still work. */
-    }
+  try {
+    await syncUserChatGroups(user.id);
+  } catch {
+    /* Group chats are optional; direct messages still work. */
   }
 
-  const [conversations, contacts] = await Promise.all([
+  const db = await getDb();
+  const [conversations, contacts, settings, leadership] = await Promise.all([
     listChatConversations(user.id),
     listChatContacts(user.id),
+    getSettings(),
+    db
+      .select({ id: departmentLeaders.id })
+      .from(departmentLeaders)
+      .where(
+        and(
+          eq(departmentLeaders.userId, user.id),
+          isNull(departmentLeaders.endedAt),
+        ),
+      )
+      .limit(1),
   ]);
 
   return (
@@ -37,6 +54,10 @@ export default async function ChatPage({
       contacts={contacts}
       currentUserId={user.id}
       currentUserName={user.name}
+      announcementReplies={settings[ANNOUNCEMENT_REPLIES_KEY] === "1"}
+      canPostAnnouncements={
+        hasPermission(user, PERMISSIONS.memberManage) || leadership.length > 0
+      }
     />
   );
 }

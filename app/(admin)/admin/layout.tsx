@@ -3,6 +3,7 @@ import { PERMISSIONS, ROLES } from "@/lib/constants";
 import { mediaUrl } from "@/lib/media";
 import { getSettings } from "@/lib/settings";
 import { AdminShell } from "@/components/layout/admin-shell";
+import { totalChatUnread } from "@/lib/chat";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,11 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, settings] = await Promise.all([requireAdmin(), getSettings()]);
+  const user = await requireAdmin();
+  const [settings, unreadChat] = await Promise.all([
+    getSettings(),
+    totalChatUnread(user.id),
+  ]);
 
   return (
     <AdminShell
@@ -19,6 +24,7 @@ export default async function AdminLayout({
       avatarUrl={mediaUrl(user.profile.avatarKey)}
       logoUrl={settings.logo_key ? "/api/branding/logo" : null}
       unread={user.unreadNotifications}
+      unreadChat={unreadChat}
       canManageMembers={hasPermission(user, PERMISSIONS.memberReview)}
       canManageAppointments={hasPermission(user, PERMISSIONS.appointmentManage)}
       canManageContent={hasPermission(user, PERMISSIONS.contentManage)}

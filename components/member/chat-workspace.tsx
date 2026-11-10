@@ -12,6 +12,7 @@ import {
   Search,
   Send,
   Trash2,
+  Users,
   X,
 } from "lucide-react";
 import { Avatar, EmptyState } from "@/components/ui/display";
@@ -70,6 +71,14 @@ type Message = {
   createdAt: DateLike;
 };
 
+type GroupMember = {
+  id: string;
+  name: string;
+  avatarKey: string | null;
+  avatarUrl: string | null;
+  memberCode: string | null;
+};
+
 type AttachmentDraft = {
   key: string;
   url: string;
@@ -116,12 +125,16 @@ export function ChatWorkspace({
   contacts,
   currentUserId,
   currentUserName,
+  announcementReplies,
+  canPostAnnouncements,
 }: {
   initialConversationId: string | null;
   initialConversations: Conversation[];
   contacts: Contact[];
   currentUserId: string;
   currentUserName: string;
+  announcementReplies: boolean;
+  canPostAnnouncements: boolean;
 }) {
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
@@ -143,6 +156,9 @@ export function ChatWorkspace({
   const [onlineIds, setOnlineIds] = useState<string[]>([]);
   const [contactSearch, setContactSearch] = useState("");
   const [showContacts, setShowContacts] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -157,6 +173,13 @@ export function ChatWorkspace({
         .some((value) => value!.toLowerCase().includes(term)),
     );
   }, [contactList, contactSearch]);
+
+  const isGroup = Boolean(selected && selected.type !== "direct");
+  const canPost = !selected
+    ? false
+    : selected.type === "announcement"
+      ? announcementReplies || canPostAnnouncements
+      : true;
 
   function scrollToBottom(behavior: ScrollBehavior = "smooth") {
     requestAnimationFrame(() => {
@@ -215,9 +238,41 @@ export function ChatWorkspace({
     }
   }
 
+  async function loadMembers(conversationId: string) {
+    setMembersLoading(true);
+    try {
+      const response = await fetchWithTimeout(
+        `/api/chat/conversations/${conversationId}/members`,
+      );
+      const result = (await response.json()) as {
+        members?: GroupMember[];
+        error?: string;
+      };
+      if (!response.ok) throw new Error(result.error ?? "Could not load members.");
+      setMembers(result.members ?? []);
+    } catch (membersError) {
+      setError(
+        membersError instanceof Error
+          ? membersError.message
+          : "Could not load members.",
+      );
+    } finally {
+      setMembersLoading(false);
+    }
+  }
+
+  async function toggleMembers() {
+    if (!selectedId) return;
+    const next = !showMembers;
+    setShowMembers(next);
+    if (next) await loadMembers(selectedId);
+  }
+
   async function selectConversation(conversationId: string) {
     setSelectedId(conversationId);
     setShowContacts(false);
+    setShowMembers(false);
+    setMembers([]);
     setError(null);
     setLoadingMessages(true);
     setMessages([]);
@@ -688,7 +743,11 @@ export function ChatWorkspace({
                     {selected.title}
                   </h2>
                   <p className="flex items-center gap-1.5 text-xs text-charcoal/50">
-                    {selected.type === "department" ? "Department group" : "Direct message"}
+                    {selected.type === "department"
+                      ? "Department group"
+                      : selected.type === "announcement"
+                        ? "All centers announcements"
+                        : "Direct message"}
                     {selected.otherUser ? (
                       <>
                         <span aria-hidden="true">·</span>
@@ -699,7 +758,62 @@ export function ChatWorkspace({
                     ) : null}
                   </p>
                 </div>
+                {isGroup ? (
+                  <button
+                    type="button"
+                    onClick={() => void toggleMembers()}
+                    aria-expanded={showMembers}
+                    className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-2xl border border-brand-100 bg-white px-3 text-xs font-semibold text-charcoal/65 transition hover:bg-brand-50 active:scale-95"
+                  >
+                    <Users className="h-4 w-4" aria-hidden="true" />
+                    Members
+                  </button>
+                ) : null}
               </header>
+
+              {showMembers && isGroup ? (
+                <div className="max-h-56 shrink-0 overflow-y-auto border-b border-brand-100 bg-white px-3 py-2">
+                  {membersLoading ? (
+                    <p className="py-3 text-center text-xs text-charcoal/50">
+                      Loading members...
+                    </p>
+                  ) : members.length ? (
+                    <ul className="divide-y divide-brand-50">
+                      {members.map((member) => (
+                        <li
+                          key={member.id}
+                          className="flex min-h-11 items-center gap-2.5 py-1.5"
+                        >
+                          <Avatar
+                            name={member.name}
+                            src={member.avatarUrl}
+                            size="sm"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold">
+                              {member.name}
+                            </span>
+                            {member.memberCode ? (
+                              <span className="block truncate text-[11px] text-charcoal/45">
+                                {member.memberCode}
+                              </span>
+                            ) : null}
+                          </span>
+                          {onlineIds.includes(member.id) ? (
+                            <span className="text-[10px] font-semibold text-emerald-700">
+                              Online
+                            </span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="py-3 text-center text-xs text-charcoal/50">
+                      No members in this group yet.
+                    </p>
+                  )}
+                </div>
+              ) : null}
 
               <div
                 ref={scrollRef}
@@ -741,7 +855,7 @@ export function ChatWorkspace({
                           />
                         ) : null}
                         <div className={cn("max-w-[82%] sm:max-w-[70%]", mine && "text-right")}>
-                          {!mine && selected.type === "department" ? (
+                          {!mine && isGroup ? (
                             <p className="mb-0.5 text-[11px] font-semibold text-brand-800">
                               {message.senderName}
                             </p>
@@ -852,6 +966,7 @@ export function ChatWorkspace({
                 ) : null}
               </div>
 
+              {canPost ? (
               <div className="border-t border-brand-100 bg-white p-3">
                 {replyTo ? (
                   <div className="mb-2 flex items-start justify-between gap-2 rounded-xl bg-brand-50 px-3 py-2 text-xs text-charcoal/65">
@@ -951,6 +1066,15 @@ export function ChatWorkspace({
                   </Button>
                 </div>
               </div>
+              ) : (
+                <div className="border-t border-brand-100 bg-white p-4">
+                  <p className="rounded-2xl bg-brand-50 px-4 py-3 text-center text-sm leading-6 text-charcoal/65">
+                    {selected.type === "announcement"
+                      ? "This announcement group is read-only. Only admins and unit leaders can post here."
+                      : "You cannot post in this group."}
+                  </p>
+                </div>
+              )}
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center p-6 text-center">

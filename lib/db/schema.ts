@@ -59,6 +59,7 @@ export const users = sqliteTable(
     mustChangePassword: integer("must_change_password", { mode: "boolean" })
       .notNull()
       .default(false),
+    chatMutedUntil: integer("chat_muted_until", { mode: "timestamp_ms" }),
     lastLoginAt: integer("last_login_at", { mode: "timestamp_ms" }),
     ...timestamps(),
   },
@@ -738,6 +739,12 @@ export const conversations = sqliteTable(
     departmentId: text("department_id").references(() => departments.id, {
       onDelete: "cascade",
     }),
+    centerId: text("center_id").references(() => worshipCenters.id, {
+      onDelete: "cascade",
+    }),
+    isArchived: integer("is_archived", { mode: "boolean" })
+      .notNull()
+      .default(false),
     createdBy: text("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
@@ -750,9 +757,12 @@ export const conversations = sqliteTable(
     uniqueIndex("conversations_pair_unique")
       .on(table.pairKey)
       .where(sql`${table.pairKey} IS NOT NULL`),
-    uniqueIndex("conversations_department_unique")
-      .on(table.departmentId)
-      .where(sql`${table.departmentId} IS NOT NULL`),
+    uniqueIndex("conversations_department_center_unique")
+      .on(table.departmentId, table.centerId)
+      .where(
+        sql`${table.departmentId} IS NOT NULL AND ${table.centerId} IS NOT NULL`,
+      ),
+    index("conversations_center_idx").on(table.centerId),
   ],
 );
 
@@ -828,6 +838,33 @@ export const messageReads = sqliteTable(
   },
   (table) => [
     uniqueIndex("message_reads_unique").on(table.messageId, table.userId),
+  ],
+);
+
+export const chatReports = sqliteTable(
+  "chat_reports",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    messageId: text("message_id"),
+    reporterId: text("reporter_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    reason: text("reason").notNull(),
+    status: text("status").notNull().default("open"),
+    resolvedBy: text("resolved_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    resolvedAt: integer("resolved_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(now),
+  },
+  (table) => [
+    index("chat_reports_status_idx").on(table.status),
+    index("chat_reports_conversation_idx").on(table.conversationId),
   ],
 );
 

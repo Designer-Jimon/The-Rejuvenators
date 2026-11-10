@@ -10,6 +10,10 @@ import { PERMISSIONS } from "@/lib/constants";
 import { departmentSchema } from "@/lib/admin/cms-validation";
 import { logAudit } from "@/lib/audit";
 import { slugify } from "@/lib/utils";
+import {
+  archiveDepartmentConversations,
+  ensureDepartmentGroups,
+} from "@/lib/chat";
 
 function parseDepartment(formData: FormData) {
   return departmentSchema.safeParse({
@@ -99,6 +103,12 @@ export async function saveDepartment(formData: FormData) {
     })
     .where(eq(departments.id, row.id));
 
+  if (parsed.data.isActive) {
+    await ensureDepartmentGroups(row.id);
+  } else {
+    await archiveDepartmentConversations(row.id);
+  }
+
   await logAudit({
     actorId: user.id,
     action: "department.updated",
@@ -137,6 +147,10 @@ export async function createDepartment(formData: FormData) {
     sortOrder: parsed.data.sortOrder,
     isActive: parsed.data.isActive,
   });
+
+  if (parsed.data.isActive) {
+    await ensureDepartmentGroups(id);
+  }
 
   await logAudit({
     actorId: user.id,

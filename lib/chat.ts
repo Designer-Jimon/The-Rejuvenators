@@ -10,10 +10,12 @@ import {
   lt,
   ne,
   notInArray,
+  or,
   sql,
 } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import {
+  chatReports,
   conversationParticipants,
   conversations,
   departmentLeaders,
@@ -21,14 +23,25 @@ import {
   departments,
   memberProfiles,
   messages,
+  permissions as permissionsTable,
+  rolePermissions,
+  roles,
+  userRoles,
   users,
+  worshipCenters,
 } from "@/lib/db/schema";
-import { NOTIFICATION_TYPES } from "@/lib/constants";
-import { notifyUser } from "@/lib/notifications";
+import { NOTIFICATION_TYPES, PERMISSIONS, ROLES } from "@/lib/constants";
+import { notifyUser, notifyPermission } from "@/lib/notifications";
+import { getSettings } from "@/lib/settings";
 import { mediaUrl } from "@/lib/media";
 
 export const CHAT_BODY_LIMIT = 4000;
 export const CHAT_PAGE_SIZE = 50;
+export const ALL_CENTERS_PAIR_KEY = "all-centers";
+export const ANNOUNCEMENT_ENABLED_KEY = "announcement_group_enabled";
+export const ANNOUNCEMENT_REPLIES_KEY = "announcement_allow_replies";
+
+export const GROUP_TYPES = ["department", "announcement"] as const;
 
 export type ChatUserSummary = {
   id: string;
@@ -43,6 +56,7 @@ export type ChatConversationSummary = {
   type: string;
   title: string;
   departmentId: string | null;
+  centerId: string | null;
   lastMessageAt: Date | null;
   lastMessage: string | null;
   lastSenderName: string | null;
@@ -95,6 +109,45 @@ async function participantIds(conversationId: string) {
     .from(conversationParticipants)
     .where(eq(conversationParticipants.conversationId, conversationId));
   return rows.map((row) => row.userId);
+}
+
+async function isAdminUser(userId: string) {
+  const db = await getDb();
+  const rows = await db
+    .select({ userId: userRoles.userId })
+    .from(userRoles)
+    .innerJoin(roles, eq(roles.id, userRoles.roleId))
+    .leftJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+    .leftJoin(
+      permissionsTable,
+      eq(permissionsTable.id, rolePermissions.permissionId),
+    )
+    .where(
+      and(
+        eq(userRoles.userId, userId),
+        or(
+          eq(roles.key, ROLES.superAdmin),
+          eq(permissionsTable.key, PERMISSIONS.adminAccess),
+        ),
+      ),
+    )
+    .limit(1);
+  return Boolean(rows[0]);
+}
+
+async function isActiveUnitLeader(userId: string) {
+  const db = await getDb();
+  const rows = await db
+    .select({ id: departmentLeaders.id })
+    .from(departmentLeaders)
+    .where(
+      and(
+        eq(departmentLeaders.userId, userId),
+        isNull(departmentLeaders.endedAt),
+      ),
+    )
+    .limit(1);
+  return Boolean(rows[0]);
 }
 
 export async function getOrCreateDirectConversation(
@@ -159,60 +212,40 @@ export async function getOrCreateDirectConversation(
   return conversationId;
 }
 
-export async function getOrCreateDepartmentConversation(
-  departmentId: string,
-  createdBy?: string | null,
-) {
+async function syncParticipants(conversationId: string, ids: string[]) {
   const db = await getDb();
-  const department = await db
-    .select({ id: departments.id, name: departments.name })
-    .from(departments)
-    .where(and(eq(departments.id, departmentId), eq(departments.isActive, true)))
-    .limit(1);
-  if (!department[0]) throw new Error("Department not found.");
-
-  let conversationId: string;
-  const existing = await db
-    .select({ id: conversations.id })
-    .from(conversations)
-    .where(eq(conversations.departmentId, departmentId))
-    .limit(1);
-  if (existing[0]) {
-    conversationId = existing[0].id;
-  } else {
-    conversationId = crypto.randomUUID();
+  const unique = [...new Set(ids)];
+  if (unique.length > 0) {
     await db
-      .insert(conversations)
-      .values({
-        id: conversationId,
-        type: "department",
-        title: `${department[0].name} Department`,
-        departmentId,
-        createdBy: createdBy ?? null,
-        lastMessageAt: new Date(),
-      })
+      .insert(conversationParticipants)
+      .values(
+        unique.map((userId) => ({
+          id: crypto.randomUUID(),
+          conversationId,
+          userId,
+        })),
+      )
       .onConflictDoNothing();
-    const created = await db
-      .select({ id: conversations.id })
-      .from(conversations)
-      .where(eq(conversations.departmentId, departmentId))
-      .limit(1);
-    conversationId = created[0]?.id ?? conversationId;
+    await db
+      .delete(conversationParticipants)
+      .where(
+        and(
+          eq(conversationParticipants.conversationId, conversationId),
+          notInArray(conversationParticipants.userId, unique),
+        ),
+      );
+    return;
   }
-
-  await syncDepartmentConversation(departmentId);
-  return conversationId;
+  await db
+    .delete(conversationParticipants)
+    .where(eq(conversationParticipants.conversationId, conversationId));
 }
 
-export async function syncDepartmentConversation(departmentId: string) {
+async function departmentCenterMemberIds(
+  departmentId: string,
+  centerId: string,
+) {
   const db = await getDb();
-  const conversation = await db
-    .select({ id: conversations.id })
-    .from(conversations)
-    .where(eq(conversations.departmentId, departmentId))
-    .limit(1);
-  if (!conversation[0]) return;
-
   const [members, leaders] = await Promise.all([
     db
       .select({ userId: departmentMembers.userId })
@@ -226,6 +259,7 @@ export async function syncDepartmentConversation(departmentId: string) {
           eq(users.status, "active"),
           eq(memberProfiles.registrationStatus, "approved"),
           eq(memberProfiles.memberStatus, "active"),
+          eq(memberProfiles.worshipCenterId, centerId),
         ),
       ),
     db
@@ -240,31 +274,461 @@ export async function syncDepartmentConversation(departmentId: string) {
           eq(users.status, "active"),
           eq(memberProfiles.registrationStatus, "approved"),
           eq(memberProfiles.memberStatus, "active"),
+          or(
+            eq(departmentLeaders.centerId, centerId),
+            eq(memberProfiles.worshipCenterId, centerId),
+          ),
         ),
       ),
   ]);
+  return [...new Set([...members, ...leaders].map((row) => row.userId))];
+}
 
-  const ids = [...new Set([...members, ...leaders].map((row) => row.userId))];
-  if (ids.length > 0) {
+export async function ensureDepartmentCenterConversation(
+  departmentId: string,
+  centerId: string,
+  createdBy?: string | null,
+) {
+  const db = await getDb();
+  const [department] = await db
+    .select({ id: departments.id, name: departments.name })
+    .from(departments)
+    .where(
+      and(eq(departments.id, departmentId), eq(departments.isActive, true)),
+    )
+    .limit(1);
+  const [center] = await db
+    .select({ id: worshipCenters.id, name: worshipCenters.name })
+    .from(worshipCenters)
+    .where(
+      and(
+        eq(worshipCenters.id, centerId),
+        eq(worshipCenters.isActive, true),
+      ),
+    )
+    .limit(1);
+  if (!department || !center) return null;
+
+  const existing = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.type, "department"),
+        eq(conversations.departmentId, departmentId),
+        eq(conversations.centerId, centerId),
+      ),
+    )
+    .limit(1);
+
+  let conversationId = existing[0]?.id;
+  const title = `${department.name} · ${center.name}`;
+  if (!conversationId) {
+    conversationId = crypto.randomUUID();
+    await db
+      .insert(conversations)
+      .values({
+        id: conversationId,
+        type: "department",
+        title,
+        departmentId,
+        centerId,
+        createdBy: createdBy ?? null,
+        lastMessageAt: new Date(),
+      })
+      .onConflictDoNothing();
+    const [created] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.type, "department"),
+          eq(conversations.departmentId, departmentId),
+          eq(conversations.centerId, centerId),
+        ),
+      )
+      .limit(1);
+    conversationId = created?.id ?? conversationId;
+  } else {
+    await db
+      .update(conversations)
+      .set({ title, isArchived: false })
+      .where(eq(conversations.id, conversationId));
+  }
+
+  return conversationId;
+}
+
+export async function syncDepartmentCenterConversation(
+  departmentId: string,
+  centerId: string,
+) {
+  const db = await getDb();
+  const [conversation] = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.type, "department"),
+        eq(conversations.departmentId, departmentId),
+        eq(conversations.centerId, centerId),
+      ),
+    )
+    .limit(1);
+  if (!conversation[0]) {
+    const id = await ensureDepartmentCenterConversation(departmentId, centerId);
+    if (!id) return;
+    return syncParticipants(
+      id,
+      await departmentCenterMemberIds(departmentId, centerId),
+    );
+  }
+  await syncParticipants(
+    conversation[0].id,
+    await departmentCenterMemberIds(departmentId, centerId),
+  );
+}
+
+export async function ensureDepartmentGroups(departmentId: string) {
+  const db = await getDb();
+  const centers = await db
+    .select({ id: worshipCenters.id })
+    .from(worshipCenters)
+    .where(eq(worshipCenters.isActive, true));
+  for (const center of centers) {
+    const id = await ensureDepartmentCenterConversation(
+      departmentId,
+      center.id,
+    );
+    if (id) {
+      await syncParticipants(
+        id,
+        await departmentCenterMemberIds(departmentId, center.id),
+      );
+    }
+  }
+}
+
+export async function ensureCenterGroups(centerId: string) {
+  const db = await getDb();
+  const rows = await db
+    .select({ id: departments.id })
+    .from(departments)
+    .where(eq(departments.isActive, true));
+  for (const department of rows) {
+    const id = await ensureDepartmentCenterConversation(
+      department.id,
+      centerId,
+    );
+    if (id) {
+      await syncParticipants(
+        id,
+        await departmentCenterMemberIds(department.id, centerId),
+      );
+    }
+  }
+}
+
+export async function archiveDepartmentConversations(departmentId: string) {
+  const db = await getDb();
+  await db
+    .update(conversations)
+    .set({ isArchived: true })
+    .where(
+      and(
+        eq(conversations.type, "department"),
+        eq(conversations.departmentId, departmentId),
+      ),
+    );
+}
+
+export async function archiveCenterConversations(centerId: string) {
+  const db = await getDb();
+  await db
+    .update(conversations)
+    .set({ isArchived: true })
+    .where(eq(conversations.centerId, centerId));
+}
+
+export async function ensureAllCentersConversation(createdBy?: string | null) {
+  const settings = await getSettings();
+  const enabled = settings[ANNOUNCEMENT_ENABLED_KEY] !== "0";
+  const db = await getDb();
+  const existing = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(eq(conversations.pairKey, ALL_CENTERS_PAIR_KEY))
+    .limit(1);
+
+  if (!enabled) {
+    if (existing[0]) {
+      await db
+        .update(conversations)
+        .set({ isArchived: true })
+        .where(eq(conversations.id, existing[0].id));
+    }
+    return null;
+  }
+
+  let conversationId = existing[0]?.id;
+  if (!conversationId) {
+    conversationId = crypto.randomUUID();
+    await db
+      .insert(conversations)
+      .values({
+        id: conversationId,
+        type: "announcement",
+        title: "All Centers Announcements",
+        pairKey: ALL_CENTERS_PAIR_KEY,
+        createdBy: createdBy ?? null,
+        lastMessageAt: new Date(),
+      })
+      .onConflictDoNothing();
+    const [created] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(eq(conversations.pairKey, ALL_CENTERS_PAIR_KEY))
+      .limit(1);
+    conversationId = created?.id ?? conversationId;
+  } else {
+    await db
+      .update(conversations)
+      .set({ isArchived: false })
+      .where(eq(conversations.id, conversationId));
+  }
+  return conversationId;
+}
+
+export async function syncAllCentersConversation() {
+  const db = await getDb();
+  const conversationId = await ensureAllCentersConversation();
+  if (!conversationId) return;
+  const rows = await db
+    .select({ userId: memberProfiles.userId })
+    .from(memberProfiles)
+    .innerJoin(users, eq(users.id, memberProfiles.userId))
+    .where(
+      and(
+        eq(memberProfiles.registrationStatus, "approved"),
+        eq(memberProfiles.memberStatus, "active"),
+        eq(users.status, "active"),
+      ),
+    );
+  await syncParticipants(
+    conversationId,
+    rows.map((row) => row.userId),
+  );
+}
+
+export async function getOrCreateDepartmentConversation(
+  departmentId: string,
+  createdBy?: string | null,
+  centerId?: string | null,
+) {
+  const db = await getDb();
+  let resolvedCenter = centerId ?? null;
+  if (!resolvedCenter && createdBy) {
+    const [profile] = await db
+      .select({ centerId: memberProfiles.worshipCenterId })
+      .from(memberProfiles)
+      .where(eq(memberProfiles.userId, createdBy))
+      .limit(1);
+    resolvedCenter = profile?.centerId ?? null;
+  }
+  if (!resolvedCenter) {
+    const [center] = await db
+      .select({ id: worshipCenters.id })
+      .from(worshipCenters)
+      .where(eq(worshipCenters.isActive, true))
+      .orderBy(asc(worshipCenters.sortOrder))
+      .limit(1);
+    resolvedCenter = center?.id ?? null;
+  }
+  if (!resolvedCenter) throw new Error("No worship center is available.");
+
+  const conversationId = await ensureDepartmentCenterConversation(
+    departmentId,
+    resolvedCenter,
+    createdBy ?? null,
+  );
+  if (!conversationId) throw new Error("Department not found.");
+  await syncDepartmentCenterConversation(departmentId, resolvedCenter);
+  return conversationId;
+}
+
+export async function syncDepartmentConversation(departmentId: string) {
+  const db = await getDb();
+  const rows = await db
+    .select({ centerId: conversations.centerId })
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.type, "department"),
+        eq(conversations.departmentId, departmentId),
+      ),
+    );
+  for (const row of rows) {
+    if (row.centerId) {
+      await syncDepartmentCenterConversation(departmentId, row.centerId);
+    }
+  }
+  await ensureDepartmentGroups(departmentId);
+}
+
+async function userTargetGroupIds(userId: string) {
+  const db = await getDb();
+  const [profile] = await db
+    .select({
+      departmentId: memberProfiles.requestedDepartmentId,
+      centerId: memberProfiles.worshipCenterId,
+      registrationStatus: memberProfiles.registrationStatus,
+      memberStatus: memberProfiles.memberStatus,
+      userStatus: users.status,
+    })
+    .from(memberProfiles)
+    .innerJoin(users, eq(users.id, memberProfiles.userId))
+    .where(eq(memberProfiles.userId, userId))
+    .limit(1);
+  if (!profile) return [] as string[];
+
+  const eligible =
+    profile.registrationStatus === "approved" &&
+    profile.memberStatus === "active" &&
+    profile.userStatus === "active";
+  if (!eligible) return [] as string[];
+
+  const target: string[] = [];
+  if (profile.departmentId && profile.centerId) {
+    const id = await ensureDepartmentCenterConversation(
+      profile.departmentId,
+      profile.centerId,
+      userId,
+    );
+    if (id) target.push(id);
+  }
+  const allCenters = await ensureAllCentersConversation(userId);
+  if (allCenters) target.push(allCenters);
+  return target;
+}
+
+export async function syncUserChatGroups(userId: string) {
+  const db = await getDb();
+  const target = await userTargetGroupIds(userId);
+
+  if (target.length > 0) {
     await db
       .insert(conversationParticipants)
       .values(
-        ids.map((userId) => ({
+        target.map((conversationId) => ({
           id: crypto.randomUUID(),
-          conversationId: conversation[0].id,
+          conversationId,
           userId,
         })),
       )
       .onConflictDoNothing();
+  }
+
+  const stale = await db
+    .select({
+      id: conversationParticipants.id,
+      conversationId: conversationParticipants.conversationId,
+    })
+    .from(conversationParticipants)
+    .innerJoin(
+      conversations,
+      eq(conversations.id, conversationParticipants.conversationId),
+    )
+    .where(
+      and(
+        eq(conversationParticipants.userId, userId),
+        inArray(conversations.type, [...GROUP_TYPES]),
+      ),
+    );
+
+  const removeIds = stale
+    .filter((row) => !target.includes(row.conversationId))
+    .map((row) => row.id);
+  if (removeIds.length > 0) {
     await db
       .delete(conversationParticipants)
-      .where(
-        and(
-          eq(conversationParticipants.conversationId, conversation[0].id),
-          notInArray(conversationParticipants.userId, ids),
-        ),
-      );
+      .where(inArray(conversationParticipants.id, removeIds));
   }
+  return target;
+}
+
+export async function backfillChatGroups() {
+  const db = await getDb();
+  await db
+    .update(conversations)
+    .set({ isArchived: true })
+    .where(
+      and(
+        eq(conversations.type, "department"),
+        isNull(conversations.centerId),
+      ),
+    );
+  await ensureAllCentersConversation();
+  const [centerRows, departmentRows] = await Promise.all([
+    db
+      .select({ id: worshipCenters.id })
+      .from(worshipCenters)
+      .where(eq(worshipCenters.isActive, true)),
+    db
+      .select({ id: departments.id })
+      .from(departments)
+      .where(eq(departments.isActive, true)),
+  ]);
+  for (const center of centerRows) {
+    for (const department of departmentRows) {
+      await syncDepartmentCenterConversation(department.id, center.id);
+    }
+  }
+  await syncAllCentersConversation();
+  const members = await db
+    .select({ userId: memberProfiles.userId })
+    .from(memberProfiles)
+    .innerJoin(users, eq(users.id, memberProfiles.userId))
+    .where(
+      and(
+        eq(memberProfiles.registrationStatus, "approved"),
+        eq(memberProfiles.memberStatus, "active"),
+        eq(users.status, "active"),
+      ),
+    );
+  for (const member of members) {
+    await syncUserChatGroups(member.userId);
+  }
+  return { centers: centerRows.length, departments: departmentRows.length };
+}
+
+async function canPostToConversation(
+  conversation: {
+    id: string;
+    type: string;
+    isArchived: boolean;
+  },
+  userId: string,
+) {
+  if (conversation.isArchived) {
+    throw new Error("This group is archived and no longer accepts messages.");
+  }
+  const admin = await isAdminUser(userId);
+  const participant = await requireParticipant(conversation.id, userId);
+
+  if (conversation.type === "direct") {
+    if (!participant) throw new Error("Conversation not found.");
+    return;
+  }
+  if (conversation.type === "announcement") {
+    if (admin) return;
+    const settings = await getSettings();
+    const allowReplies = settings[ANNOUNCEMENT_REPLIES_KEY] === "1";
+    if (allowReplies && participant) return;
+    if (await isActiveUnitLeader(userId)) return;
+    throw new Error("Only admins and unit leaders can post in this group.");
+  }
+  if (admin || participant) return;
+  throw new Error("Only members of this group can post here.");
 }
 
 export async function listChatConversations(
@@ -277,6 +741,7 @@ export async function listChatConversations(
       type: conversations.type,
       title: conversations.title,
       departmentId: conversations.departmentId,
+      centerId: conversations.centerId,
       lastMessageAt: conversations.lastMessageAt,
       createdAt: conversations.createdAt,
       lastReadAt: conversationParticipants.lastReadAt,
@@ -307,7 +772,12 @@ export async function listChatConversations(
       conversations,
       eq(conversations.id, conversationParticipants.conversationId),
     )
-    .where(eq(conversationParticipants.userId, userId));
+    .where(
+      and(
+        eq(conversationParticipants.userId, userId),
+        eq(conversations.isArchived, false),
+      ),
+    );
 
   const directIds = rows
     .filter((row) => row.type === "direct")
@@ -351,8 +821,9 @@ export async function listChatConversations(
         title:
           row.type === "direct"
             ? otherUser?.name ?? row.title ?? "Direct message"
-            : row.title ?? "Department chat",
+            : row.title ?? "Group chat",
         departmentId: row.departmentId,
+        centerId: row.centerId,
         lastMessageAt: row.lastMessageAt ?? row.createdAt,
         lastMessage: row.lastMessage,
         lastSenderName: row.lastSenderName,
@@ -412,6 +883,41 @@ export async function getChatConversation(
   }
 
   return { ...conversation, otherUser: null };
+}
+
+export async function listConversationMembers(
+  userId: string,
+  conversationId: string,
+) {
+  const db = await getDb();
+  const [conversation] = await db
+    .select({ id: conversations.id, type: conversations.type })
+    .from(conversations)
+    .where(eq(conversations.id, conversationId))
+    .limit(1);
+  if (!conversation) throw new Error("Conversation not found.");
+  if (!(await requireParticipant(conversationId, userId))) {
+    throw new Error("Conversation not found.");
+  }
+  if (conversation.type === "direct") {
+    throw new Error("Member lists are only available for group chats.");
+  }
+  const rows = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarKey: memberProfiles.avatarKey,
+      memberCode: memberProfiles.memberCode,
+    })
+    .from(conversationParticipants)
+    .innerJoin(users, eq(users.id, conversationParticipants.userId))
+    .leftJoin(memberProfiles, eq(memberProfiles.userId, users.id))
+    .where(eq(conversationParticipants.conversationId, conversationId))
+    .orderBy(asc(users.name));
+  return rows.map((row) => ({
+    ...row,
+    avatarUrl: mediaUrl(row.avatarKey),
+  }));
 }
 
 export async function listChatMessages(
@@ -488,9 +994,33 @@ export async function sendChatMessage(input: {
   replyToId?: string | null;
   notify?: boolean;
 }) {
-  if (!(await requireParticipant(input.conversationId, input.senderId))) {
-    throw new Error("Conversation not found.");
+  const db = await getDb();
+  const [conversation] = await db
+    .select({
+      id: conversations.id,
+      type: conversations.type,
+      title: conversations.title,
+      isArchived: conversations.isArchived,
+    })
+    .from(conversations)
+    .where(eq(conversations.id, input.conversationId))
+    .limit(1);
+  if (!conversation) throw new Error("Conversation not found.");
+
+  await canPostToConversation(conversation, input.senderId);
+
+  const [senderState] = await db
+    .select({ chatMutedUntil: users.chatMutedUntil })
+    .from(users)
+    .where(eq(users.id, input.senderId))
+    .limit(1);
+  if (
+    senderState?.chatMutedUntil &&
+    senderState.chatMutedUntil.getTime() > Date.now()
+  ) {
+    throw new Error("You are muted from chat. Contact the church team.");
   }
+
   const body = input.body.trim();
   const hasAttachment = Boolean(input.attachmentKey);
   if (!body && !hasAttachment) throw new Error("Write a message first.");
@@ -498,7 +1028,6 @@ export async function sendChatMessage(input: {
     throw new Error(`Keep messages under ${CHAT_BODY_LIMIT} characters.`);
   }
 
-  const db = await getDb();
   const message = {
     id: crypto.randomUUID(),
     conversationId: input.conversationId,
@@ -518,27 +1047,20 @@ export async function sendChatMessage(input: {
     .set({ lastMessageAt: message.createdAt })
     .where(eq(conversations.id, input.conversationId));
 
-  const [conversation] = await db
-    .select({
-      type: conversations.type,
-      title: conversations.title,
-    })
-    .from(conversations)
-    .where(eq(conversations.id, input.conversationId))
-    .limit(1);
-
+  const isGroup =
+    conversation.type === "department" || conversation.type === "announcement";
   const recipients = (await participantIds(input.conversationId)).filter(
     (id) => id !== input.senderId,
   );
-  const isMention = conversation?.type === "department" && body.includes("@");
-  if (input.notify !== false && (conversation?.type === "direct" || isMention)) {
+  const isMention = isGroup && body.includes("@");
+  if (input.notify !== false && (conversation.type === "direct" || isMention)) {
     const [sender] = await db
       .select({ name: users.name })
       .from(users)
       .where(eq(users.id, input.senderId))
       .limit(1);
     const title = isMention
-      ? `Mention in ${conversation?.title ?? "department chat"}`
+      ? `Mention in ${conversation.title ?? "group chat"}`
       : `New message from ${sender?.name ?? "a member"}`;
     await Promise.all(
       recipients.map(async (userId) => {
@@ -634,10 +1156,15 @@ export async function totalChatUnread(userId: string) {
         eq(conversationParticipants.userId, userId),
       ),
     )
+    .innerJoin(
+      conversations,
+      eq(conversations.id, messages.conversationId),
+    )
     .where(
       and(
         ne(messages.senderId, userId),
         isNull(messages.deletedAt),
+        eq(conversations.isArchived, false),
         gt(
           messages.createdAt,
           sql`coalesce(${conversationParticipants.lastReadAt}, 0)`,
@@ -653,7 +1180,7 @@ export async function deleteChatMessage(
   messageId: string,
   canModerate = false,
 ) {
-  if (!(await requireParticipant(conversationId, userId))) {
+  if (!(await requireParticipant(conversationId, userId)) && !canModerate) {
     throw new Error("Conversation not found.");
   }
   const db = await getDb();
@@ -677,6 +1204,31 @@ export async function deleteChatMessage(
       .set({ body: "", deletedAt: new Date() })
       .where(eq(messages.id, messageId));
   }
+}
+
+export async function createChatReport(input: {
+  reporterId: string;
+  reporterName: string;
+  conversationId: string;
+  messageId?: string | null;
+  reason: string;
+}) {
+  const db = await getDb();
+  await db.insert(chatReports).values({
+    id: crypto.randomUUID(),
+    conversationId: input.conversationId,
+    messageId: input.messageId ?? null,
+    reporterId: input.reporterId,
+    reason: input.reason,
+    status: "open",
+    createdAt: new Date(),
+  });
+  await notifyPermission(PERMISSIONS.memberManage, {
+    type: NOTIFICATION_TYPES.adminNotice,
+    title: "Chat reported",
+    body: `${input.reporterName} reported a conversation: ${input.reason}`,
+    link: "/admin/chat-moderation",
+  });
 }
 
 export async function listChatContacts(userId: string) {
@@ -704,6 +1256,10 @@ export async function listChatContacts(userId: string) {
     )
     .orderBy(asc(users.name))
     .limit(120);
+}
+
+export async function ensureUserChatGroups(userId: string) {
+  return syncUserChatGroups(userId);
 }
 
 export { requireParticipant };

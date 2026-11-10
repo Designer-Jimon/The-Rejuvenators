@@ -7,6 +7,11 @@ import { siteSettings } from "@/lib/db/schema";
 import { requirePermission } from "@/lib/auth/authorize";
 import { PERMISSIONS, SETTING_FIELDS } from "@/lib/constants";
 import { logAudit } from "@/lib/audit";
+import {
+  ANNOUNCEMENT_ENABLED_KEY,
+  ANNOUNCEMENT_REPLIES_KEY,
+  syncAllCentersConversation,
+} from "@/lib/chat";
 
 const urlFields = new Set([
   "whatsapp_group_url",
@@ -49,6 +54,23 @@ export async function updateSettings(formData: FormData) {
       });
     changes.push(field.key);
   }
+
+  const toggles: Array<[string, string]> = [
+    [ANNOUNCEMENT_ENABLED_KEY, "announcementGroupEnabled"],
+    [ANNOUNCEMENT_REPLIES_KEY, "announcementAllowReplies"],
+  ];
+  for (const [key, fieldName] of toggles) {
+    const value = formData.get(fieldName) === "on" ? "1" : "0";
+    await db
+      .insert(siteSettings)
+      .values({ key, value, updatedAt: now, updatedBy: user.id })
+      .onConflictDoUpdate({
+        target: siteSettings.key,
+        set: { value, updatedAt: now, updatedBy: user.id },
+      });
+    changes.push(key);
+  }
+  await syncAllCentersConversation();
 
   await logAudit({
     actorId: user.id,

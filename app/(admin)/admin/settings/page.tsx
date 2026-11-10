@@ -80,6 +80,33 @@ export default async function AdminSettingsPage({
           })}
         </div>
 
+        <fieldset className="mt-6 space-y-3 border-t border-brand-100 pt-5">
+          <legend className="text-sm font-semibold">Chat announcement group</legend>
+          <label className="flex items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              name="announcementGroupEnabled"
+              defaultChecked={settings.announcement_group_enabled !== "0"}
+              className="mt-0.5 h-5 w-5 rounded border-brand-300"
+            />
+            <span>
+              Enable the All Centers announcement group for every active member.
+            </span>
+          </label>
+          <label className="flex items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              name="announcementAllowReplies"
+              defaultChecked={settings.announcement_allow_replies === "1"}
+              className="mt-0.5 h-5 w-5 rounded border-brand-300"
+            />
+            <span>
+              Allow members to reply. When off, only admins and unit leaders can
+              post.
+            </span>
+          </label>
+        </fieldset>
+
         <div className="mt-5 flex flex-col-reverse gap-2 border-t border-brand-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs leading-5 text-charcoal/45">
             Changes are saved to the database and recorded in the audit log.
