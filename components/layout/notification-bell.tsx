@@ -32,7 +32,8 @@ export function NotificationBell({
         if (!response.ok) return;
         const data = (await response.json()) as { count?: unknown };
         if (!active || typeof data.count !== "number") return;
-        setUnread((current) => (current === data.count ? current : data.count));
+        const count: number = data.count;
+        setUnread((current) => (current === count ? current : count));
       } catch {
         return;
       }
