@@ -12,7 +12,11 @@ import { getSessionUser } from "@/lib/auth/session";
 import { isAdmin } from "@/lib/auth/authorize";
 import { getSettings, getLogoUrl } from "@/lib/settings";
 import { CHURCH_NAME, CHURCH_TAGLINE } from "@/lib/branding";
-import { getPublicNav, FOOTER_LINKS } from "@/lib/navigation";
+import {
+  getPublicNav,
+  getLatestDevotionalHref,
+  FOOTER_LINKS,
+} from "@/lib/navigation";
 import { PublicHeader } from "@/components/layout/public-header";
 import { Logo } from "@/components/branding/logo";
 
@@ -23,11 +27,12 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, settings, nav, logoUrl] = await Promise.all([
+  const [user, settings, nav, logoUrl, devotionalHref] = await Promise.all([
     getSessionUser(),
     getSettings(),
     getPublicNav(),
     getLogoUrl(),
+    getLatestDevotionalHref(),
   ]);
   const admin = user ? isAdmin(user) : false;
 
@@ -49,6 +54,7 @@ export default async function PublicLayout({
         tagline={settings.tagline?.trim() || CHURCH_TAGLINE}
         logoUrl={logoUrl}
         links={nav}
+        devotionalHref={devotionalHref}
         isLoggedIn={Boolean(user)}
         isAdmin={admin}
         dashboardHref={admin ? "/admin" : "/member"}
@@ -85,7 +91,11 @@ export default async function PublicLayout({
                 {FOOTER_LINKS.map((link) => (
                   <li key={link.href}>
                     <Link
-                      href={link.href}
+                      href={
+                        link.href === "/devotionals"
+                          ? devotionalHref
+                          : link.href
+                      }
                       prefetch
                       className="inline-flex min-h-10 items-center text-sm font-semibold text-charcoal/70 hover:text-brand-800 hover:underline active:opacity-70"
                     >
