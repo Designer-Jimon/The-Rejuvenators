@@ -13,7 +13,7 @@ npm run dev
 - Admin: `http://localhost:3000/admin`; Super Admin: `admin@example.com` / `ChangeMe123!`; Member: `member@example.com` / `Member123!`.
 - Seed is idempotent. Replace `[Church ... - edit in Admin]` placeholders before launch.
 ## Public site
-- Home, About, Vision & Mission, Activities, Departments, Worship Centers, FAQ, Contact, Events, Sermons, Devotionals + detail.
+- Home, About, Vision & Mission, Activities, Departments, Worship Centers, FAQ, Contact, Events, Sermons, Daily Meal + detail (share and PDF download).
 - Appointments at `/appointments`: guest/member request form, available slots, confirmation receipt.
 - Hero, content blocks, department photos/icons/leaders, FAQ, social and logo are database-driven; `revalidatePath` updates pages.
 ## Chat and realtime
@@ -26,15 +26,16 @@ npm run dev
 - Bundled `data/locations/countries.json` (250 countries), `states-by-country.json` and `nigeria-lgas.json` (37 states / 774 LGAs).
 - Registration/profile editing use searchable country/state/LGA pickers; missing state data falls back to free text. Validate with `npm run test:locations`.
 ## Admin and UX
-- Media, branding, slideshow, website text, pastor profile, activities, departments, worship centers, FAQ, social, sermons, devotionals, AI settings.
+- Media, branding, slideshow, website text, pastor profile, activities, departments, worship centers, FAQ, social, sermons, Daily Meal, AI settings.
 - Website text edits Home/About/Vision/Contact/Footer in one validated form; Pastor edits name, title, bio, about, quote and photo.
+- Daily Meal at `/devotionals`: AI quick post, draft generation from a sermon, review/edit, approve, schedule, archive/restore, notify/home toggles, member dashboard card, public sharing and PDF download. Scheduled meals publish at 6:00 AM Africa/Lagos; cron runs every 15 minutes and only acts after the 6 AM gate.
 - Events, attendance, appointments, unit-leader attendance and center-scoped member events as before.
 - Grouped collapsible admin navigation, mobile drawers and member account menu; skeleton loading, sticky safe-area headers, 44px+ targets and no horizontal scroll.
 ## Data and security
-- Migrations: `0005_freezing_lady_vermin.sql` (chat), `0006_brief_menace.sql` (center chat, archive, mutes, reports).
-- Set `APP_URL` for absolute links. `OPENAI_API_KEY` is a Worker secret: `wrangler secret put OPENAI_API_KEY`; public R2 reads are limited to `media/`.
+- Migrations: `0005_freezing_lady_vermin.sql` (chat), `0006_brief_menace.sql` (center chat, archive, mutes, reports), `0007_conscious_trauma.sql` (Daily Meal notify/home/archive columns).
+- Set `APP_URL` for absolute links and password reset emails. `RESEND_API_KEY` plus `EMAIL_FROM` enable transactional email; without a key, development reset links are logged to the console. `OPENAI_API_KEY` is a Worker secret: `wrangler secret put OPENAI_API_KEY`; public R2 reads are limited to `media/`.
 - State-changing APIs verify origin; admin/permission checks are server-side with audit logs. CSP, HSTS, frame and permissions headers are set in `next.config.ts`.
 - Chat rate limits: create conversation 20/min, send message 40/min, upload 10/min. Uploads allow images, PDF, Word, Excel, text, CSV and ZIP up to 10MB.
 - Verify: `npm run typecheck`, `npm run build`, `npm run test:security`, `npm run test:locations`, `npm run cf:build`.
 ## Launch checklist
-- Replace seed placeholders, set `APP_URL`, add `OPENAI_API_KEY`, run `npm run db:migrate:remote` and `npm run db:seed:remote`; change seeded passwords, test branding/logo and chat on a real phone, and confirm cron devotional time (5:00 AM Lagos) with attendance follow-ups.
+- Replace seed placeholders, set `APP_URL`, add `RESEND_API_KEY`, `EMAIL_FROM` and `OPENAI_API_KEY`, run `npm run db:migrate:remote` (includes `0007_conscious_trauma.sql`) and `npm run db:seed:remote`; change seeded passwords, test password reset, Daily Meal PDF/share and branding/logo, test chat on a real phone, and confirm the Daily Meal cron time (6:00 AM Lagos) with attendance follow-ups.
