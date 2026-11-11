@@ -13,6 +13,7 @@ import {
   getSessionUser,
 } from "@/lib/auth/session";
 import { hasPermission, isAdmin } from "@/lib/auth/authorize";
+import { logAudit } from "@/lib/audit";
 import { checkRateLimit, clientIpFromHeaders, rateLimitKey } from "@/lib/rate-limit";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { sameOriginServerAction } from "@/lib/http";
@@ -113,8 +114,11 @@ export async function forgotPasswordAction(
 
   const headerStore = await headers();
   const ip = clientIpFromHeaders(headerStore);
-  const limit = await checkRateLimit(rateLimitKey("forgot:ip", ip), 6, 3600);
-  if (!limit.allowed) {
+  const [ipLimit, emailLimit] = await Promise.all([
+    checkRateLimit(rateLimitKey("forgot:ip", ip), 6, 3600),
+    checkRateLimit(rateLimitKey("forgot:email", parsed.data.email), 3, 3600),
+  ]);
+  if (!ipLimit.allowed || !emailLimit.allowed) {
     return { error: "Too many reset requests. Please try again later." };
   }
 
@@ -128,6 +132,15 @@ export async function forgotPasswordAction(
   let resetUrl: string | undefined;
 
   if (rows[0] && rows[0].status === "active") {
+    await db
+      .update(passwordResets)
+      .set({ usedAt: new Date() })
+      .where(
+        and(
+          eq(passwordResets.userId, rows[0].id),
+          isNull(passwordResets.usedAt),
+        ),
+      );
     const token = await randomToken(32);
     const tokenHash = await hashToken(token);
     await db.insert(passwordResets).values({
@@ -209,8 +222,21 @@ export async function resetPasswordAction(
   await db
     .update(passwordResets)
     .set({ usedAt: new Date() })
-    .where(eq(passwordResets.id, reset.id));
+    .where(
+      and(
+        eq(passwordResets.userId, reset.userId),
+        isNull(passwordResets.usedAt),
+      ),
+    );
   await db.delete(sessions).where(eq(sessions.userId, reset.userId));
+  await logAudit({
+    actorId: reset.userId,
+    action: "auth.password_reset",
+    entityType: "user",
+    entityId: reset.userId,
+    details: "Password reset with an emailed link. All sessions were revoked.",
+    ipAddress: ip,
+  });
 
   return { success: "Password updated. You can now sign in." };
 }
