@@ -15,7 +15,7 @@
     {
       "binding": "DB",
       "database_name": "itisfinished-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "223f7960-c712-4750-be2d-5b232fe037ed",
       "migrations_dir": "drizzle"
     }
   ],
