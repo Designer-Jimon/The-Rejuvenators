@@ -27,6 +27,7 @@ import {
   SectionHeader,
   StatCard,
 } from "@/components/ui/display";
+import { NotificationLink } from "@/components/notifications/notification-link";
 
 export const dynamic = "force-dynamic";
 
@@ -309,17 +310,18 @@ export default async function MemberHomePage() {
             {recentNotifications.length ? (
               <div className="mt-3 space-y-2">
                 {recentNotifications.map((notification) => (
-                  <Link
+                  <NotificationLink
                     key={notification.id}
+                    id={notification.id}
                     href={notification.link ?? "/member/notifications"}
-                    prefetch
+                    isRead={notification.isRead}
                     className="block rounded-2xl border border-brand-100 p-3 transition hover:bg-brand-50/50 active:scale-[0.99] active:opacity-80"
                   >
                     <p className="text-sm font-semibold">{notification.title}</p>
                     <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-charcoal/60">
                       {notification.body}
                     </p>
-                  </Link>
+                  </NotificationLink>
                 ))}
               </div>
             ) : (

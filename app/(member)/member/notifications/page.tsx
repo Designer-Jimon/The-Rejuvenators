@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { notifications } from "@/lib/db/schema";
 import { requireUser } from "@/lib/auth/authorize";
 import { formatDateTime, humanize } from "@/lib/utils";
 import { Badge, EmptyState, PageHero } from "@/components/ui/display";
-import { Button } from "@/components/ui/button";
-import { markAllNotificationsRead } from "../actions";
+import { NotificationLink } from "@/components/notifications/notification-link";
+import { MarkAllReadButton } from "@/components/notifications/mark-all-read-button";
 
 export const metadata: Metadata = { title: "Notifications" };
 export const dynamic = "force-dynamic";
@@ -24,7 +23,7 @@ export default async function NotificationsPage() {
     .orderBy(desc(notifications.createdAt))
     .limit(80);
 
-  const unread = rows.filter((row) => !row.isRead).length;
+  const unread = user.unreadNotifications;
 
   return (
     <div className="space-y-5">
@@ -42,14 +41,7 @@ export default async function NotificationsPage() {
             "You are all caught up."
           )}
         </p>
-        {unread ? (
-          <form action={markAllNotificationsRead}>
-            <Button type="submit" variant="outline" size="sm">
-              <CheckCheck className="h-4 w-4" aria-hidden="true" />
-              Mark all as read
-            </Button>
-          </form>
-        ) : null}
+        {unread ? <MarkAllReadButton /> : null}
       </div>
 
       {rows.length ? (
@@ -92,14 +84,15 @@ export default async function NotificationsPage() {
             );
 
             return notification.link ? (
-              <Link
+              <NotificationLink
                 key={notification.id}
+                id={notification.id}
                 href={notification.link}
-                prefetch
+                isRead={notification.isRead}
                 className="block rounded-2xl transition active:scale-[0.99] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2"
               >
                 {content}
-              </Link>
+              </NotificationLink>
             ) : (
               <div key={notification.id}>{content}</div>
             );

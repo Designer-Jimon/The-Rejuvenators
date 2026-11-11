@@ -33,8 +33,9 @@ export async function markAllNotificationsRead() {
         eq(notifications.isRead, false),
       ),
     );
-  revalidatePath("/member");
+  revalidatePath("/member", "layout");
   revalidatePath("/member/notifications");
+  revalidatePath("/admin", "layout");
 }
 
 export async function updateNotificationPreferences(formData: FormData) {
