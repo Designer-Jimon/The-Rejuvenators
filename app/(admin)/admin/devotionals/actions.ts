@@ -18,7 +18,16 @@ import {
   ROLES,
 } from "@/lib/constants";
 import { logAudit } from "@/lib/audit";
-import { AI_SETTING_KEYS, AI_PROVIDERS } from "@/lib/devotionals/config";
+import {
+  AI_SETTING_KEYS,
+  AI_PROVIDERS,
+  readAiSettings,
+} from "@/lib/devotionals/config";
+import {
+  generateDailyMealFromMaterial,
+  testAiConnection,
+} from "@/lib/devotionals/ai";
+import { extractSermonText } from "@/lib/devotionals/extract";
 import {
   generatePlanDays,
   lagosToday,
@@ -29,18 +38,27 @@ import {
 } from "@/lib/devotionals/pipeline";
 import { notifyMembers } from "@/lib/notifications";
 
-function back(
-  tab: string,
-  key: "saved" | "error",
-  message: string,
-): never {
+const MAX_FILE = 12 * 1024 * 1024;
+
+function tabFrom(formData: FormData) {
+  const value = String(formData.get("returnTab") ?? "plans");
+  return value === "quick" || value === "new" ? value : "plans";
+}
+
+function back(tab: string, key: "saved" | "error", message: string): never {
   redirect(`/admin/devotionals?tab=${tab}&${key}=${encodeURIComponent(message)}`);
 }
 
 function auditPath() {
   revalidatePath("/admin/devotionals");
   revalidatePath("/devotionals");
+  revalidatePath("/devotionals/[date]", "page");
+  revalidatePath("/member");
   revalidatePath("/");
+}
+
+function validDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 export async function createPlan(formData: FormData) {
@@ -58,7 +76,7 @@ export async function createPlan(formData: FormData) {
   if (!Number.isInteger(totalDays) || totalDays < 1 || totalDays > 31) {
     back("new", "error", "Total days must be between 1 and 31.");
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+  if (!validDate(startDate)) {
     back("new", "error", "Choose a valid start date.");
   }
 
@@ -77,7 +95,7 @@ export async function createPlan(formData: FormData) {
   const id = crypto.randomUUID();
   await db.insert(devotionalPlans).values({
     id,
-    title: `${sermon.title} — ${totalDays} day plan`,
+    title: `${sermon.title} - ${totalDays} day plan`,
     description: `Generated from ${sermon.title}.`,
     sermonId,
     startDate,
@@ -101,23 +119,19 @@ export async function createPlan(formData: FormData) {
     back("plans", "saved", "Plan created. Generate the days when you are ready.");
   }
 
+  let message = "";
+  let failed = false;
   try {
     const { env } = await getCloudflareContext({ async: true });
     const created = await generatePlanDays({ db, env, planId: id });
-    back(
-      "plans",
-      "saved",
-      `Plan created and ${created} day${created === 1 ? "" : "s"} generated.`,
-    );
+    message = `Plan created and ${created} day${created === 1 ? "" : "s"} generated.`;
   } catch (error) {
-    back(
-      "plans",
-      "error",
-      `Plan created, but generation failed: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-    );
+    failed = true;
+    message = `Plan created, but generation failed: ${
+      error instanceof Error ? error.message : "Unknown error"
+    }`;
   }
+  back("plans", failed ? "error" : "saved", message);
 }
 
 export async function updatePlan(formData: FormData) {
@@ -133,7 +147,7 @@ export async function updatePlan(formData: FormData) {
   if (!Number.isInteger(totalDays) || totalDays < 1 || totalDays > 31) {
     back("plans", "error", "Total days must be between 1 and 31.");
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+  if (!validDate(startDate)) {
     back("plans", "error", "Choose a valid start date.");
   }
   const db = await getDb();
@@ -152,7 +166,7 @@ export async function updatePlan(formData: FormData) {
     action: "devotional_plan.updated",
     entityType: "devotional_plan",
     entityId: id,
-    details: "Updated devotional plan settings.",
+    details: "Updated Daily Meal plan settings.",
   });
   auditPath();
   back("plans", "saved", "Plan updated.");
@@ -171,7 +185,11 @@ export async function deletePlan(formData: FormData) {
     .where(and(eq(devotionals.planId, id), eq(devotionals.status, "published")))
     .limit(1);
   if (published.length) {
-    back("plans", "error", "Unpublish the generated days before deleting this plan.");
+    back(
+      "plans",
+      "error",
+      "Unpublish the generated days before deleting this plan.",
+    );
   }
   await db.delete(devotionals).where(eq(devotionals.planId, id));
   await db.delete(devotionalPlans).where(eq(devotionalPlans.id, id));
@@ -180,7 +198,7 @@ export async function deletePlan(formData: FormData) {
     action: "devotional_plan.deleted",
     entityType: "devotional_plan",
     entityId: id,
-    details: "Deleted devotional plan and unpublished days.",
+    details: "Deleted Daily Meal plan and unpublished days.",
   });
   auditPath();
   back("plans", "saved", "Plan deleted.");
@@ -193,49 +211,54 @@ export async function generatePlanNow(formData: FormData) {
   );
   const planId = String(formData.get("id") ?? "");
   const db = await getDb();
+  let created = 0;
+  let errorMessage = "";
   try {
     const { env } = await getCloudflareContext({ async: true });
-    const created = await generatePlanDays({ db, env, planId });
-    await logAudit({
-      actorId: user.id,
-      action: "devotional_plan.generated",
-      entityType: "devotional_plan",
-      entityId: planId,
-      details: `Generated ${created} devotional days.`,
-    });
-    auditPath();
-    back(
-      "plans",
-      "saved",
-      created
-        ? `${created} day${created === 1 ? "" : "s"} generated.`
-        : "All days are already generated.",
-    );
+    created = await generatePlanDays({ db, env, planId });
   } catch (error) {
-    back(
-      "plans",
-      "error",
-      error instanceof Error ? error.message : "Generation failed.",
-    );
+    errorMessage =
+      error instanceof Error ? error.message : "Generation failed.";
   }
+  if (errorMessage) {
+    back("plans", "error", errorMessage);
+  }
+  await logAudit({
+    actorId: user.id,
+    action: "devotional_plan.generated",
+    entityType: "devotional_plan",
+    entityId: planId,
+    details: `Generated ${created} Daily Meal days.`,
+  });
+  auditPath();
+  back(
+    "plans",
+    "saved",
+    created
+      ? `${created} day${created === 1 ? "" : "s"} generated.`
+      : "All days are already generated.",
+  );
 }
 
-export async function saveDevotional(formData: FormData) {
+async function saveDevotionalRecord(formData: FormData, forcedStatus?: string) {
   const user = await requirePermission(
     PERMISSIONS.contentManage,
     "/admin/devotionals",
   );
+  const tab = tabFrom(formData);
   const id = String(formData.get("id") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
   const publishDate = String(formData.get("publishDate") ?? "");
-  const status = String(formData.get("status") ?? "draft");
-  if (!title || !body) back("plans", "error", "Title and body are required.");
+  const status = forcedStatus ?? String(formData.get("status") ?? "draft");
+  const notify = formData.get("notifyMembers") === "on";
+  const showOnHome = formData.get("showOnHome") === "on";
+  if (!title || !body) back(tab, "error", "Title and body are required.");
   if (!["draft", "scheduled", "published", "rejected"].includes(status)) {
-    back("plans", "error", "Choose a valid status.");
+    back(tab, "error", "Choose a valid status.");
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(publishDate)) {
-    back("plans", "error", "Choose a valid publish date.");
+  if (!validDate(publishDate)) {
+    back(tab, "error", "Choose a valid publish date.");
   }
 
   const db = await getDb();
@@ -244,7 +267,7 @@ export async function saveDevotional(formData: FormData) {
     .from(devotionals)
     .where(eq(devotionals.id, id))
     .limit(1);
-  if (!existing) back("plans", "error", "Devotional not found.");
+  if (!existing) back(tab, "error", "Daily Meal not found.");
   const [clash] = await db
     .select({ id: devotionals.id })
     .from(devotionals)
@@ -252,7 +275,9 @@ export async function saveDevotional(formData: FormData) {
       and(eq(devotionals.publishDate, publishDate), ne(devotionals.id, id)),
     )
     .limit(1);
-  if (clash) back("plans", "error", "Another devotional already uses that date.");
+  if (clash) {
+    back(tab, "error", "Another Daily Meal already uses that date.");
+  }
 
   const now = new Date();
   const publishing = status === "published" && existing.status !== "published";
@@ -272,14 +297,17 @@ export async function saveDevotional(formData: FormData) {
       publishDate,
       status: status as typeof existing.status,
       isPublished: status === "published",
-      publishedAt: status === "published" ? now : null,
+      notifyMembers: notify,
+      showOnHome: showOnHome,
+      publishedAt:
+        status === "published" ? existing.publishedAt ?? now : null,
       lastError: null,
     })
     .where(eq(devotionals.id, id));
-  if (publishing) {
+  if (publishing && notify) {
     await notifyMembers({
       type: NOTIFICATION_TYPES.devotionalPublished,
-      title: `Today's devotional: ${title}`,
+      title: `Today's Daily Meal: ${title}`,
       body: body.replace(/\s+/g, " ").slice(0, 160),
       link: `/devotionals/${publishDate}`,
     });
@@ -289,10 +317,30 @@ export async function saveDevotional(formData: FormData) {
     action: "devotional.updated",
     entityType: "devotional",
     entityId: id,
-    details: `Updated devotional “${title}” (${status}).`,
+    details: `Updated Daily Meal "${title}" (${status}).`,
   });
   auditPath();
-  back("plans", "saved", publishing ? "Devotional published." : "Devotional saved.");
+  back(tab, "saved", publishing ? "Daily Meal published." : "Daily Meal saved.");
+}
+
+export async function saveDevotional(formData: FormData) {
+  await saveDevotionalRecord(formData);
+}
+
+export async function saveDevotionalDraft(formData: FormData) {
+  await saveDevotionalRecord(formData, "draft");
+}
+
+export async function approveDevotionalAction(formData: FormData) {
+  await saveDevotionalRecord(formData, "scheduled");
+}
+
+export async function rejectDevotionalAction(formData: FormData) {
+  await saveDevotionalRecord(formData, "rejected");
+}
+
+export async function scheduleDevotionalAction(formData: FormData) {
+  await saveDevotionalRecord(formData, "scheduled");
 }
 
 export async function publishDevotionalAction(formData: FormData) {
@@ -300,18 +348,35 @@ export async function publishDevotionalAction(formData: FormData) {
     PERMISSIONS.contentManage,
     "/admin/devotionals",
   );
+  const tab = tabFrom(formData);
   const id = String(formData.get("id") ?? "");
   const db = await getDb();
-  const published = await publishDueDevotional(db, id);
+  let published = false;
+  let errorMessage = "";
+  try {
+    published = await publishDueDevotional(db, id);
+  } catch (error) {
+    errorMessage =
+      error instanceof Error ? error.message : "Could not publish Daily Meal.";
+  }
+  if (errorMessage) {
+    back(tab, "error", errorMessage);
+  }
   await logAudit({
     actorId: user.id,
     action: "devotional.published",
     entityType: "devotional",
     entityId: id,
-    details: published ? "Published devotional." : "Devotional was already published.",
+    details: published
+      ? "Published Daily Meal."
+      : "Daily Meal was already published.",
   });
   auditPath();
-  back("plans", "saved", published ? "Devotional published." : "Already published.");
+  back(
+    tab,
+    "saved",
+    published ? "Daily Meal published." : "Already published.",
+  );
 }
 
 export async function unpublishDevotionalAction(formData: FormData) {
@@ -319,6 +384,7 @@ export async function unpublishDevotionalAction(formData: FormData) {
     PERMISSIONS.contentManage,
     "/admin/devotionals",
   );
+  const tab = tabFrom(formData);
   const id = String(formData.get("id") ?? "");
   const db = await getDb();
   await unpublishDevotional(db, id);
@@ -327,10 +393,61 @@ export async function unpublishDevotionalAction(formData: FormData) {
     action: "devotional.unpublished",
     entityType: "devotional",
     entityId: id,
-    details: "Unpublished devotional.",
+    details: "Unpublished Daily Meal.",
   });
   auditPath();
-  back("plans", "saved", "Devotional unpublished.");
+  back(tab, "saved", "Daily Meal unpublished.");
+}
+
+export async function archiveDevotionalAction(formData: FormData) {
+  const user = await requirePermission(
+    PERMISSIONS.contentManage,
+    "/admin/devotionals",
+  );
+  const tab = tabFrom(formData);
+  const id = String(formData.get("id") ?? "");
+  const db = await getDb();
+  await db
+    .update(devotionals)
+    .set({
+      status: "draft",
+      isPublished: false,
+      publishedAt: null,
+      archivedAt: new Date(),
+    })
+    .where(eq(devotionals.id, id));
+  await logAudit({
+    actorId: user.id,
+    action: "devotional.archived",
+    entityType: "devotional",
+    entityId: id,
+    details: "Archived Daily Meal.",
+  });
+  auditPath();
+  back(tab, "saved", "Daily Meal archived.");
+}
+
+export async function restoreDevotionalAction(formData: FormData) {
+  const user = await requirePermission(
+    PERMISSIONS.contentManage,
+    "/admin/devotionals",
+  );
+  const tab = tabFrom(formData);
+  const id = String(formData.get("id") ?? "");
+  const db = await getDb();
+  await db
+    .update(devotionals)
+    .set({ archivedAt: null, status: "draft", isPublished: false })
+    .where(eq(devotionals.id, id));
+  await logAudit({
+    actorId: user.id,
+    action: "devotional.restored",
+    entityType: "devotional",
+    entityId: id,
+    details: "Restored Daily Meal from archive.",
+  });
+  auditPath();
+  back(tab, "saved", "Daily Meal restored as a draft.");
 }
 
 export async function regenerateDay(formData: FormData) {
@@ -338,7 +455,10 @@ export async function regenerateDay(formData: FormData) {
     PERMISSIONS.contentManage,
     "/admin/devotionals",
   );
+  const tab = tabFrom(formData);
   const id = String(formData.get("id") ?? "");
+  let regeneratedTitle = "";
+  let errorMessage = "";
   try {
     const db = await getDb();
     const { env } = await getCloudflareContext({ async: true });
@@ -347,22 +467,177 @@ export async function regenerateDay(formData: FormData) {
       env,
       devotionalId: id,
     });
-    await logAudit({
-      actorId: user.id,
-      action: "devotional.regenerated",
-      entityType: "devotional",
-      entityId: id,
-      details: `Regenerated devotional “${day.title}”.`,
-    });
-    auditPath();
-    back("plans", "saved", "Day regenerated as a draft.");
+    regeneratedTitle = day.title;
   } catch (error) {
+    errorMessage =
+      error instanceof Error ? error.message : "Regeneration failed.";
+  }
+  if (errorMessage) {
+    back(tab, "error", errorMessage);
+  }
+  await logAudit({
+    actorId: user.id,
+    action: "devotional.regenerated",
+    entityType: "devotional",
+    entityId: id,
+    details: `Regenerated Daily Meal "${regeneratedTitle}".`,
+  });
+  auditPath();
+  back(tab, "saved", "Day regenerated as a draft.");
+}
+
+export async function quickPost(formData: FormData) {
+  const user = await requirePermission(
+    PERMISSIONS.contentManage,
+    "/admin/devotionals",
+  );
+  const material = String(formData.get("material") ?? "").trim();
+  const file = formData.get("file");
+  const upload = file instanceof File && file.size > 0 ? file : null;
+  const publishDate = String(formData.get("publishDate") ?? "") || lagosToday();
+  const notify = formData.get("notifyMembers") === "on";
+  const showOnHome = formData.get("showOnHome") === "on";
+
+  if (!validDate(publishDate)) {
+    back("quick", "error", "Choose a valid publish date.");
+  }
+  if (upload && upload.size > MAX_FILE) {
+    back("quick", "error", "Uploads must be under 12MB.");
+  }
+
+  let extracted = "";
+  if (upload) {
+    try {
+      extracted = await extractSermonText(upload);
+    } catch (error) {
+      back(
+        "quick",
+        "error",
+        error instanceof Error ? error.message : "Could not read that file.",
+      );
+    }
+  }
+  const source = material || extracted;
+  if (source.length < 120) {
     back(
-      "plans",
+      "quick",
       "error",
-      error instanceof Error ? error.message : "Regeneration failed.",
+      "Paste the source text or upload a document with at least a short paragraph.",
     );
   }
+
+  const db = await getDb();
+  const [clash] = await db
+    .select({ id: devotionals.id })
+    .from(devotionals)
+    .where(eq(devotionals.publishDate, publishDate))
+    .limit(1);
+  if (clash) {
+    back(
+      "quick",
+      "error",
+      "A Daily Meal already exists for that date. Choose another date.",
+    );
+  }
+
+  const settings = await readAiSettings(db);
+  const { env } = await getCloudflareContext({ async: true });
+  const apiKey = env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    back(
+      "quick",
+      "error",
+      "OPENAI_API_KEY is not configured. Add it with: wrangler secret put OPENAI_API_KEY",
+    );
+  }
+
+  let title = "";
+  let errorMessage = "";
+  try {
+    const meal = await generateDailyMealFromMaterial({
+      material: source.slice(0, 28000),
+      publishDate,
+      settings,
+      apiKey,
+    });
+    const now = new Date();
+    const id = crypto.randomUUID();
+    await db.insert(devotionals).values({
+      id,
+      title: meal.title.slice(0, 200),
+      body: meal.body,
+      scripture: meal.scripture.slice(0, 400),
+      bibleVerses: meal.bibleVerses.slice(0, 4000),
+      declaration: meal.declaration.slice(0, 1000),
+      prayerPoints: meal.prayerPoints.slice(0, 4000),
+      status: "draft",
+      publishDate,
+      isPublished: false,
+      notifyMembers: notify,
+      showOnHome,
+      generatedAt: now,
+      createdAt: now,
+    });
+    title = meal.title;
+    await logAudit({
+      actorId: user.id,
+      action: "devotional.quick_posted",
+      entityType: "devotional",
+      entityId: id,
+      details: `Created Daily Meal draft "${meal.title}" from pasted material.`,
+    });
+  } catch (error) {
+    errorMessage =
+      error instanceof Error
+        ? error.message
+        : "The AI could not generate this Daily Meal.";
+  }
+  if (errorMessage) {
+    back("quick", "error", errorMessage);
+  }
+  auditPath();
+  back(
+    "plans",
+    "saved",
+    `Draft created: "${title}". Review it under Other Daily Meals.`,
+  );
+}
+
+export async function testAiConnectionAction() {
+  const user = await requireAdmin();
+  if (!user.roles.includes(ROLES.superAdmin)) {
+    redirect("/admin?denied=1");
+  }
+  const db = await getDb();
+  const settings = await readAiSettings(db);
+  const { env } = await getCloudflareContext({ async: true });
+  const key = env.OPENAI_API_KEY?.trim();
+  let message = "";
+  let failed = false;
+  if (!key) {
+    message =
+      "OPENAI_API_KEY is not configured. Run: wrangler secret put OPENAI_API_KEY";
+    failed = true;
+  } else {
+    try {
+      const reply = await testAiConnection({ settings, apiKey: key });
+      message = `AI connection OK. Provider replied: ${reply}`;
+    } catch (error) {
+      message =
+        error instanceof Error ? error.message : "AI connection test failed.";
+      failed = true;
+    }
+  }
+  await logAudit({
+    actorId: user.id,
+    action: "ai_settings.connection_test",
+    entityType: "ai_settings",
+    details: message,
+  });
+  revalidatePath("/admin/ai-settings");
+  redirect(
+    `/admin/ai-settings?${failed ? "error" : "saved"}=${encodeURIComponent(message)}`,
+  );
 }
 
 export async function runAiTest() {
@@ -385,7 +660,7 @@ export async function runAiTest() {
     failed = result.status === "failed";
   } catch (error) {
     message =
-      error instanceof Error ? error.message : "The AI test could not run.";
+      error instanceof Error ? error.message : "The pipeline test could not run.";
     failed = true;
   }
   await logAudit({
@@ -423,7 +698,9 @@ export async function saveAiSettings(formData: FormData) {
     redirect("/admin/ai-settings?error=Add%20a%20model%20and%20system%20prompt.");
   }
   if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
-    redirect("/admin/ai-settings?error=Temperature%20must%20be%20between%200%20and%202.");
+    redirect(
+      "/admin/ai-settings?error=Temperature%20must%20be%20between%200%20and%202.",
+    );
   }
 
   const db = await getDb();

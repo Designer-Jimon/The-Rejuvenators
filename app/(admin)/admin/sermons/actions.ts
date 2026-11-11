@@ -5,11 +5,14 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getDb } from "@/lib/db";
-import { sermons } from "@/lib/db/schema";
+import { devotionals, sermons } from "@/lib/db/schema";
 import { requirePermission } from "@/lib/auth/authorize";
 import { PERMISSIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/audit";
+import { generateDailyMealFromMaterial } from "@/lib/devotionals/ai";
+import { readAiSettings } from "@/lib/devotionals/config";
 import { extractSermonText, sermonFileExtension } from "@/lib/devotionals/extract";
+import { lagosToday } from "@/lib/devotionals/pipeline";
 
 const MAX_FILE = 12 * 1024 * 1024;
 
@@ -166,6 +169,96 @@ export async function deleteSermon(formData: FormData) {
     details: `Deleted sermon ${sermon.title}.`,
   });
   done("Sermon deleted.");
+}
+
+export async function generateSermonMeal(formData: FormData) {
+  const user = await requirePermission(PERMISSIONS.contentManage, "/admin/sermons");
+  const id = String(formData.get("id") ?? "");
+  const db = await getDb();
+  const [sermon] = await db
+    .select()
+    .from(sermons)
+    .where(eq(sermons.id, id))
+    .limit(1);
+  if (!sermon) fail("Sermon not found.");
+  if (!sermon.contentText?.trim()) {
+    fail("This sermon has no text. Add or extract the sermon text first.");
+  }
+
+  const publishDate = lagosToday();
+  const [clash] = await db
+    .select({ id: devotionals.id })
+    .from(devotionals)
+    .where(eq(devotionals.publishDate, publishDate))
+    .limit(1);
+  if (clash) {
+    fail("Today already has a Daily Meal. Edit or remove it first.");
+  }
+
+  const settings = await readAiSettings(db);
+  const { env } = await getCloudflareContext({ async: true });
+  const apiKey = env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    fail(
+      "OPENAI_API_KEY is not configured. Run: wrangler secret put OPENAI_API_KEY",
+    );
+  }
+
+  const material = [
+    `Sermon title: ${sermon.title}`,
+    sermon.speaker ? `Speaker: ${sermon.speaker}` : "",
+    sermon.bibleReferences ? `Bible references: ${sermon.bibleReferences}` : "",
+    sermon.summary ? `Sermon summary: ${sermon.summary}` : "",
+    "Sermon text:",
+    sermon.contentText,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const meal = await generateDailyMealFromMaterial({
+      material,
+      publishDate,
+      settings,
+      apiKey,
+    });
+    const now = new Date();
+    const devotionalId = crypto.randomUUID();
+    await db.insert(devotionals).values({
+      id: devotionalId,
+      sourceSermonId: sermon.id,
+      title: meal.title.slice(0, 200),
+      body: meal.body,
+      scripture: meal.scripture.slice(0, 400),
+      bibleVerses: meal.bibleVerses.slice(0, 4000),
+      declaration: meal.declaration.slice(0, 1000),
+      prayerPoints: meal.prayerPoints.slice(0, 4000),
+      status: "draft",
+      publishDate,
+      isPublished: false,
+      notifyMembers: true,
+      showOnHome: true,
+      generatedAt: now,
+      createdAt: now,
+    });
+    await logAudit({
+      actorId: user.id,
+      action: "devotional.generated_from_sermon",
+      entityType: "devotional",
+      entityId: devotionalId,
+      details: `Generated Daily Meal draft "${meal.title}" from sermon ${sermon.title}.`,
+    });
+    revalidatePath("/admin/devotionals");
+    revalidatePath("/devotionals");
+    revalidatePath("/");
+    done(`Draft created: "${meal.title}". Review it in Daily Meal.`);
+  } catch (error) {
+    fail(
+      `Could not generate the Daily Meal: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+    );
+  }
 }
 
 function allowedMime(type: string) {

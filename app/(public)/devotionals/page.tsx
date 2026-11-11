@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, desc, eq, lte } from "drizzle-orm";
+import { and, desc, eq, isNull, lte } from "drizzle-orm";
 import { ArrowRight, BookOpen, CalendarDays } from "lucide-react";
 import { getDb } from "@/lib/db";
 import { devotionals } from "@/lib/db/schema";
@@ -9,8 +9,8 @@ import { formatDate } from "@/lib/utils";
 import { EmptyState, PageHero } from "@/components/ui/display";
 
 export const metadata: Metadata = {
-  title: "Daily devotionals",
-  description: `Daily devotionals from ${CHURCH_NAME}, generated from the preached word and grounded in Scripture.`,
+  title: "Daily Meal",
+  description: `The Daily Meal from ${CHURCH_NAME}, grounded in Scripture and the preached word.`,
 };
 export const dynamic = "force-dynamic";
 
@@ -43,6 +43,7 @@ export default async function DevotionalsPage() {
       and(
         eq(devotionals.status, "published"),
         eq(devotionals.isPublished, true),
+        isNull(devotionals.archivedAt),
         lte(devotionals.publishDate, todayLagos()),
       ),
     )
@@ -53,8 +54,8 @@ export default async function DevotionalsPage() {
     <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
       <PageHero
         eyebrow="Daily bread"
-        title="Devotionals"
-        description="Short daily readings from the sermon archive to help you abide in Christ through the week."
+        title="Daily Meal"
+        description="A short daily reading from the sermon archive to help you abide in Christ through the week."
       />
 
       <div className="mt-8">
@@ -95,7 +96,7 @@ export default async function DevotionalsPage() {
                   {devotional.body}
                 </p>
                 <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-800">
-                  Read devotional
+                  Read Daily Meal
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </span>
               </Link>
@@ -104,8 +105,8 @@ export default async function DevotionalsPage() {
         ) : (
           <EmptyState
             icon={<BookOpen className="h-6 w-6" aria-hidden="true" />}
-            title="No devotionals published yet"
-            description="Published devotionals will appear here each morning."
+            title="No Daily Meals published yet"
+            description="The Daily Meal will appear here each morning at 6:00 AM Lagos time."
           />
         )}
       </div>

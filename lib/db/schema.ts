@@ -674,8 +674,15 @@ export const devotionals = sqliteTable(
     isPublished: integer("is_published", { mode: "boolean" })
       .notNull()
       .default(true),
+    notifyMembers: integer("notify_members", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    showOnHome: integer("show_on_home", { mode: "boolean" })
+      .notNull()
+      .default(true),
     generatedAt: integer("generated_at", { mode: "timestamp_ms" }),
     publishedAt: integer("published_at", { mode: "timestamp_ms" }),
+    archivedAt: integer("archived_at", { mode: "timestamp_ms" }),
     lastError: text("last_error"),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()

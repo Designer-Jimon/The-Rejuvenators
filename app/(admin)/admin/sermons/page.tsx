@@ -23,7 +23,11 @@ import {
   Textarea,
 } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { deleteSermon, saveSermon } from "./actions";
+import {
+  deleteSermon,
+  generateSermonMeal,
+  saveSermon,
+} from "./actions";
 
 export const metadata: Metadata = { title: "Sermons" };
 export const dynamic = "force-dynamic";
@@ -60,12 +64,12 @@ export default async function AdminSermonsPage({
           <h1 className="mt-1 font-serif text-3xl font-bold">Sermon library</h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-charcoal/60">
             Add a sermon and upload TXT, DOCX or PDF notes. The extracted text is
-            what the devotional generator uses.
+            what the Daily Meal generator uses.
           </p>
         </div>
         <Link href="/admin/devotionals" prefetch>
           <span className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-brand-200 bg-white px-4 text-sm font-semibold text-brand-800 active:scale-[0.98] active:opacity-80">
-            Devotionals
+            Daily Meal
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </span>
         </Link>
@@ -102,7 +106,7 @@ export default async function AdminSermonsPage({
                     </span>
                     {sermon.isDevotionalSource ? (
                       <span className="rounded-full bg-gold-100 px-2.5 py-1 text-xs font-semibold text-gold-900">
-                        Devotional source
+                        Daily Meal source
                       </span>
                     ) : null}
                     <span className="rounded-full bg-charcoal/5 px-2.5 py-1 text-xs font-semibold text-charcoal/60">
@@ -115,7 +119,7 @@ export default async function AdminSermonsPage({
                   <p className="mt-1 text-sm text-charcoal/55">
                     {[sermon.speaker, sermon.preachedAt ? formatDate(sermon.preachedAt) : null]
                       .filter(Boolean)
-                      .join(" · ") || "Sermon details pending"}
+                      .join(" | ") || "Sermon details pending"}
                   </p>
                   {sermon.summary ? (
                     <p className="mt-2 line-clamp-2 text-sm leading-6 text-charcoal/65">
@@ -137,13 +141,29 @@ export default async function AdminSermonsPage({
                     </a>
                   ) : null}
                   <div className="mt-3 flex flex-wrap gap-2">
+                    {sermon.contentText ? (
+                      <form action={generateSermonMeal}>
+                        <input type="hidden" name="id" value={sermon.id} />
+                        <SubmitButton
+                          size="sm"
+                          pendingLabel="Generating draft..."
+                        >
+                          <Sparkles className="h-4 w-4" aria-hidden="true" />
+                          Generate Daily Meal
+                        </SubmitButton>
+                      </form>
+                    ) : (
+                      <span className="inline-flex min-h-11 items-center rounded-xl border border-dashed border-brand-200 px-3 text-xs font-semibold text-charcoal/50">
+                        Add sermon text to generate
+                      </span>
+                    )}
                     <Link
                       href={`/admin/devotionals?tab=new&sermonId=${sermon.id}`}
                       prefetch
-                      className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-brand-700 px-3 text-sm font-semibold text-cream active:scale-[0.98] active:opacity-80"
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-brand-200 bg-white px-3 text-sm font-semibold text-brand-800 active:scale-[0.98] active:opacity-80"
                     >
-                      <Sparkles className="h-4 w-4" aria-hidden="true" />
-                      Use for devotional
+                      <BookOpen className="h-4 w-4" aria-hidden="true" />
+                      Build a plan
                     </Link>
                     <form action={deleteSermon}>
                       <input type="hidden" name="id" value={sermon.id} />
@@ -307,7 +327,7 @@ function SermonFields({
       <FormField
         label="Sermon text"
         htmlFor={`text-${idPrefix}`}
-        hint="Paste or edit the text manually. This is the source for AI devotionals."
+        hint="Paste or edit the text manually. This is the source for the Daily Meal."
       >
         <Textarea
           id={`text-${idPrefix}`}
@@ -360,7 +380,7 @@ function SermonFields({
             name="isDevotionalSource"
             defaultChecked={sermon?.isDevotionalSource ?? false}
           />
-          Devotional source
+          Daily Meal source
         </label>
         <label className="flex min-h-12 items-center gap-2 rounded-2xl border border-brand-200 bg-white px-3 text-sm font-semibold">
           <input

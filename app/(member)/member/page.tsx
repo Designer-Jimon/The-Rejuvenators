@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { and, asc, desc, eq, gte, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import {
   ArrowRight,
   Bell,
+  BookOpen,
   CheckCircle2,
   ClipboardCheck,
   Clock3,
@@ -13,6 +14,7 @@ import {
   departmentLeaders,
   departmentMembers,
   departments,
+  devotionals,
   events,
   notifications,
 } from "@/lib/db/schema";
@@ -34,6 +36,12 @@ export const dynamic = "force-dynamic";
 export default async function MemberHomePage() {
   const user = await requireUser("/member");
   const db = await getDb();
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 
   const [
     memberships,
@@ -41,6 +49,7 @@ export default async function MemberHomePage() {
     upcoming,
     attendance,
     ledDepartments,
+    todayMeal,
   ] = await Promise.all([
     db
       .select({
@@ -82,6 +91,24 @@ export default async function MemberHomePage() {
           eq(departments.isActive, true),
         ),
       ),
+    db
+      .select({
+        title: devotionals.title,
+        scripture: devotionals.scripture,
+        body: devotionals.body,
+        publishDate: devotionals.publishDate,
+      })
+      .from(devotionals)
+      .where(
+        and(
+          eq(devotionals.status, "published"),
+          eq(devotionals.isPublished, true),
+          isNull(devotionals.archivedAt),
+          lte(devotionals.publishDate, today),
+        ),
+      )
+      .orderBy(desc(devotionals.publishDate))
+      .limit(1),
   ]);
 
   const pending = user.profile.registrationStatus !== "approved";
@@ -124,6 +151,38 @@ export default async function MemberHomePage() {
         </div>
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full border border-white/15" />
       </section>
+
+      {todayMeal[0] ? (
+        <section className="surface flex flex-wrap items-center justify-between gap-4 border-brand-700/20 p-5 sm:p-6">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-700 text-cream">
+              <BookOpen className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">
+                Today&apos;s Daily Meal
+              </p>
+              <h2 className="mt-1 font-serif text-lg font-semibold">
+                {todayMeal[0].title}
+              </h2>
+              {todayMeal[0].scripture ? (
+                <p className="mt-1 text-sm font-semibold text-brand-800">
+                  {todayMeal[0].scripture}
+                </p>
+              ) : null}
+              <p className="mt-1 line-clamp-2 text-sm text-charcoal/60">
+                {todayMeal[0].body}
+              </p>
+            </div>
+          </div>
+          <Link href={`/devotionals/${todayMeal[0].publishDate}`} prefetch>
+            <Button variant="outline" size="sm">
+              Read Daily Meal
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </Link>
+        </section>
+      ) : null}
 
       {pending ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
@@ -183,7 +242,7 @@ export default async function MemberHomePage() {
                 Mark attendance
               </h2>
               <p className="mt-1 text-sm text-charcoal/60">
-                {ledDepartments.map((row) => row.name).join(" · ")}
+                {ledDepartments.map((row) => row.name).join(" | ")}
               </p>
             </div>
           </div>

@@ -46,7 +46,7 @@ export default async function SermonsPage() {
                 ) : null}
                 {sermon.isDevotionalSource ? (
                   <p className="mt-2 inline-flex rounded-full bg-gold-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-gold-900">
-                    Devotional series source
+                    Daily Meal source
                   </p>
                 ) : null}
                 {sermon.summary ? (

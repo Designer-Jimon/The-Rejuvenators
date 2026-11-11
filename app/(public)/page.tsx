@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { and, asc, desc, eq, gte, lte, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import {
   ArrowRight,
   BookOpen,
@@ -121,6 +121,8 @@ export default async function HomePage() {
           and(
             eq(devotionals.status, "published"),
             eq(devotionals.isPublished, true),
+            eq(devotionals.showOnHome, true),
+            isNull(devotionals.archivedAt),
             lte(devotionals.publishDate, today),
           ),
         )
@@ -539,7 +541,7 @@ export default async function HomePage() {
                 {formatDate(
                   new Date(`${devotional.publishDate}T12:00:00+01:00`),
                 )}
-                {devotional.scripture ? ` · ${devotional.scripture}` : ""}
+                {devotional.scripture ? ` - ${devotional.scripture}` : ""}
               </p>
               <h2 className="mt-1 font-serif text-2xl font-semibold">
                 {devotional.title}
@@ -552,7 +554,7 @@ export default async function HomePage() {
                 prefetch
                 className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-brand-800 hover:underline active:opacity-70"
               >
-                Read today&apos;s devotional
+                Read today&apos;s Daily Meal
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </>
@@ -569,7 +571,7 @@ export default async function HomePage() {
                 prefetch
                 className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-brand-800 hover:underline active:opacity-70"
               >
-                Visit the devotional library
+                Visit the Daily Meal library
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </>

@@ -23,6 +23,30 @@ export function lagosToday() {
   }).format(new Date());
 }
 
+export const DAILY_MEAL_PUBLISH_MINUTES = 6 * 60;
+
+export function lagosClock() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const value = (type: string) =>
+    parts.find((part) => part.type === type)?.value ?? "00";
+  const hour = Number(value("hour"));
+  const minute = Number(value("minute"));
+  return {
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    hour,
+    minute,
+    minutes: hour * 60 + minute,
+  };
+}
+
 export function addDays(date: string, days: number) {
   const value = new Date(`${date}T00:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);
@@ -105,7 +129,7 @@ async function notifyPublished(
       id: crypto.randomUUID(),
       userId,
       type: NOTIFICATION_TYPES.devotionalPublished,
-      title: `Today's devotional: ${devotional.title}`,
+      title: `Today's Daily Meal: ${devotional.title}`,
       body: devotional.body.replace(/\s+/g, " ").slice(0, 160),
       link: `/devotionals/${devotional.publishDate}`,
       isRead: false,
@@ -121,6 +145,7 @@ async function publish(
     title: string;
     body: string;
     publishDate: string;
+    notifyMembers: boolean;
   },
 ) {
   const now = new Date();
@@ -130,10 +155,13 @@ async function publish(
       status: "published",
       isPublished: true,
       publishedAt: now,
+      archivedAt: null,
       lastError: null,
     })
     .where(eq(devotionals.id, devotional.id));
-  await notifyPublished(db, devotional);
+  if (devotional.notifyMembers) {
+    await notifyPublished(db, devotional);
+  }
 }
 
 async function activePlan(db: AppDb) {
@@ -162,10 +190,20 @@ export async function runDailyDevotional(input: {
   trigger: "cron" | "manual";
   triggeredBy?: string | null;
 }): Promise<RunResult> {
-  const runDate = lagosToday();
+  const clock = lagosClock();
+  if (
+    input.trigger === "cron" &&
+    clock.minutes < DAILY_MEAL_PUBLISH_MINUTES
+  ) {
+    return {
+      status: "skipped",
+      message: "The Daily Meal publishes at 6:00 AM Lagos time.",
+    };
+  }
+  const runDate = clock.date;
   const planRow = await activePlan(input.db);
   if (!planRow) {
-    return { status: "skipped", message: "No active devotional plan." };
+    return { status: "skipped", message: "No active Daily Meal plan." };
   }
   const { plan, sermon } = planRow;
   const runId = crypto.randomUUID();
@@ -189,21 +227,30 @@ export async function runDailyDevotional(input: {
       .limit(1);
 
     if (existing) {
+      if (existing.archivedAt) {
+        await finishRun(input.db, runId, "completed", 0);
+        return {
+          status: "skipped",
+          message:
+            "Today's Daily Meal is archived. Restore it from Admin when ready.",
+          devotionalId: existing.id,
+        };
+      }
       if (existing.status === "published") {
         await finishRun(input.db, runId, "completed", 1);
         return {
           status: "skipped",
-          message: "Today's devotional is already published.",
+          message: "Today's Daily Meal is already published.",
           devotionalId: existing.id,
         };
       }
-      if (plan.autoPublish && existing.status !== "rejected") {
+      if (plan.autoPublish && existing.status === "scheduled") {
         await publish(input.db, existing);
         await finishRun(input.db, runId, "completed", 1);
         await recordAiRun(input.db, "completed");
         return {
           status: "published",
-          message: `Published “${existing.title}”.`,
+          message: `Published "${existing.title}".`,
           devotionalId: existing.id,
         };
       }
@@ -211,7 +258,7 @@ export async function runDailyDevotional(input: {
       return {
         status: "skipped",
         message:
-          "Today's devotional is waiting for review (auto-publish is off).",
+          "Today's Daily Meal is waiting for review (auto-publish is off).",
         devotionalId: existing.id,
       };
     }
@@ -261,6 +308,8 @@ export async function runDailyDevotional(input: {
         status,
         publishDate: runDate,
         isPublished: plan.autoPublish,
+        notifyMembers: true,
+        showOnHome: true,
         generatedAt: now,
         publishedAt: plan.autoPublish ? now : null,
         createdAt: now,
@@ -289,8 +338,8 @@ export async function runDailyDevotional(input: {
     return {
       status: plan.autoPublish ? "published" : "skipped",
       message: plan.autoPublish
-        ? `Generated and published “${day.title}”.`
-        : `Generated “${day.title}”. Review it before publishing.`,
+        ? `Generated and published "${day.title}".`
+        : `Generated "${day.title}". Review it before publishing.`,
       devotionalId: id,
     };
   } catch (error) {
@@ -405,6 +454,8 @@ export async function generatePlanDays(input: {
           status: row.plan.autoPublish ? "scheduled" : "draft",
           publishDate,
           isPublished: false,
+          notifyMembers: true,
+          showOnHome: true,
           generatedAt: now,
           createdAt: now,
         })
@@ -485,8 +536,36 @@ export async function publishDueDevotional(
     .from(devotionals)
     .where(eq(devotionals.id, devotionalId))
     .limit(1);
-  if (!row) throw new Error("Devotional not found.");
+  if (!row) throw new Error("Daily Meal not found.");
+  if (row.archivedAt) {
+    throw new Error("Restore this Daily Meal before publishing it.");
+  }
   if (row.status === "published") return false;
+
+  const today = lagosToday();
+  if (row.publishDate > today) {
+    const [clash] = await db
+      .select({ id: devotionals.id })
+      .from(devotionals)
+      .where(
+        and(
+          eq(devotionals.publishDate, today),
+          ne(devotionals.id, devotionalId),
+        ),
+      )
+      .limit(1);
+    if (clash) {
+      throw new Error(
+        "Today already has a Daily Meal. Unpublish or archive it first.",
+      );
+    }
+    await db
+      .update(devotionals)
+      .set({ publishDate: today })
+      .where(eq(devotionals.id, devotionalId));
+    row.publishDate = today;
+  }
+
   await publish(db, row);
   return true;
 }
@@ -497,6 +576,11 @@ export async function unpublishDevotional(
 ) {
   await db
     .update(devotionals)
-    .set({ status: "draft", isPublished: false, publishedAt: null })
+    .set({
+      status: "draft",
+      isPublished: false,
+      publishedAt: null,
+      archivedAt: null,
+    })
     .where(eq(devotionals.id, devotionalId));
 }

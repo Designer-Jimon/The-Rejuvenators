@@ -113,7 +113,7 @@ const navigationGroups: NavGroup[] = [
       },
       {
         href: "/admin/devotionals",
-        label: "Devotionals",
+        label: "Daily Meal",
         icon: BookOpen,
         exact: false,
         permission: "content",

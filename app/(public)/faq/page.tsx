@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "FAQ",
-  description: `Answers to common questions about ${CHURCH_NAME} - location, service times, membership, departments, appointments and devotionals.`,
+  description: `Answers to common questions about ${CHURCH_NAME} - location, service times, membership, departments, appointments and the Daily Meal.`,
   openGraph: {
     title: `FAQ | ${CHURCH_NAME}`,
     description:

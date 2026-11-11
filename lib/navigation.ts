@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { and, desc, eq, lte } from "drizzle-orm";
+import { and, desc, eq, isNull, lte } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { devotionals } from "@/lib/db/schema";
 import type { PublicNavItem } from "@/lib/navigation-types";
@@ -26,7 +26,7 @@ const PUBLIC_NAV: ReadonlyArray<PublicNavItem> = [
   },
   { href: "/events", label: "Events" },
   { href: "/sermons", label: "Sermons" },
-  { href: "/devotionals", label: "Devotional" },
+  { href: "/devotionals", label: "Daily Meal" },
   { href: "/appointments", label: "Appointments" },
   { href: "/contact", label: "Contact" },
 ];
@@ -51,6 +51,7 @@ export const getLatestDevotionalHref = cache(async () => {
       and(
         eq(devotionals.status, "published"),
         eq(devotionals.isPublished, true),
+        isNull(devotionals.archivedAt),
         lte(devotionals.publishDate, lagosToday()),
       ),
     )
@@ -69,7 +70,7 @@ export const FOOTER_LINKS = [
   { href: "/appointments", label: "Appointments" },
   { href: "/events", label: "Events" },
   { href: "/sermons", label: "Sermons" },
-  { href: "/devotionals", label: "Devotional" },
+  { href: "/devotionals", label: "Daily Meal" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ] as const;

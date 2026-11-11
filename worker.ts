@@ -229,12 +229,12 @@ export default {
           trigger: "cron",
         });
         if (result.status === "failed") {
-          console.error("Daily devotional failed:", result.message);
+          console.error("Daily Meal failed:", result.message);
         } else {
-          console.log("Daily devotional:", result.status, result.message);
+          console.log("Daily Meal:", result.status, result.message);
         }
       })().catch((error) => {
-        console.error("Daily devotional schedule error:", error);
+        console.error("Daily Meal schedule error:", error);
       }),
     );
   },

@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   KeyRound,
   Play,
+  PlugZap,
   ShieldAlert,
   Sparkles,
 } from "lucide-react";
@@ -26,7 +27,11 @@ import {
   Textarea,
 } from "@/components/ui/form";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { runAiTest, saveAiSettings } from "../devotionals/actions";
+import {
+  runAiTest,
+  saveAiSettings,
+  testAiConnectionAction,
+} from "../devotionals/actions";
 
 export const metadata: Metadata = { title: "AI settings" };
 export const dynamic = "force-dynamic";
@@ -61,7 +66,7 @@ export default async function AiSettingsPage({
         className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-800 active:opacity-70"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        Back to devotionals
+        Back to Daily Meal
       </Link>
 
       <div>
@@ -70,7 +75,7 @@ export default async function AiSettingsPage({
         </p>
         <h1 className="mt-1 font-serif text-3xl font-bold">AI settings</h1>
         <p className="mt-1 max-w-2xl text-sm leading-6 text-charcoal/60">
-          Configure the OpenAI-compatible provider used to generate devotionals.
+          Configure the OpenAI-compatible provider used to generate the Daily Meal.
           The API key is a Worker secret and is never stored in the database.
         </p>
       </div>
@@ -152,7 +157,7 @@ export default async function AiSettingsPage({
             <FormField
               label="Temperature"
               htmlFor="temperature"
-              hint="0 is focused, 1 is more creative. Recommended: 0.6–0.8."
+              hint="0 is focused, 1 is more creative. Recommended: 0.6-0.8."
             >
               <Input
                 id="temperature"
@@ -185,14 +190,40 @@ export default async function AiSettingsPage({
           <div className="surface p-5">
             <div className="flex items-start gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-700 text-cream">
+                <PlugZap className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="font-serif text-lg font-semibold">
+                  Test AI connection
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-charcoal/60">
+                  Sends a tiny request to the configured provider. Use this
+                  first if generation is failing.
+                </p>
+              </div>
+            </div>
+            <form action={testAiConnectionAction} className="mt-4">
+              <SubmitButton
+                variant="outline"
+                pendingLabel="Testing connection..."
+              >
+                <PlugZap className="h-4 w-4" aria-hidden="true" />
+                Test connection
+              </SubmitButton>
+            </form>
+          </div>
+
+          <div className="surface p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-700 text-cream">
                 <Sparkles className="h-5 w-5" aria-hidden="true" />
               </span>
               <div>
                 <h2 className="font-serif text-lg font-semibold">Test the pipeline</h2>
                 <p className="mt-1 text-sm leading-6 text-charcoal/60">
-                  This runs today&apos;s generation exactly like the 5:00 AM
-                  scheduler. If today already exists, it will publish or leave it
-                  for review instead of duplicating it.
+                  This runs today&apos;s generation exactly like the 6:00 AM
+                  scheduler. If today already exists, it will publish or leave
+                  it for review instead of duplicating it.
                 </p>
               </div>
             </div>
@@ -233,7 +264,7 @@ export default async function AiSettingsPage({
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-charcoal/55">
-                      {run.trigger === "manual" ? "Manual test" : "Scheduled"} ·{" "}
+                      {run.trigger === "manual" ? "Manual test" : "Scheduled"} |{" "}
                       {run.completedDays} day
                       {run.completedDays === 1 ? "" : "s"}
                     </p>
