@@ -375,7 +375,7 @@ export async function syncDepartmentCenterConversation(
       ),
     )
     .limit(1);
-  if (!conversation[0]) {
+  if (!conversation) {
     const id = await ensureDepartmentCenterConversation(departmentId, centerId);
     if (!id) return;
     return syncParticipants(
@@ -384,7 +384,7 @@ export async function syncDepartmentCenterConversation(
     );
   }
   await syncParticipants(
-    conversation[0].id,
+    conversation.id,
     await departmentCenterMemberIds(departmentId, centerId),
   );
 }
