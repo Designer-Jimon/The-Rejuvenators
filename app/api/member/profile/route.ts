@@ -5,7 +5,9 @@ import { memberProfiles, users, worshipCenters } from "@/lib/db/schema";
 import { requireApiUser } from "@/lib/auth/authorize";
 import { csrfFailure, readJson, sameOrigin } from "@/lib/http";
 import { profileUpdateSchema } from "@/lib/validation";
+import { canonicalCountry } from "@/lib/locations";
 import { syncUserChatGroups } from "@/lib/chat";
+import { sendProfileUpdateEmail } from "@/lib/email";
 
 const forbiddenFields = [
   "departmentId",
@@ -80,7 +82,9 @@ export async function PATCH(request: Request) {
     .set({
       gender: parsed.data.gender ?? null,
       maritalStatus: parsed.data.maritalStatus || null,
-      country: parsed.data.country || null,
+      country: parsed.data.country
+        ? canonicalCountry(parsed.data.country)
+        : null,
       state: parsed.data.state || null,
       lga: parsed.data.lga || null,
       worshipCenterId,
@@ -96,6 +100,15 @@ export async function PATCH(request: Request) {
     .where(eq(memberProfiles.userId, user.id));
 
   await syncUserChatGroups(user.id);
+
+  try {
+    await sendProfileUpdateEmail(user.email, parsed.data.name);
+  } catch (error) {
+    console.error("Profile update confirmation email failed", {
+      userId: user.id,
+      error,
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

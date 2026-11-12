@@ -15,6 +15,8 @@ import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { csrfFailure, sameOrigin } from "@/lib/http";
 import { MEMBER_REGISTRATION_MESSAGE, NOTIFICATION_TYPES, ROLES } from "@/lib/constants";
 import { registerSchema } from "@/lib/validation";
+import { canonicalCountry } from "@/lib/locations";
+import { sendRegistrationEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -134,7 +136,7 @@ export async function POST(request: Request) {
         memberCode: memberCode(),
         gender: parsed.data.gender,
         maritalStatus: parsed.data.maritalStatus,
-        country: parsed.data.country,
+        country: canonicalCountry(parsed.data.country),
         state: parsed.data.state,
         lga: parsed.data.lga,
         worshipCenterId: parsed.data.worshipCenterId,
@@ -183,6 +185,12 @@ export async function POST(request: Request) {
     body: MEMBER_REGISTRATION_MESSAGE(departmentName),
     link: "/admin/members?status=pending",
   });
+
+  try {
+    await sendRegistrationEmail(parsed.data.email, parsed.data.name);
+  } catch (error) {
+    console.error("Registration confirmation email failed", { userId, error });
+  }
 
   return NextResponse.json({ ok: true });
 }

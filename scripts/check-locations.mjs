@@ -59,6 +59,11 @@ if (errors.length) {
   process.exit(1);
 }
 
+console.log("Nigerian LGA count by state:");
+for (const state of [...nigeriaStates].sort()) {
+  console.log(`  ${state}: ${lgasByState[state].length}`);
+}
+console.log(`  Total: ${lgaCount}`);
 console.log(
   `Location data OK: ${countries.length} countries, ${nigeriaStates.length} states, ${lgaCount} LGAs.`,
 );

@@ -41,6 +41,9 @@ export type MemberListItem = {
   avatarKey: string | null;
   departmentName: string | null;
   worshipCenterName: string | null;
+  country: string | null;
+  state: string | null;
+  lga: string | null;
   registrationStatus: string;
   memberStatus: string;
   followupStatus: string;
@@ -86,6 +89,9 @@ export async function listMembers(options: {
       avatarKey: memberProfiles.avatarKey,
       departmentName: departments.name,
       worshipCenterName: worshipCenters.name,
+      country: memberProfiles.country,
+      state: memberProfiles.state,
+      lga: memberProfiles.lga,
       registrationStatus: memberProfiles.registrationStatus,
       memberStatus: memberProfiles.memberStatus,
       followupStatus: memberProfiles.followupStatus,

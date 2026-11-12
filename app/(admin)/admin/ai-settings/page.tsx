@@ -17,6 +17,7 @@ import { devotionalRuns } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth/authorize";
 import { ROLES } from "@/lib/constants";
 import { AI_PROVIDERS, readAiSettings } from "@/lib/devotionals/config";
+import { getDailyMealStatus } from "@/lib/devotionals/pipeline";
 import { formatDateTime } from "@/lib/utils";
 import { Badge, SectionHeader } from "@/components/ui/display";
 import {
@@ -47,13 +48,14 @@ export default async function AiSettingsPage({
   }
   const params = await searchParams;
   const db = await getDb();
-  const [settings, runs, { env }] = await Promise.all([
+  const [settings, runs, status, { env }] = await Promise.all([
     readAiSettings(db),
     db
       .select()
       .from(devotionalRuns)
       .orderBy(desc(devotionalRuns.startedAt))
       .limit(8),
+    getDailyMealStatus(db),
     getCloudflareContext({ async: true }),
   ]);
   const keyConfigured = Boolean(env.OPENAI_API_KEY?.trim());
@@ -236,6 +238,53 @@ export default async function AiSettingsPage({
             <p className="mt-2 text-xs leading-5 text-charcoal/45">
               A plan must be active before this can generate a day.
             </p>
+          </div>
+
+          <div className="surface p-5">
+            <h2 className="font-serif text-lg font-semibold">
+              Daily Meal status
+            </h2>
+            <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-2xl bg-brand-50 p-3">
+                <dt className="text-[10px] font-semibold uppercase tracking-wide text-brand-800/70">
+                  Failed today
+                </dt>
+                <dd className="mt-1 font-serif text-xl font-bold text-brand-900">
+                  {status.failedToday}
+                </dd>
+              </div>
+              <div className="rounded-2xl bg-brand-50 p-3">
+                <dt className="text-[10px] font-semibold uppercase tracking-wide text-brand-800/70">
+                  Lagos date
+                </dt>
+                <dd className="mt-1 text-sm font-semibold text-brand-900">
+                  {status.runDate}
+                </dd>
+              </div>
+            </dl>
+            {status.lastFailure ? (
+              <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <p className="font-semibold">Last failure</p>
+                <p className="mt-1 break-words leading-6">
+                  {status.lastFailure}
+                </p>
+                {status.lastFailureAt ? (
+                  <p className="mt-1 text-xs text-red-700/70">
+                    {formatDateTime(status.lastFailureAt)}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-charcoal/55">
+                No generation failures recorded.
+              </p>
+            )}
+            {!keyConfigured ? (
+              <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+                OPENAI_API_KEY is missing, so the Daily Meal cannot generate
+                until the secret is added.
+              </p>
+            ) : null}
           </div>
 
           <div className="surface p-5">

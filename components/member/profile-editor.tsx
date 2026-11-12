@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, ImagePlus, LockKeyhole, Save } from "lucide-react";
 import { PhotoPicker } from "@/components/ui/photo-picker";
@@ -23,8 +23,8 @@ import { compressImageSafe } from "@/lib/client-image";
 import { fetchWithTimeout } from "@/lib/client-fetch";
 import {
   COUNTRIES,
-  lgasForLocation,
-  statesForCountry,
+  loadLgasForLocation,
+  loadStatesForCountry,
 } from "@/lib/locations";
 import { formatDate } from "@/lib/utils";
 
@@ -86,6 +86,10 @@ export function ProfileEditor({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"avatar" | "cover" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [stateOptions, setStateOptions] = useState<string[]>([]);
+  const [lgaOptions, setLgaOptions] = useState<string[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [lgasLoading, setLgasLoading] = useState(false);
 
   const completeness = useMemo(() => {
     const fields = [
@@ -106,14 +110,52 @@ export function ProfileEditor({
     () => COUNTRIES.map((country) => country.name),
     [],
   );
-  const stateOptions = useMemo(
-    () => statesForCountry(form.country),
-    [form.country],
-  );
-  const lgaOptions = useMemo(
-    () => lgasForLocation(form.country, form.state),
-    [form.country, form.state],
-  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setStateOptions([]);
+    if (!form.country.trim()) {
+      setStatesLoading(false);
+      return;
+    }
+    setStatesLoading(true);
+    loadStatesForCountry(form.country)
+      .then((options) => {
+        if (!cancelled) setStateOptions(options);
+      })
+      .catch(() => {
+        if (!cancelled) setStateOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setStatesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.country]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLgaOptions([]);
+    if (!form.country.trim() || !form.state.trim()) {
+      setLgasLoading(false);
+      return;
+    }
+    setLgasLoading(true);
+    loadLgasForLocation(form.country, form.state)
+      .then((options) => {
+        if (!cancelled) setLgaOptions(options);
+      })
+      .catch(() => {
+        if (!cancelled) setLgaOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLgasLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.country, form.state]);
 
   function updateCountry(value: string) {
     setForm((current) => ({
@@ -381,6 +423,7 @@ export function ProfileEditor({
               <FormField label="Country" htmlFor="profile-country">
                 <Combobox
                   id="profile-country"
+                  label="Country"
                   value={form.country}
                   onChange={updateCountry}
                   options={countryOptions}
@@ -388,9 +431,27 @@ export function ProfileEditor({
                 />
               </FormField>
               <FormField label="State" htmlFor="profile-state">
-                {stateOptions.length ? (
+                {!form.country.trim() ? (
+                  <Input
+                    id="profile-state"
+                    value=""
+                    placeholder="Select a country first"
+                    disabled
+                  />
+                ) : statesLoading ? (
                   <Combobox
                     id="profile-state"
+                    label="State"
+                    value=""
+                    onChange={updateState}
+                    options={[]}
+                    placeholder="Loading states..."
+                    disabled
+                  />
+                ) : stateOptions.length ? (
+                  <Combobox
+                    id="profile-state"
+                    label="State"
                     value={form.state}
                     onChange={updateState}
                     options={stateOptions}
@@ -402,14 +463,33 @@ export function ProfileEditor({
                     value={form.state}
                     onChange={(event) => updateState(event.target.value)}
                     autoComplete="address-level1"
+                    placeholder="Enter your state or region"
                   />
                 )}
               </FormField>
             </div>
             <FormField label="LGA" htmlFor="profile-lga">
-              {lgaOptions.length ? (
+              {!form.country.trim() || !form.state.trim() ? (
+                <Input
+                  id="profile-lga"
+                  value=""
+                  placeholder="Select a state first"
+                  disabled
+                />
+              ) : lgasLoading ? (
                 <Combobox
                   id="profile-lga"
+                  label="Local government"
+                  value=""
+                  onChange={(value) => update("lga", value)}
+                  options={[]}
+                  placeholder="Loading LGAs..."
+                  disabled
+                />
+              ) : lgaOptions.length ? (
+                <Combobox
+                  id="profile-lga"
+                  label="Local government"
                   value={form.lga}
                   onChange={(value) => update("lga", value)}
                   options={lgaOptions}
@@ -421,6 +501,7 @@ export function ProfileEditor({
                   value={form.lga}
                   onChange={(event) => update("lga", event.target.value)}
                   autoComplete="address-level2"
+                  placeholder="Enter your local government or city"
                 />
               )}
             </FormField>

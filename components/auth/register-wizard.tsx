@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
@@ -9,11 +9,8 @@ import { FormField, FormMessage, Input, Select, Textarea } from "@/components/ui
 import {
   COUNTRIES,
   canonicalCountry,
-  isKnownCountry,
-  isKnownLga,
-  isKnownState,
-  lgasForLocation,
-  statesForCountry,
+  loadLgasForLocation,
+  loadStatesForCountry,
 } from "@/lib/locations";
 import {
   PasswordChecklist,
@@ -85,20 +82,62 @@ export function RegisterWizard({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [stateOptions, setStateOptions] = useState<string[]>([]);
+  const [lgaOptions, setLgaOptions] = useState<string[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [lgasLoading, setLgasLoading] = useState(false);
 
   const progress = useMemo(() => ((step + 1) / steps.length) * 100, [step]);
   const countryOptions = useMemo(
     () => COUNTRIES.map((country) => country.name),
     [],
   );
-  const stateOptions = useMemo(
-    () => statesForCountry(form.country),
-    [form.country],
-  );
-  const lgaOptions = useMemo(
-    () => lgasForLocation(form.country, form.state),
-    [form.country, form.state],
-  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setStateOptions([]);
+    if (!form.country.trim()) {
+      setStatesLoading(false);
+      return;
+    }
+    setStatesLoading(true);
+    loadStatesForCountry(form.country)
+      .then((options) => {
+        if (!cancelled) setStateOptions(options);
+      })
+      .catch(() => {
+        if (!cancelled) setStateOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setStatesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.country]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLgaOptions([]);
+    if (!form.country.trim() || !form.state.trim()) {
+      setLgasLoading(false);
+      return;
+    }
+    setLgasLoading(true);
+    loadLgasForLocation(form.country, form.state)
+      .then((options) => {
+        if (!cancelled) setLgaOptions(options);
+      })
+      .catch(() => {
+        if (!cancelled) setLgaOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLgasLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.country, form.state]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -138,16 +177,25 @@ export function RegisterWizard({
       if (!form.gender) return setError("Select an option for gender.");
       if (!form.maritalStatus) return setError("Select your marital status.");
       if (!form.country.trim()) return setError("Select your country.");
-      if (!isKnownCountry(form.country)) {
-        return setError("Select your country from the list.");
-      }
       if (!form.state.trim()) return setError("Enter your state.");
       if (canonicalCountry(form.country) === "Nigeria") {
-        if (!isKnownState(form.country, form.state)) {
+        if (
+          !statesLoading &&
+          stateOptions.length &&
+          !stateOptions.some(
+            (state) => state.toLowerCase() === form.state.trim().toLowerCase(),
+          )
+        ) {
           return setError("Select your state from the list.");
         }
         if (!form.lga.trim()) return setError("Select your LGA.");
-        if (!isKnownLga(form.country, form.state, form.lga)) {
+        if (
+          !lgasLoading &&
+          lgaOptions.length &&
+          !lgaOptions.some(
+            (lga) => lga.toLowerCase() === form.lga.trim().toLowerCase(),
+          )
+        ) {
           return setError("Select your LGA from the list.");
         }
       }
@@ -366,6 +414,7 @@ export function RegisterWizard({
               <Combobox
                 id="country"
                 name="country"
+                label="Country"
                 value={form.country}
                 onChange={updateCountry}
                 options={countryOptions}
@@ -373,10 +422,30 @@ export function RegisterWizard({
               />
             </FormField>
             <FormField label="State" htmlFor="state">
-              {stateOptions.length ? (
+              {!form.country.trim() ? (
+                <Input
+                  id="state"
+                  name="state"
+                  value=""
+                  placeholder="Select a country first"
+                  disabled
+                />
+              ) : statesLoading ? (
                 <Combobox
                   id="state"
                   name="state"
+                  label="State"
+                  value=""
+                  onChange={updateState}
+                  options={[]}
+                  placeholder="Loading states..."
+                  disabled
+                />
+              ) : stateOptions.length ? (
+                <Combobox
+                  id="state"
+                  name="state"
+                  label="State"
                   value={form.state}
                   onChange={updateState}
                   options={stateOptions}
@@ -388,6 +457,7 @@ export function RegisterWizard({
                   name="state"
                   autoComplete="address-level1"
                   value={form.state}
+                  placeholder="Enter your state or region"
                   onChange={(event) => updateState(event.target.value)}
                   required
                 />
@@ -395,10 +465,30 @@ export function RegisterWizard({
             </FormField>
           </div>
           <FormField label="LGA" htmlFor="lga">
-            {lgaOptions.length ? (
+            {!form.country.trim() || !form.state.trim() ? (
+              <Input
+                id="lga"
+                name="lga"
+                value=""
+                placeholder="Select a state first"
+                disabled
+              />
+            ) : lgasLoading ? (
               <Combobox
                 id="lga"
                 name="lga"
+                label="Local government"
+                value=""
+                onChange={(value) => update("lga", value)}
+                options={[]}
+                placeholder="Loading LGAs..."
+                disabled
+              />
+            ) : lgaOptions.length ? (
+              <Combobox
+                id="lga"
+                name="lga"
+                label="Local government"
                 value={form.lga}
                 onChange={(value) => update("lga", value)}
                 options={lgaOptions}
@@ -410,6 +500,7 @@ export function RegisterWizard({
                 name="lga"
                 autoComplete="address-level2"
                 value={form.lga}
+                placeholder="Enter your local government or city"
                 onChange={(event) => update("lga", event.target.value)}
                 required
               />

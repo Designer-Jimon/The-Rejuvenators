@@ -104,6 +104,14 @@ export default async function AdminMembersPage({
       render: (member: MemberListItem) => member.worshipCenterName ?? "Not set",
     },
     {
+      key: "location",
+      header: "Country / State / LGA",
+      render: (member: MemberListItem) =>
+        [member.country, member.state, member.lga]
+          .filter(Boolean)
+          .join(" · ") || "Not set",
+    },
+    {
       key: "followup",
       header: "Follow-up",
       render: (member: MemberListItem) => humanize(member.followupStatus),

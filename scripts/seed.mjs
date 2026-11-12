@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import crypto from "node:crypto";
 
@@ -32,23 +32,31 @@ async function hashPassword(password) {
 }
 
 const adminName = process.env.SEED_ADMIN_NAME || "Super Admin";
-const adminEmail = (process.env.SEED_ADMIN_EMAIL || "admin@example.com").toLowerCase();
+const adminEmail = (
+  process.env.SEED_ADMIN_EMAIL || (remote ? "" : "admin@example.com")
+).toLowerCase();
 const adminPassword = process.env.SEED_ADMIN_PASSWORD || (remote ? "" : "ChangeMe123!");
 const memberName = process.env.SEED_MEMBER_NAME || "Test Member";
 const memberEmail = (process.env.SEED_MEMBER_EMAIL || "member@example.com").toLowerCase();
 const memberPassword = process.env.SEED_MEMBER_PASSWORD || (remote ? "" : "Member123!");
 
+if (remote && (!adminEmail || adminEmail.endsWith("@example.com"))) {
+  console.error(
+    "Refusing to seed the remote database: set SEED_ADMIN_EMAIL to a real admin email (not @example.com).",
+  );
+  process.exit(1);
+}
 if (!adminPassword) {
   console.error("SEED_ADMIN_PASSWORD is required when seeding a remote database.");
   process.exit(1);
 }
-if (!memberPassword) {
-  console.error("SEED_MEMBER_PASSWORD is required when seeding a remote database.");
+if (!remote && !memberPassword) {
+  console.error("SEED_MEMBER_PASSWORD is required when seeding the local database.");
   process.exit(1);
 }
 
 const adminHash = await hashPassword(adminPassword);
-const memberHash = await hashPassword(memberPassword);
+const memberHash = remote ? null : await hashPassword(memberPassword);
 
 const permissions = [
   ["perm_admin_access", "admin.access", "Access the admin dashboard"],
@@ -164,10 +172,10 @@ const settings = {
   announcement_allow_replies: "0",
 };
 
-const lines = [
-  "PRAGMA foreign_keys = ON;",
-  "BEGIN TRANSACTION;",
-];
+const lines = ["PRAGMA foreign_keys = ON;"];
+if (!remote) {
+  lines.push("BEGIN TRANSACTION;");
+}
 
 for (const [id, key, description] of permissions) {
   lines.push(
@@ -378,12 +386,14 @@ lines.push(
   `INSERT OR IGNORE INTO department_members (id, department_id, user_id, role, is_active, joined_at) SELECT 'dm_admin_content', 'dept_content', id, 'member', 1, unixepoch() * 1000 FROM users WHERE email = ${q(adminEmail)};`,
 );
 
-lines.push(
-  `INSERT OR IGNORE INTO users (id, name, email, phone, password_hash, status, must_change_password, created_at, updated_at) VALUES ('usr_test_member', ${q(memberName)}, ${q(memberEmail)}, '+10000000000', ${q(memberHash)}, 'active', 0, unixepoch() * 1000, unixepoch() * 1000);`,
-  `INSERT OR IGNORE INTO user_roles (user_id, role_id, assigned_at) SELECT id, 'role_member', unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
-  `INSERT OR IGNORE INTO member_profiles (user_id, member_code, gender, marital_status, country, state, lga, worship_center_id, date_of_birth, address, occupation, bio, requested_department_id, registration_status, member_status, followup_status, show_phone, show_email, show_last_seen, approved_at, created_at, updated_at) SELECT id, 'IIF-MEMBER-0001', 'prefer_not_to_say', 'prefer_not_to_say', 'Nigeria', ${q("[State]")}, ${q("[LGA]")}, 'center_1', '1995-01-01', ${q("[Test member address]")}, ${q("Volunteer")}, ${q("Seeded member account for local testing.")}, 'dept_worship', 'approved', 'active', 'completed', 0, 0, 0, unixepoch() * 1000, unixepoch() * 1000, unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
-  `INSERT OR IGNORE INTO department_members (id, department_id, user_id, role, is_active, joined_at) SELECT 'dm_member_worship', 'dept_worship', id, 'member', 1, unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
-);
+if (!remote) {
+  lines.push(
+    `INSERT OR IGNORE INTO users (id, name, email, phone, password_hash, status, must_change_password, created_at, updated_at) VALUES ('usr_test_member', ${q(memberName)}, ${q(memberEmail)}, '+10000000000', ${q(memberHash)}, 'active', 0, unixepoch() * 1000, unixepoch() * 1000);`,
+    `INSERT OR IGNORE INTO user_roles (user_id, role_id, assigned_at) SELECT id, 'role_member', unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
+    `INSERT OR IGNORE INTO member_profiles (user_id, member_code, gender, marital_status, country, state, lga, worship_center_id, date_of_birth, address, occupation, bio, requested_department_id, registration_status, member_status, followup_status, show_phone, show_email, show_last_seen, approved_at, created_at, updated_at) SELECT id, 'IIF-MEMBER-0001', 'prefer_not_to_say', 'prefer_not_to_say', 'Nigeria', ${q("[State]")}, ${q("[LGA]")}, 'center_1', '1995-01-01', ${q("[Test member address]")}, ${q("Volunteer")}, ${q("Seeded member account for local testing.")}, 'dept_worship', 'approved', 'active', 'completed', 0, 0, 0, unixepoch() * 1000, unixepoch() * 1000, unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
+    `INSERT OR IGNORE INTO department_members (id, department_id, user_id, role, is_active, joined_at) SELECT 'dm_member_worship', 'dept_worship', id, 'member', 1, unixepoch() * 1000 FROM users WHERE email = ${q(memberEmail)};`,
+  );
+}
 
 lines.push(
   `UPDATE conversations SET is_archived = 1 WHERE type = 'department' AND center_id IS NULL;`,
@@ -404,8 +414,10 @@ for (const [departmentId, departmentName] of departments) {
 
 lines.push(
   `INSERT OR IGNORE INTO notification_preferences (id, user_id, type, in_app, email, whatsapp) SELECT 'np_admin_reg', id, 'member_registration', 1, 0, 0 FROM users WHERE email = ${q(adminEmail)};`,
-  "COMMIT;",
 );
+if (!remote) {
+  lines.push("COMMIT;");
+}
 
 const sqlPath = resolve(".wrangler", "seed.generated.sql");
 mkdirSync(resolve(".wrangler"), { recursive: true });
@@ -413,23 +425,30 @@ writeFileSync(sqlPath, lines.join("\n"), "utf8");
 
 console.log(`Seed SQL prepared (${lines.length} statements) for ${mode}.`);
 console.log(`Super Admin: ${adminEmail}`);
-console.log(`Test member: ${memberEmail}`);
+if (!remote) {
+  console.log(`Test member: ${memberEmail}`);
+}
 
 const wranglerCli = resolve("node_modules", "wrangler", "bin", "wrangler.js");
-const result = spawnSync(
-  process.execPath,
-  [
-    wranglerCli,
-    "d1",
-    "execute",
-    "itisfinished-db",
-    remote ? "--remote" : "--local",
-    "--file",
-    sqlPath,
-    "-y",
-  ],
-  { stdio: "inherit" },
-);
+let result = { status: 1 };
+try {
+  result = spawnSync(
+    process.execPath,
+    [
+      wranglerCli,
+      "d1",
+      "execute",
+      "itisfinished-db",
+      remote ? "--remote" : "--local",
+      "--file",
+      sqlPath,
+      "-y",
+    ],
+    { stdio: "inherit" },
+  );
+} finally {
+  rmSync(sqlPath, { force: true });
+}
 
 if (result.status !== 0) {
   console.error("Seeding failed. Make sure migrations have been applied.");

@@ -39,3 +39,10 @@ npm run dev
 - Verify: `npm run typecheck`, `npm run build`, `npm run test:security`, `npm run test:locations`, `npm run cf:build`.
 ## Launch checklist
 - Replace seed placeholders, set `APP_URL`, add `RESEND_API_KEY`, `EMAIL_FROM` and `OPENAI_API_KEY`, run `npm run db:migrate:remote` (includes `0007_conscious_trauma.sql`) and `npm run db:seed:remote`; change seeded passwords, test password reset, Daily Meal PDF/share and branding/logo, test chat on a real phone, and confirm the Daily Meal cron time (6:00 AM Lagos) with attendance follow-ups.
+
+## Recent changes (2026-11-12)
+- Locations: countries stay bundled; state/LGA lists lazy-load by country. Pickers use a mobile bottom sheet and desktop popover. Nigeria state/LGA values are validated server-side; other countries fall back to text. Admin member list shows country/state/LGA.
+- Seed: remote seeding now requires a real `SEED_ADMIN_EMAIL` (not `@example.com`), skips the test member and transaction wrapper, and deletes the generated temporary SQL file.
+- Daily Meal cron: checks the plan date window, AI key, existing day, and stops automatic generation after 3 failures per plan/day. Manual runs still retry. Admin shows failed-today count and the last failure.
+- Email: registration and profile-update confirmations added. Missing `RESEND_API_KEY` logs a clear warning; API/network failures are caught so registrations and profile updates still succeed. `wrangler.jsonc` now has `APP_URL` and `EMAIL_FROM` placeholders.
+- Lint note: `npm run lint` is not configured (no ESLint dependency/config); `next lint` prompts interactively. Typecheck passes.

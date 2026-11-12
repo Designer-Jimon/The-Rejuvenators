@@ -1,13 +1,11 @@
 import countriesData from "@/data/locations/countries.json";
-import statesData from "@/data/locations/states-by-country.json";
-import lgasData from "@/data/locations/nigeria-lgas.json";
 
 export type CountryOption = { code: string; name: string };
 
 export const COUNTRIES = countriesData as CountryOption[];
 
-const STATES_BY_COUNTRY = statesData as Record<string, string[]>;
-const LGAS_BY_STATE = lgasData as Record<string, string[]>;
+type StatesByCountry = Record<string, string[]>;
+type LgasByState = Record<string, string[]>;
 
 export function isKnownCountry(name: string) {
   return COUNTRIES.some(
@@ -22,23 +20,20 @@ export function canonicalCountry(name: string) {
   return match?.name ?? name.trim();
 }
 
-export function statesForCountry(country: string) {
-  return STATES_BY_COUNTRY[canonicalCountry(country)] ?? [];
+export function isNigeria(country: string) {
+  return canonicalCountry(country) === "Nigeria";
 }
 
-export function lgasForLocation(country: string, state: string) {
-  if (canonicalCountry(country) !== "Nigeria") return [];
-  return LGAS_BY_STATE[state.trim()] ?? [];
+export async function loadStatesForCountry(country: string) {
+  if (!country.trim()) return [];
+  const module = await import("@/data/locations/states-by-country.json");
+  const data = module.default as StatesByCountry;
+  return data[canonicalCountry(country)] ?? [];
 }
 
-export function isKnownState(country: string, state: string) {
-  return statesForCountry(country).some(
-    (item) => item.toLowerCase() === state.trim().toLowerCase(),
-  );
-}
-
-export function isKnownLga(country: string, state: string, lga: string) {
-  return lgasForLocation(country, state).some(
-    (item) => item.toLowerCase() === lga.trim().toLowerCase(),
-  );
+export async function loadLgasForLocation(country: string, state: string) {
+  if (!isNigeria(country) || !state.trim()) return [];
+  const module = await import("@/data/locations/nigeria-lgas.json");
+  const data = module.default as LgasByState;
+  return data[state.trim()] ?? [];
 }

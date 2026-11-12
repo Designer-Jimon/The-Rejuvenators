@@ -13,8 +13,11 @@ import { getDb } from "@/lib/db";
 import { devotionalPlans, devotionals, sermons } from "@/lib/db/schema";
 import { requirePermission } from "@/lib/auth/authorize";
 import { PERMISSIONS } from "@/lib/constants";
-import { lagosToday } from "@/lib/devotionals/pipeline";
-import { formatDate } from "@/lib/utils";
+import {
+  getDailyMealStatus,
+  lagosToday,
+} from "@/lib/devotionals/pipeline";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import {
   Badge,
   EmptyState,
@@ -74,7 +77,7 @@ export default async function AdminDevotionalsPage({
     params.tab === "new" ? "new" : params.tab === "quick" ? "quick" : "plans";
   const db = await getDb();
 
-  const [plans, days, sermonList] = await Promise.all([
+  const [plans, days, sermonList, mealStatus] = await Promise.all([
     db
       .select({
         plan: devotionalPlans,
@@ -94,6 +97,7 @@ export default async function AdminDevotionalsPage({
       .from(sermons)
       .where(eq(sermons.isArchived, false))
       .orderBy(desc(sermons.createdAt)),
+    getDailyMealStatus(db),
   ]);
 
   const daysByPlan = new Map<string, typeof days>();
@@ -128,6 +132,31 @@ export default async function AdminDevotionalsPage({
         <FormMessage tone="success">{params.saved}</FormMessage>
       ) : null}
       {params.error ? <FormMessage>{params.error}</FormMessage> : null}
+
+      {mealStatus.failedToday > 0 ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">
+          <p className="font-semibold">
+            Daily Meal generation failed {mealStatus.failedToday}{" "}
+            {mealStatus.failedToday === 1 ? "time" : "times"} today.
+          </p>
+          {mealStatus.lastFailure ? (
+            <p className="mt-1 break-words">{mealStatus.lastFailure}</p>
+          ) : null}
+          {mealStatus.lastFailureAt ? (
+            <p className="mt-1 text-xs text-red-700/70">
+              Last failure: {formatDateTime(mealStatus.lastFailureAt)}
+            </p>
+          ) : null}
+          <p className="mt-2">
+            Check the AI key and credit in{" "}
+            <Link href="/admin/ai-settings" prefetch className="underline">
+              AI settings
+            </Link>
+            . Automatic retries stop after 3 failures per day; use Generate
+            missing to retry manually.
+          </p>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-1.5">
         {tabs.map((item) => (

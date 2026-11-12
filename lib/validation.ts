@@ -1,12 +1,9 @@
 import { z } from "zod";
+import { canonicalCountry } from "@/lib/locations";
 import {
-  canonicalCountry,
-  isKnownCountry,
   isKnownLga,
   isKnownState,
-  lgasForLocation,
-  statesForCountry,
-} from "@/lib/locations";
+} from "@/lib/locations-server";
 
 const name = z.string().trim().min(2, "Please enter your full name.").max(120);
 const email = z.string().trim().toLowerCase().email("Enter a valid email address.");
@@ -84,14 +81,6 @@ export const registerSchema = z
     path: ["confirmPassword"],
   })
   .superRefine((data, context) => {
-    if (!isKnownCountry(data.country)) {
-      context.addIssue({
-        code: "custom",
-        message: "Select your country from the list.",
-        path: ["country"],
-      });
-      return;
-    }
     if (canonicalCountry(data.country) !== "Nigeria") return;
     if (!isKnownState(data.country, data.state)) {
       context.addIssue({
@@ -167,16 +156,8 @@ export const profileUpdateSchema = z
   .strict()
   .superRefine((data, context) => {
     if (!data.country) return;
-    if (!isKnownCountry(data.country)) {
-      context.addIssue({
-        code: "custom",
-        message: "Select your country from the list.",
-        path: ["country"],
-      });
-      return;
-    }
-    const states = statesForCountry(data.country);
-    if (states.length && data.state && !isKnownState(data.country, data.state)) {
+    if (canonicalCountry(data.country) !== "Nigeria") return;
+    if (data.state && !isKnownState(data.country, data.state)) {
       context.addIssue({
         code: "custom",
         message: "Select your state from the list.",
@@ -184,8 +165,7 @@ export const profileUpdateSchema = z
       });
       return;
     }
-    const lgas = lgasForLocation(data.country, data.state);
-    if (lgas.length && data.lga && !isKnownLga(data.country, data.state, data.lga)) {
+    if (data.lga && !isKnownLga(data.country, data.state, data.lga)) {
       context.addIssue({
         code: "custom",
         message: "Select your LGA from the list.",
