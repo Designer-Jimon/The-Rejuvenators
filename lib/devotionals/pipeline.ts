@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lte, ne } from "drizzle-orm";
 import type { AppDb } from "../db";
 import {
   devotionalPlans,
@@ -147,9 +147,18 @@ async function publish(
     publishDate: string;
     notifyMembers: boolean;
   },
+  options: { requireScheduled?: boolean } = {},
 ) {
   const now = new Date();
-  await db
+  const conditions = [
+    eq(devotionals.id, devotional.id),
+    isNull(devotionals.archivedAt),
+    ne(devotionals.status, "published"),
+  ];
+  if (options.requireScheduled) {
+    conditions.push(eq(devotionals.status, "scheduled"));
+  }
+  const updated = await db
     .update(devotionals)
     .set({
       status: "published",
@@ -158,10 +167,14 @@ async function publish(
       archivedAt: null,
       lastError: null,
     })
-    .where(eq(devotionals.id, devotional.id));
+    .where(and(...conditions))
+    .returning({ id: devotionals.id });
+
+  if (!updated.length) return false;
   if (devotional.notifyMembers) {
     await notifyPublished(db, devotional);
   }
+  return true;
 }
 
 async function activePlan(db: AppDb) {
@@ -184,6 +197,55 @@ export type RunResult = {
   devotionalId?: string;
 };
 
+async function failedRunsForDay(db: AppDb, planId: string, runDate: string) {
+  const [row] = await db
+    .select({ value: count() })
+    .from(devotionalRuns)
+    .where(
+      and(
+        eq(devotionalRuns.planId, planId),
+        eq(devotionalRuns.runDate, runDate),
+        eq(devotionalRuns.status, "failed"),
+      ),
+    );
+  return Number(row?.value ?? 0);
+}
+
+export async function getDailyMealStatus(
+  db: AppDb,
+  runDate = lagosToday(),
+) {
+  const [[failed], lastFailure] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(devotionalRuns)
+      .where(
+        and(
+          eq(devotionalRuns.runDate, runDate),
+          eq(devotionalRuns.status, "failed"),
+        ),
+      ),
+    db
+      .select({
+        error: devotionalRuns.error,
+        startedAt: devotionalRuns.startedAt,
+        finishedAt: devotionalRuns.finishedAt,
+      })
+      .from(devotionalRuns)
+      .where(eq(devotionalRuns.status, "failed"))
+      .orderBy(desc(devotionalRuns.startedAt))
+      .limit(1),
+  ]);
+
+  return {
+    runDate,
+    failedToday: Number(failed?.value ?? 0),
+    lastFailure: lastFailure[0]?.error ?? null,
+    lastFailureAt:
+      lastFailure[0]?.finishedAt ?? lastFailure[0]?.startedAt ?? null,
+  };
+}
+
 export async function runDailyDevotional(input: {
   db: AppDb;
   env: CloudflareEnv;
@@ -191,21 +253,103 @@ export async function runDailyDevotional(input: {
   triggeredBy?: string | null;
 }): Promise<RunResult> {
   const clock = lagosClock();
-  if (
-    input.trigger === "cron" &&
-    clock.minutes < DAILY_MEAL_PUBLISH_MINUTES
-  ) {
+  const isCron = input.trigger === "cron";
+  if (isCron && clock.minutes < DAILY_MEAL_PUBLISH_MINUTES) {
     return {
       status: "skipped",
       message: "The Daily Meal publishes at 6:00 AM Lagos time.",
     };
   }
+
   const runDate = clock.date;
   const planRow = await activePlan(input.db);
   if (!planRow) {
     return { status: "skipped", message: "No active Daily Meal plan." };
   }
+
   const { plan, sermon } = planRow;
+  const startDate = plan.startDate ?? runDate;
+  const endDate = plan.endDate ?? addDays(startDate, plan.totalDays - 1);
+  const dayNumber = daysBetween(startDate, runDate) + 1;
+
+  let existing: typeof devotionals.$inferSelect | undefined;
+  let shouldPublish = false;
+  let shouldGenerate = false;
+
+  if (isCron) {
+    if (runDate < startDate || dayNumber < 1) {
+      return { status: "skipped", message: "The plan has not started yet." };
+    }
+    if (runDate > endDate || dayNumber > plan.totalDays) {
+      return { status: "skipped", message: "The active plan has finished." };
+    }
+
+    [existing] = await input.db
+      .select()
+      .from(devotionals)
+      .where(eq(devotionals.publishDate, runDate))
+      .limit(1);
+
+    if (existing) {
+      if (existing.archivedAt) {
+        return {
+          status: "skipped",
+          message:
+            "Today's Daily Meal is archived. Restore it from Admin when ready.",
+          devotionalId: existing.id,
+        };
+      }
+      if (existing.status === "published") {
+        return {
+          status: "skipped",
+          message: "Today's Daily Meal is already published.",
+          devotionalId: existing.id,
+        };
+      }
+      if (plan.autoPublish && existing.status === "scheduled") {
+        shouldPublish = true;
+      } else {
+        return {
+          status: "skipped",
+          message:
+            "Today's Daily Meal is waiting for review (auto-publish is off).",
+          devotionalId: existing.id,
+        };
+      }
+    } else {
+      if (!plan.autoPublish) {
+        return {
+          status: "skipped",
+          message:
+            "Auto-publish is off. Generate today's Daily Meal manually when ready.",
+        };
+      }
+      shouldGenerate = true;
+      if (!input.env.OPENAI_API_KEY?.trim()) {
+        return {
+          status: "skipped",
+          message:
+            "OPENAI_API_KEY is not configured. Add it in Admin > AI settings.",
+        };
+      }
+      const failed = await failedRunsForDay(input.db, plan.id, runDate);
+      if (failed >= 3) {
+        return {
+          status: "skipped",
+          message:
+            "Daily Meal generation failed 3 times today. Check the AI key and credit in Admin, then run it manually.",
+        };
+      }
+    }
+  }
+
+  if (isCron && !shouldPublish && !shouldGenerate) {
+    return {
+      status: "skipped",
+      message: "Nothing to do for today's Daily Meal.",
+    };
+  }
+
   const runId = crypto.randomUUID();
   await input.db.insert(devotionalRuns).values({
     id: runId,
@@ -220,59 +364,86 @@ export async function runDailyDevotional(input: {
   });
 
   try {
-    const [existing] = await input.db
-      .select()
-      .from(devotionals)
-      .where(eq(devotionals.publishDate, runDate))
-      .limit(1);
+    if (!isCron) {
+      [existing] = await input.db
+        .select()
+        .from(devotionals)
+        .where(eq(devotionals.publishDate, runDate))
+        .limit(1);
 
-    if (existing) {
-      if (existing.archivedAt) {
+      if (existing) {
+        if (existing.archivedAt) {
+          await finishRun(input.db, runId, "completed", 0);
+          return {
+            status: "skipped",
+            message:
+              "Today's Daily Meal is archived. Restore it from Admin when ready.",
+            devotionalId: existing.id,
+          };
+        }
+        if (existing.status === "published") {
+          await finishRun(input.db, runId, "completed", 1);
+          return {
+            status: "skipped",
+            message: "Today's Daily Meal is already published.",
+            devotionalId: existing.id,
+          };
+        }
+        if (plan.autoPublish && existing.status === "scheduled") {
+          const published = await publish(input.db, existing, {
+            requireScheduled: true,
+          });
+          await finishRun(input.db, runId, "completed", published ? 1 : 0);
+          if (!published) {
+            return {
+              status: "skipped",
+              message: "Today's Daily Meal is already published.",
+              devotionalId: existing.id,
+            };
+          }
+          await recordAiRun(input.db, "completed");
+          return {
+            status: "published",
+            message: `Published "${existing.title}".`,
+            devotionalId: existing.id,
+          };
+        }
+        await finishRun(input.db, runId, "completed", 1);
+        return {
+          status: "skipped",
+          message:
+            "Today's Daily Meal is waiting for review (auto-publish is off).",
+          devotionalId: existing.id,
+        };
+      }
+
+      if (dayNumber < 1 || dayNumber > plan.totalDays) {
         await finishRun(input.db, runId, "completed", 0);
         return {
           status: "skipped",
           message:
-            "Today's Daily Meal is archived. Restore it from Admin when ready.",
-          devotionalId: existing.id,
+            dayNumber > plan.totalDays
+              ? "The active plan has finished."
+              : "The plan has not started yet.",
         };
       }
-      if (existing.status === "published") {
-        await finishRun(input.db, runId, "completed", 1);
+    } else if (shouldPublish && existing) {
+      const published = await publish(input.db, existing, {
+        requireScheduled: true,
+      });
+      await finishRun(input.db, runId, "completed", published ? 1 : 0);
+      if (!published) {
         return {
           status: "skipped",
           message: "Today's Daily Meal is already published.",
           devotionalId: existing.id,
         };
       }
-      if (plan.autoPublish && existing.status === "scheduled") {
-        await publish(input.db, existing);
-        await finishRun(input.db, runId, "completed", 1);
-        await recordAiRun(input.db, "completed");
-        return {
-          status: "published",
-          message: `Published "${existing.title}".`,
-          devotionalId: existing.id,
-        };
-      }
-      await finishRun(input.db, runId, "completed", 1);
+      await recordAiRun(input.db, "completed");
       return {
-        status: "skipped",
-        message:
-          "Today's Daily Meal is waiting for review (auto-publish is off).",
+        status: "published",
+        message: `Published "${existing.title}".`,
         devotionalId: existing.id,
-      };
-    }
-
-    const startDate = plan.startDate ?? runDate;
-    const dayNumber = daysBetween(startDate, runDate) + 1;
-    if (dayNumber < 1 || dayNumber > plan.totalDays) {
-      await finishRun(input.db, runId, "completed", 0);
-      return {
-        status: "skipped",
-        message:
-          dayNumber > plan.totalDays
-            ? "The active plan has finished."
-            : "The plan has not started yet.",
       };
     }
 
@@ -292,7 +463,7 @@ export async function runDailyDevotional(input: {
     const now = new Date();
     const status = plan.autoPublish ? "published" : "scheduled";
     const id = crypto.randomUUID();
-    await input.db
+    const inserted = await input.db
       .insert(devotionals)
       .values({
         id,
@@ -314,7 +485,16 @@ export async function runDailyDevotional(input: {
         publishedAt: plan.autoPublish ? now : null,
         createdAt: now,
       })
-      .onConflictDoNothing();
+      .onConflictDoNothing()
+      .returning({ id: devotionals.id });
+
+    if (!inserted.length) {
+      await finishRun(input.db, runId, "completed", 0);
+      return {
+        status: "skipped",
+        message: "Today's Daily Meal was created by another run.",
+      };
+    }
 
     await input.db
       .update(devotionalPlans)
@@ -527,7 +707,85 @@ export async function regenerateDevotionalDay(input: {
   return day;
 }
 
+export type PublishDueResult = {
+  published: number;
+  skipped: number;
+  failed: number;
+  errors: string[];
+};
+
+function devotionalDueAt(publishDate: string) {
+  return Date.parse(`${publishDate}T06:00:00+01:00`);
+}
+
+function isDevotionalDue(publishDate: string, now = Date.now()) {
+  const dueAt = devotionalDueAt(publishDate);
+  return Number.isFinite(dueAt) && now >= dueAt;
+}
+
+async function revalidatePublishedDevotionals() {
+  try {
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/");
+    revalidatePath("/devotionals");
+    revalidatePath("/devotionals/[date]", "page");
+    revalidatePath("/member");
+  } catch (error) {
+    console.warn("Daily Meal public revalidation skipped:", error);
+  }
+}
+
 export async function publishDueDevotional(
+  db: AppDb,
+): Promise<PublishDueResult> {
+  const rows = await db
+    .select()
+    .from(devotionals)
+    .where(
+      and(
+        eq(devotionals.status, "scheduled"),
+        isNull(devotionals.archivedAt),
+        lte(devotionals.publishDate, lagosToday()),
+      ),
+    )
+    .orderBy(asc(devotionals.publishDate));
+
+  const result: PublishDueResult = {
+    published: 0,
+    skipped: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  for (const row of rows) {
+    if (!isDevotionalDue(row.publishDate)) {
+      result.skipped += 1;
+      continue;
+    }
+    try {
+      const published = await publish(db, row, { requireScheduled: true });
+      if (published) {
+        result.published += 1;
+      } else {
+        result.skipped += 1;
+      }
+    } catch (error) {
+      result.failed += 1;
+      result.errors.push(
+        `${row.publishDate}: ${
+          error instanceof Error ? error.message : "Publish failed."
+        }`,
+      );
+    }
+  }
+
+  if (result.published > 0) {
+    await revalidatePublishedDevotionals();
+  }
+  return result;
+}
+
+export async function publishDevotionalNow(
   db: AppDb,
   devotionalId: string,
 ) {
@@ -566,8 +824,7 @@ export async function publishDueDevotional(
     row.publishDate = today;
   }
 
-  await publish(db, row);
-  return true;
+  return publish(db, row);
 }
 
 export async function unpublishDevotional(

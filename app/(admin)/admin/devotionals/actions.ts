@@ -31,7 +31,7 @@ import { extractSermonText } from "@/lib/devotionals/extract";
 import {
   generatePlanDays,
   lagosToday,
-  publishDueDevotional,
+  publishDevotionalNow,
   regenerateDevotionalDay,
   runDailyDevotional,
   unpublishDevotional,
@@ -354,7 +354,7 @@ export async function publishDevotionalAction(formData: FormData) {
   let published = false;
   let errorMessage = "";
   try {
-    published = await publishDueDevotional(db, id);
+    published = await publishDevotionalNow(db, id);
   } catch (error) {
     errorMessage =
       error instanceof Error ? error.message : "Could not publish Daily Meal.";

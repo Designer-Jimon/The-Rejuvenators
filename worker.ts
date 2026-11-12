@@ -7,7 +7,10 @@ import type {
   WebSocket,
 } from "@cloudflare/workers-types";
 import * as schema from "./lib/db/schema";
-import { runDailyDevotional } from "./lib/devotionals/pipeline";
+import {
+  publishDueDevotional,
+  runDailyDevotional,
+} from "./lib/devotionals/pipeline";
 import { hashToken } from "./lib/auth/password";
 import { SESSION_COOKIE } from "./lib/constants";
 
@@ -223,19 +226,40 @@ export default {
     ctx.waitUntil(
       (async () => {
         const db = drizzle(env.DB, { schema });
-        const result = await runDailyDevotional({
-          db,
-          env,
-          trigger: "cron",
-        });
-        if (result.status === "failed") {
-          console.error("Daily Meal failed:", result.message);
-        } else {
-          console.log("Daily Meal:", result.status, result.message);
+
+        try {
+          const result = await publishDueDevotional(db);
+          console.log(
+            "Daily Meal scheduled publish:",
+            result.published,
+            "published,",
+            result.skipped,
+            "skipped,",
+            result.failed,
+            "failed",
+          );
+          if (result.errors.length) {
+            console.error("Daily Meal scheduled publish errors:", result.errors);
+          }
+        } catch (error) {
+          console.error("Daily Meal scheduled publish error:", error);
         }
-      })().catch((error) => {
-        console.error("Daily Meal schedule error:", error);
-      }),
+
+        try {
+          const result = await runDailyDevotional({
+            db,
+            env,
+            trigger: "cron",
+          });
+          if (result.status === "failed") {
+            console.error("Daily Meal failed:", result.message);
+          } else {
+            console.log("Daily Meal:", result.status, result.message);
+          }
+        } catch (error) {
+          console.error("Daily Meal schedule error:", error);
+        }
+      })(),
     );
   },
 } satisfies ExportedHandler<CloudflareEnv>;
