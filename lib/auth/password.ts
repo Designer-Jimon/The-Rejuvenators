@@ -1,5 +1,5 @@
 const ALGORITHM = "PBKDF2";
-const ITERATIONS = 210_000;
+const ITERATIONS = 100_000;
 const DIGEST = "SHA-256";
 const KEY_LENGTH = 256;
 

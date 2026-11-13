@@ -24,11 +24,11 @@ async function hashPassword(password) {
     ["deriveBits"],
   );
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt, iterations: 210000 },
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: 100000 },
     key,
     256,
   );
-  return `pbkdf2_sha256$210000$${hex(salt)}$${hex(new Uint8Array(bits))}`;
+  return `pbkdf2_sha256$100000$${hex(salt)}$${hex(new Uint8Array(bits))}`;
 }
 
 const adminName = process.env.SEED_ADMIN_NAME || "Super Admin";
