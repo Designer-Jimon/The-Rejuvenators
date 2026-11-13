@@ -649,6 +649,7 @@ export async function runAiTest() {
   const { env } = await getCloudflareContext({ async: true });
   let message = "";
   let failed = false;
+  let published = false;
   try {
     const result = await runDailyDevotional({
       db,
@@ -658,6 +659,7 @@ export async function runAiTest() {
     });
     message = result.message;
     failed = result.status === "failed";
+    published = result.published;
   } catch (error) {
     message =
       error instanceof Error ? error.message : "The pipeline test could not run.";
@@ -670,7 +672,11 @@ export async function runAiTest() {
     details: message,
   });
   revalidatePath("/admin/ai-settings");
-  revalidatePath("/admin/devotionals");
+  if (published) {
+    auditPath();
+  } else {
+    revalidatePath("/admin/devotionals");
+  }
   redirect(
     `/admin/ai-settings?${failed ? "error" : "saved"}=${encodeURIComponent(message)}`,
   );

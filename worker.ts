@@ -231,7 +231,7 @@ export default {
           const result = await publishDueDevotional(db);
           console.log(
             "Daily Meal scheduled publish:",
-            result.published,
+            result.count,
             "published,",
             result.skipped,
             "skipped,",

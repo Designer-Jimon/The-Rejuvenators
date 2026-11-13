@@ -197,6 +197,8 @@ export type RunResult = {
   devotionalId?: string;
 };
 
+export type DailyDevotionalResult = RunResult & { published: boolean };
+
 async function failedRunsForDay(db: AppDb, planId: string, runDate: string) {
   const [row] = await db
     .select({ value: count() })
@@ -246,7 +248,7 @@ export async function getDailyMealStatus(
   };
 }
 
-export async function runDailyDevotional(input: {
+async function runDailyDevotionalInternal(input: {
   db: AppDb;
   env: CloudflareEnv;
   trigger: "cron" | "manual";
@@ -531,6 +533,16 @@ export async function runDailyDevotional(input: {
   }
 }
 
+export async function runDailyDevotional(input: {
+  db: AppDb;
+  env: CloudflareEnv;
+  trigger: "cron" | "manual";
+  triggeredBy?: string | null;
+}): Promise<DailyDevotionalResult> {
+  const result = await runDailyDevotionalInternal(input);
+  return { ...result, published: result.status === "published" };
+}
+
 async function finishRun(
   db: AppDb,
   id: string,
@@ -708,7 +720,8 @@ export async function regenerateDevotionalDay(input: {
 }
 
 export type PublishDueResult = {
-  published: number;
+  published: boolean;
+  count: number;
   skipped: number;
   failed: number;
   errors: string[];
@@ -721,18 +734,6 @@ function devotionalDueAt(publishDate: string) {
 function isDevotionalDue(publishDate: string, now = Date.now()) {
   const dueAt = devotionalDueAt(publishDate);
   return Number.isFinite(dueAt) && now >= dueAt;
-}
-
-async function revalidatePublishedDevotionals() {
-  try {
-    const { revalidatePath } = await import("next/cache");
-    revalidatePath("/");
-    revalidatePath("/devotionals");
-    revalidatePath("/devotionals/[date]", "page");
-    revalidatePath("/member");
-  } catch (error) {
-    console.warn("Daily Meal public revalidation skipped:", error);
-  }
 }
 
 export async function publishDueDevotional(
@@ -751,7 +752,8 @@ export async function publishDueDevotional(
     .orderBy(asc(devotionals.publishDate));
 
   const result: PublishDueResult = {
-    published: 0,
+    published: false,
+    count: 0,
     skipped: 0,
     failed: 0,
     errors: [],
@@ -765,7 +767,7 @@ export async function publishDueDevotional(
     try {
       const published = await publish(db, row, { requireScheduled: true });
       if (published) {
-        result.published += 1;
+        result.count += 1;
       } else {
         result.skipped += 1;
       }
@@ -779,9 +781,7 @@ export async function publishDueDevotional(
     }
   }
 
-  if (result.published > 0) {
-    await revalidatePublishedDevotionals();
-  }
+  result.published = result.count > 0;
   return result;
 }
 
